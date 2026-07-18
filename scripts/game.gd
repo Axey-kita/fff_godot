@@ -1,0 +1,445 @@
+extends Node2D
+
+# Global texture resources
+const BG_IMG = preload("res://assets/801215d83f224786b0f0b4c37c2571d9.png")
+const SHIELD_IMG = preload("res://assets/shield-11-20260702203319.png")
+const FLAME_IMG = preload("res://assets/17-20260703142847.png")
+const PROJ_LIGHT_IMG = preload("res://assets/10-20260702202815.png")
+
+# Input state
+var keys := {
+	"left": false, "right": false, "up": false,
+	"attack": false, "skill1": false, "skill2": false, "ult": false
+}
+
+# Fixed timestep
+const FIXED_DT := 1000.0 / 60.0
+var _last_time := 0.0
+var _accumulator := 0.0
+
+# AI
+var ai_think_delay := 0
+
+func _ready():
+	print("[Game] _ready() start")
+	CharConfigs.ensure_init()
+	print("[Game] configs OK, selected_char = ", GameWorld.selected_char_id)
+	call_deferred("_start_game")
+
+func _start_game():
+	var enemy_chars = ["knight","mage","archer","paladin","witch","assassin","shadowwarrior","evoker"]
+	var ai_char = enemy_chars[randi() % enemy_chars.size()]
+	print("Starting game: player=", GameWorld.selected_char_id, " enemy=", ai_char)
+	init_game(GameWorld.selected_char_id, ai_char)
+
+func init_game(player_char_id: String, enemy_char_id: String):
+	CharConfigs.ensure_init()
+	print("Configs available: ", CharConfigs.configs.keys())
+	GameWorld.reset_world()
+	var p_skills = CharacterFactory.create_skills(player_char_id)
+	var e_skills = CharacterFactory.create_skills(enemy_char_id)
+	print("Skills created: p=", p_skills.size(), " e=", e_skills.size())
+	GameWorld.player = Fighter.new()
+	GameWorld.player.setup(160, 380 - 56, true, player_char_id, p_skills)
+	add_child(GameWorld.player)
+	GameWorld.enemy = Fighter.new()
+	GameWorld.enemy.setup(600, 380 - 56, false, enemy_char_id, e_skills)
+	add_child(GameWorld.enemy)
+	GameWorld.entities = [GameWorld.player, GameWorld.enemy]
+	PickupSystem.init_pickups()
+	GameWorld.game_running = true
+	GameWorld.game_over = false
+	GameWorld.frame = 0
+	print("Game initialized! player.hp=", GameWorld.player.hp, " enemy.hp=", GameWorld.enemy.hp)
+
+func _process(_delta: float):
+	if not GameWorld.game_running or GameWorld.game_over:
+		queue_redraw()
+		return
+	var now = Time.get_ticks_msec()
+	if _last_time == 0:
+		_last_time = now
+	var dt = now - _last_time
+	_last_time = now
+	if dt > 250:
+		dt = 250
+	_accumulator += dt
+	while _accumulator >= FIXED_DT:
+		if GameWorld.slow_mo_timer > 0:
+			GameWorld.slow_mo_timer -= 1
+			GameWorld.slow_mo_tick += 1
+			if GameWorld.slow_mo_tick >= GameWorld.SLOW_FACTOR:
+				GameWorld.slow_mo_tick = 0
+				_update()
+		else:
+			GameWorld.slow_mo_tick = 0
+			_update()
+		_accumulator -= FIXED_DT
+	queue_redraw()
+
+func _update():
+	if GameWorld.hit_stop > 0:
+		GameWorld.hit_stop -= 1
+		return
+	GameWorld.frame += 1
+	# Update all skills (cooldowns)
+	for f in GameWorld.entities:
+		for sk in f.skills:
+			sk.update()
+	# Input & AI (must happen BEFORE physics, so vx/vy from input take effect same frame)
+	InputHandler.update_player_input(GameWorld, keys)
+	ai_think_delay = AISystem.update_ai(ai_think_delay)
+	# Apply physics (after input, matching JS order)
+	_apply_physics_all()
+	# Systems
+	DashSystem.update_dash()
+	TornadoSystem.update_tornadoes()
+	ProjectileSystem.update_projectiles(self)
+	FlameZoneSystem.update_flame_zones()
+	SlowSystem.update_slow()
+	PickupSystem.update_pickups_and_end()
+	CharacterSystems.update_assassin_logic()
+	CharacterSystems.update_shadowwarrior_logic()
+	# Camera
+	var target_cam = GameWorld.player.pos_x - 400.0
+	target_cam = clampf(target_cam, 0, 2400 - 800)
+	GameWorld.camera.x += (target_cam - GameWorld.camera.x) * 0.1
+
+func _apply_physics_all():
+	# Time stop check — skip physics if any entity has time_stop active
+	var time_stopped = false
+	for f in GameWorld.entities:
+		if f.time_stop:
+			time_stopped = true
+			break
+	if not time_stopped:
+		for f in GameWorld.entities:
+			f.apply_physics()
+
+# ===== Drawing =====
+func _draw():
+	var cam_x = GameWorld.camera.x
+	var font = ThemeDB.fallback_font
+
+	# 1. drawMap()
+	_draw_map(cam_x)
+
+	# 2. drawFighter(player) / drawFighter(enemy)
+	if GameWorld.player:
+		_draw_fighter(GameWorld.player, true)
+	if GameWorld.enemy:
+		_draw_fighter(GameWorld.enemy, GameWorld.game_mode == "pvp")
+
+	# 3. drawProjectiles()
+	for p in GameWorld.projectiles:
+		var px = p["x"] - cam_x
+		if px < -50 or px > Constants.W + 50:
+			continue
+		var pc = p.get("color", Color(0.533, 0.867, 1.0))
+		var pimg = p.get("img")
+		if pimg is Texture2D:
+			if p.get("vx", 0) < 0:
+				draw_set_transform(Vector2(px + p["w"], p["y"]), 0.0, Vector2(-1, 1))
+				draw_texture_rect(pimg, Rect2(0, 0, p["w"], p["h"]), false, Color(1,1,1,0.8))
+				draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			else:
+				draw_texture_rect(pimg, Rect2(px, p["y"], p["w"], p["h"]), false, Color(1,1,1,0.8))
+		else:
+			draw_rect(Rect2(px, p["y"], p["w"], p["h"]), pc)
+			draw_rect(Rect2(px + 4, p["y"] + 4, p["w"] - 8, p["h"] - 8), Color.WHITE)
+		if GameWorld.frame % 2 == 0:
+			Fighter.emit_particles(p["x"] + p["w"] / 2.0, p["y"] + p["h"] / 2.0, 3, pc, 2, 4, "circle")
+
+	# 4. drawTornadoes()
+	for t in GameWorld.tornadoes:
+		var px = t["x"] - cam_x
+		if px > -t["w"] and px < Constants.W + t["w"]:
+			if t.has("img") and t["img"] is Texture2D:
+				draw_texture_rect(t["img"], Rect2(px, t["y"], t["w"], t["h"]), false, Color(1,1,1,0.8))
+			else:
+				draw_rect(Rect2(px, t["y"], t["w"], t["h"]), Color(0.533, 0.867, 1.0, 0.8))
+
+	# 5. drawVortexes()
+	for v in GameWorld.vortexes:
+		var px = v["x"] - cam_x
+		if px > -v["w"] and px < Constants.W + v["w"]:
+			if v.has("img") and v["img"] is Texture2D:
+				draw_texture_rect(v["img"], Rect2(px, v["y"], v["w"], v["h"]), false, Color(1,1,1,0.8))
+			else:
+				draw_rect(Rect2(px, v["y"], v["w"], v["h"]), Color(0.467, 0.267, 0.667, 0.8))
+
+	# 6. drawFlameZones()
+	for fz in GameWorld.flame_zones:
+		var px = fz["x"] - cam_x
+		if px < -50 or px > Constants.W + 50:
+			continue
+		if FLAME_IMG:
+			draw_texture_rect(FLAME_IMG, Rect2(px, fz["y"], fz["w"], fz["h"]), false, Color(1,1,1,0.8))
+		else:
+			draw_rect(Rect2(px, fz["y"], fz["w"], fz["h"]), Color(1.0, 0.267, 0.0, 0.8))
+
+	# 7. drawPickups()
+	for p in GameWorld.pickups:
+		p.draw(self, cam_x)
+
+	# 8. drawChargeBar()
+	_draw_charge_bar(GameWorld.player, cam_x)
+	if GameWorld.game_mode == "pvp":
+		_draw_charge_bar(GameWorld.enemy, cam_x)
+
+	# 9. drawParticles()
+	for pt in GameWorld.particles:
+		pt.draw(self)
+
+	# 10. drawExplosionEffects()
+	for e in GameWorld.explosion_effects:
+		var px = e.x - cam_x
+		var alpha = e.get("alpha", 0.8)
+		draw_circle(Vector2(px + e.w / 2.0, e.y + e.h / 2.0), e.w / 2.0, Color(1.0, 0.533, 0.267, alpha))
+
+	# 11. onOverlayDraw hook (placeholder)
+	# Character-specific overlay drawing would be called here.
+
+	# 12. Time slow filter
+	if GameWorld.slow_mo_timer > 0:
+		draw_rect(Rect2(0, 0, Constants.W, Constants.H), Color(0.471, 0.314, 0.784, 0.12))
+
+	# 13. HUD
+	_draw_hud(font)
+
+	# Debug text (bottom-left corner)
+	draw_string(font, Vector2(10, Constants.H - 10), "frame:" + str(GameWorld.frame) + " particles:" + str(GameWorld.particles.size()), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color(0.667, 0.667, 0.667))
+
+func _draw_map(cam_x: float):
+	# Background parallax image
+	if BG_IMG:
+		draw_texture_rect(BG_IMG, Rect2(-cam_x * 0.2, 0, Constants.W + 200, Constants.H), false)
+	else:
+		var from_color = Color(0.102, 0.102, 0.18)
+		var to_color = Color(0.169, 0.137, 0.267)
+		draw_rect(Rect2(0, 0, Constants.W, Constants.H * 0.5), from_color)
+		draw_rect(Rect2(0, Constants.H * 0.5, Constants.W, Constants.H * 0.5), to_color)
+
+	# Mountain peaks (decorative triangles)
+	for i in range(8):
+		var mx = fmod(i * 280 - cam_x * 0.2, Constants.W + 200) - 100
+		var my = Constants.GROUND_Y - 60 - sin(i * 1.5) * 30
+		var pts = PackedVector2Array([
+			Vector2(mx, Constants.GROUND_Y),
+			Vector2(mx + 120, my),
+			Vector2(mx + 240, Constants.GROUND_Y)
+		])
+		draw_polygon(pts, PackedColorArray([Color(0.267, 0.267, 0.424, 0.3)]))
+
+	# Ground
+	draw_rect(Rect2(0, Constants.GROUND_Y, Constants.W, Constants.H - Constants.GROUND_Y), Color(0.239, 0.239, 0.361))
+
+	# Ground tile stripes
+	for i in range(0, Constants.MAP_W, 40):
+		var sx = i - cam_x * 0.8
+		if sx > -20 and sx < Constants.W + 20:
+			draw_rect(Rect2(sx, Constants.GROUND_Y + 4, 20, 4), Color(0.31, 0.31, 0.435))
+
+	# Platforms
+	for pl in GameWorld.platforms:
+		if pl.get("is_ground"):
+			continue
+		var sx = pl["x"] - cam_x
+		if sx < -pl["w"] - 20 or sx > Constants.W + 20:
+			continue
+		draw_rect(Rect2(sx, pl["y"], pl["w"], pl["h"]), Color(0.416, 0.298, 0.612))
+		draw_rect(Rect2(sx + 4, pl["y"] - 2, pl["w"] - 8, 4), Color(0.541, 0.424, 0.737))
+		draw_rect(Rect2(sx + 4, pl["y"] + pl["h"], pl["w"] - 8, 4), Color(0, 0, 0, 0.3))
+
+	# Map boundary markers
+	draw_rect(Rect2(0 - cam_x, Constants.GROUND_Y - 10, 10, 10), Color(0.914, 0.271, 0.157))
+	draw_rect(Rect2(Constants.MAP_W - 10 - cam_x, Constants.GROUND_Y - 10, 10, 10), Color(0.914, 0.271, 0.157))
+
+func _draw_fighter(f: Fighter, is_local: bool = false):
+	if not f:
+		return
+	var px = f.pos_x - GameWorld.camera.x
+	if px < -80 or px > 880:
+		return
+
+	# Damage flash
+	var alpha_mod = 1.0
+	if f.damage_flash > 0 and f.damage_flash % 4 < 2:
+		alpha_mod = 0.5
+
+	# Draw texture if available, otherwise colored rect
+	var imgs = f.config.get("images", {})
+	var tex_key = f.image_state if imgs.has(f.image_state) else "idle"
+	var tex = imgs.get(tex_key)
+	if tex is Texture2D:
+		if f.facing < 0:
+			# Flip horizontally at the right edge of the fighter box
+			draw_set_transform(Vector2(px + f.w, f.pos_y), 0.0, Vector2(-1, 1))
+			draw_texture_rect(tex, Rect2(0, 0, f.w, f.h), false, Color(1, 1, 1, alpha_mod))
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		else:
+			draw_texture_rect(tex, Rect2(px, f.pos_y, f.w, f.h), false, Color(1, 1, 1, alpha_mod))
+	else:
+		# Fallback: colored rectangle
+		var c = Color(0.2, 0.6, 1.0, alpha_mod) if f.is_player else Color(1.0, 0.2, 0.2, alpha_mod)
+		draw_rect(Rect2(px, f.pos_y, f.w, f.h), c)
+
+	# Shield ring effect
+	if f.shield_active and SHIELD_IMG:
+		draw_texture_rect(SHIELD_IMG, Rect2(px - f.w * 0.5, f.pos_y - f.h * 0.5, f.w * 2, f.h * 2), false, Color(1,1,1,0.6))
+	if f.divine_shield_active or f.holy_empower_active:
+		var alpha_s = 0.32 if f.divine_shield_active else 0.24
+		draw_arc(Vector2(px + f.w / 2.0, f.pos_y + f.h / 2.0), maxf(f.w, f.h) * 0.75, 0, PI * 2, 32, Color(1.0, 0.843, 0.0, alpha_s), 4)
+		if f.holy_empower_active:
+			draw_circle(Vector2(px + f.w / 2.0, f.pos_y + f.h / 2.0), maxf(f.w, f.h) * 1.18, Color(1.0, 0.843, 0.0, 0.12))
+
+	# Status effect overlays
+	for s in f.statuses:
+		if s.timer <= 0:
+			continue
+		if s.freeze:
+			draw_rect(Rect2(px, f.pos_y, f.w, f.h), Color(1.0, 1.0, 1.0, 0.5))
+		elif s.vfx_color:
+			draw_rect(Rect2(px, f.pos_y, f.w, f.h), Color(s.vfx_color.r, s.vfx_color.g, s.vfx_color.b, 0.4))
+
+	# HP bar (above fighter)
+	var hp_pct = f.hp / maxf(f.max_hp, 1.0)
+	draw_rect(Rect2(px, f.pos_y - 8, f.w, 4), Color(0.2, 0.2, 0.2))
+	draw_rect(Rect2(px, f.pos_y - 8, f.w * hp_pct, 4), Color(0.27, 0.67, 0.27))
+
+	# Label
+	var lbl = "P1" if f.is_player else ("P2" if is_local else "AI")
+	var lbl_color = Color.WHITE if f.is_player else (Color(0.0, 0.667, 1.0) if is_local else Color.RED)
+	draw_string(ThemeDB.fallback_font, Vector2(px, f.pos_y - 12), lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lbl_color)
+
+func _draw_charge_bar(owner: Fighter, cam_x: float):
+	if not owner:
+		return
+	if not owner.charging and not owner.charging_skill1:
+		return
+	var px = owner.pos_x - cam_x + owner.w / 2.0
+	var py = owner.pos_y - 20
+	var max_width = 40.0
+	var charge_time: float
+	if owner.charging_skill1:
+		charge_time = (Time.get_ticks_msec() - owner.charge_start_time) / 1000.0
+	else:
+		charge_time = (Time.get_ticks_msec() - owner.charge_start) / 1000.0
+	var max_charge = 2.0 if owner.charging_skill1 else 3.0
+	var progress = clampf(charge_time / max_charge, 0.0, 1.0)
+
+	# Background
+	draw_rect(Rect2(px - max_width / 2.0 - 2, py - 2, max_width + 4, 10), Color(0, 0, 0, 0.6))
+	# Fill
+	var fill_color = Color(1.0, 0.843, 0.0) if owner.charging_skill1 else Color(1.0, 0.867, 0.267)
+	draw_rect(Rect2(px - max_width / 2.0, py, max_width * progress, 6), fill_color)
+	# Border
+	draw_rect(Rect2(px - max_width / 2.0, py, max_width, 6), Color.WHITE, false)
+
+func _draw_hud(font: Font):
+	if not GameWorld.player or not GameWorld.enemy:
+		return
+	var p = GameWorld.player
+	var e = GameWorld.enemy
+	var bar_x = 10
+	var bar_w = 180.0
+	var bar_h = 14.0
+
+	# === Player (left side) ===
+	var p_cfg = p.config
+	var p_name = p_cfg.get("name", "P1")
+	
+	# HP bar background
+	draw_rect(Rect2(bar_x, 4, bar_w, bar_h), Color(0.1, 0.1, 0.1, 0.8))
+	var p_hp_pct = maxf(0, p.hp / maxf(p.max_hp, 1.0))
+	var hp_color = Color(0.0, 0.667, 1.0) if p_hp_pct > 0.3 else Color(1.0, 0.133, 0.133)
+	draw_rect(Rect2(bar_x, 4, bar_w * p_hp_pct, bar_h), hp_color)
+	# HP label
+	draw_string(font, Vector2(bar_x + 4, 6), p_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)
+	draw_string(font, Vector2(bar_x + bar_w - 50, 6), str(int(p.hp)) + "/" + str(int(p.max_hp)), HORIZONTAL_ALIGNMENT_RIGHT, -1, 10, Color.WHITE)
+
+	# Energy bar
+	var energy_bar_h = 8.0
+	draw_rect(Rect2(bar_x, 20, bar_w, energy_bar_h), Color(0.05, 0.05, 0.08, 0.8))
+	var p_eng_pct = minf(1.0, p.energy / maxf(p.max_energy, 1.0))
+	draw_rect(Rect2(bar_x, 20, bar_w * p_eng_pct, energy_bar_h), Color(0.0, 0.831, 1.0))
+	var res_label = p_cfg.get("resource_label", "能量")
+	draw_string(font, Vector2(bar_x + 52, 20), res_label + " " + str(int(p.energy)), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color(0.667, 0.8, 1.0))
+
+	# === Enemy (right side) ===
+	var e_name = e.config.get("name", "AI")
+	var e_bar_x = Constants.W - bar_x - bar_w
+	
+	# HP bar
+	draw_rect(Rect2(e_bar_x, 4, bar_w, bar_h), Color(0.1, 0.1, 0.1, 0.8))
+	var e_hp_pct = maxf(0, e.hp / maxf(e.max_hp, 1.0))
+	var e_hp_color = Color(1.0, 0.133, 0.133) if e_hp_pct > 0.3 else Color(1.0, 0.0, 0.0)
+	draw_rect(Rect2(e_bar_x + bar_w * (1.0 - e_hp_pct), 4, bar_w * e_hp_pct, bar_h), e_hp_color)
+	draw_string(font, Vector2(e_bar_x + bar_w - 4, 6), e_name, HORIZONTAL_ALIGNMENT_RIGHT, -1, 12, Color(1.0, 0.533, 0.533))
+	draw_string(font, Vector2(e_bar_x + bar_w - 4 - 55, 6), str(int(e.hp)) + "/" + str(int(e.max_hp)), HORIZONTAL_ALIGNMENT_RIGHT, -1, 10, Color.WHITE)
+
+	# Energy bar (enemy)
+	draw_rect(Rect2(e_bar_x, 20, bar_w, energy_bar_h), Color(0.05, 0.05, 0.08, 0.8))
+	var e_eng_pct = minf(1.0, e.energy / maxf(e.max_energy, 1.0))
+	draw_rect(Rect2(e_bar_x + bar_w * (1.0 - e_eng_pct), 20, bar_w * e_eng_pct, energy_bar_h), Color(0.8, 0.267, 0.0))
+	draw_string(font, Vector2(e_bar_x + bar_w - 4, 20), str(int(e.energy)), HORIZONTAL_ALIGNMENT_RIGHT, -1, 8, Color(1.0, 0.667, 0.4))
+
+	# === Skill cooldowns at bottom ===
+	var skill_labels = {"attack": "J 普攻", "skill1": "U 技1", "skill2": "I 技2", "ult": "O 大招"}
+	var btn_x_start = (Constants.W - 4 * 60) / 2.0
+	var skill_keys = ["attack", "skill1", "skill2", "ult"]
+	for i in skill_keys.size():
+		var key = skill_keys[i]
+		var sk = p.get_skill(key)
+		var bx = btn_x_start + i * 64
+		var by = Constants.H - 28
+		# Background
+		draw_rect(Rect2(bx, by, 58, 22), Color(0.1, 0.1, 0.15, 0.85))
+		# Label
+		draw_string(font, Vector2(bx + 4, by + 4), skill_labels.get(key, key), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color(0.667, 0.667, 0.8))
+		# Cooldown overlay
+		if sk and sk.cd > 0:
+			var cd_pct = float(sk.cd) / float(sk.cooldown)
+			draw_rect(Rect2(bx, by, 58 * cd_pct, 22), Color(0, 0, 0, 0.6))
+			draw_string(font, Vector2(bx + 29, by + 14), str(ceil(sk.cd / 60.0)) + "s", HORIZONTAL_ALIGNMENT_CENTER, -1, 8, Color(1.0, 0.533, 0.533))
+		# Border
+		draw_rect(Rect2(bx, by, 58, 22), Color(0.3, 0.3, 0.5), false)
+
+	# === Game Over overlay ===
+	if GameWorld.game_over:
+		draw_rect(Rect2(0, 0, Constants.W, Constants.H), Color(0, 0, 0, 0.6))
+		var is_win = GameWorld.game_result == "win"
+		var title = "🏆 胜利!" if is_win else "💀 战败"
+		var sub = "你击败了 " + GameWorld.difficulty.to_upper() + " 难度对手!" if is_win else "AI 取得了胜利..."
+		draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 - 20), title, HORIZONTAL_ALIGNMENT_CENTER, -1, 36, Color(1.0, 0.843, 0.0) if is_win else Color(1.0, 0.267, 0.267))
+		draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 + 16), sub, HORIZONTAL_ALIGNMENT_CENTER, -1, 14, Color.WHITE)
+		draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 + 42), "按 R 重新开始", HORIZONTAL_ALIGNMENT_CENTER, -1, 12, Color(0.667, 0.667, 0.667))
+		draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 + 58), "按 ESC 返回菜单", HORIZONTAL_ALIGNMENT_CENTER, -1, 10, Color(0.467, 0.467, 0.467))
+
+func _unhandled_input(event: InputEvent):
+	if event is InputEventKey:
+		var pr = event.pressed
+		match event.keycode:
+			KEY_A, KEY_LEFT: keys["left"] = pr
+			KEY_D, KEY_RIGHT: keys["right"] = pr
+			KEY_W, KEY_UP, KEY_K: keys["up"] = pr
+			KEY_J: keys["attack"] = pr
+			KEY_U: keys["skill1"] = pr
+			KEY_I: keys["skill2"] = pr
+			KEY_O: keys["ult"] = pr
+			KEY_R:
+				if pr and GameWorld.game_over:
+					_restart_game()
+			KEY_ESCAPE:
+				if pr and GameWorld.game_over:
+					get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+
+func _restart_game():
+	# Clean up old fighters
+	if GameWorld.player: GameWorld.player.queue_free()
+	if GameWorld.enemy: GameWorld.enemy.queue_free()
+	GameWorld.player = null
+	GameWorld.enemy = null
+	var enemy_chars = ["knight","mage","archer","paladin","witch","assassin","shadowwarrior","evoker"]
+	var ai_char = enemy_chars[randi() % enemy_chars.size()]
+	init_game(GameWorld.selected_char_id, ai_char)
