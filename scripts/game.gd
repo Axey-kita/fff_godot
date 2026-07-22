@@ -1,10 +1,30 @@
 extends Node2D
 
+# UI nodes (CanvasLayer)
+@onready var ui_layer = $UILayer
+@onready var pause_btn = $UILayer/PauseBtn
+@onready var pause_menu = $UILayer/PauseMenu
+@onready var continue_btn = $UILayer/PauseMenu/PausePanel/ContinueBtn
+@onready var menu_btn = $UILayer/PauseMenu/PausePanel/MenuBtn
+@onready var exit_btn = $UILayer/PauseMenu/PausePanel/ExitBtn
+
+var is_paused := false
+
 # Global texture resources
 const BG_IMG = preload("res://assets/801215d83f224786b0f0b4c37c2571d9.png")
 const SHIELD_IMG = preload("res://assets/shield-11-20260702203319.png")
 const FLAME_IMG = preload("res://assets/17-20260703142847.png")
 const PROJ_LIGHT_IMG = preload("res://assets/10-20260702202815.png")
+
+# Evoker summon textures
+const EVOKER_SERVANT1 = preload("res://assets/stonem.png")   # 1号召唤物
+const EVOKER_SERVANT2_IDLE = preload("res://assets/2idl.png")  # 2号 idle
+const EVOKER_SERVANT2_HEAVY = preload("res://assets/2heavy_attack.png")  # 2号重击
+const EVOKER_SERVANT2_SKILL = preload("res://assets/2attak.png")  # 2号技能
+const EVOKER_SERVANT3 = preload("res://assets/eye.png")   # 3号召唤物
+const EVOKER_FIRE_SEA = preload("res://assets/firesea.png")  # 火海
+const EVOKER_PULL_BALL = preload("res://assets/pullball.png")  # 引力球
+const EVOKER_ULT_CRACK = preload("res://assets/utlgro.png")  # 裂隙
 
 # Input state
 var keys := {
@@ -24,6 +44,14 @@ func _ready():
 	print("[Game] _ready() start")
 	CharConfigs.ensure_init()
 	print("[Game] configs OK, selected_char = ", GameWorld.selected_char_id)
+	
+	# Pause UI setup
+	_style_pause_ui()
+	pause_btn.pressed.connect(_toggle_pause)
+	continue_btn.pressed.connect(_toggle_pause)
+	menu_btn.pressed.connect(_back_to_menu)
+	exit_btn.pressed.connect(_exit_game)
+	
 	call_deferred("_start_game")
 
 func _start_game():
@@ -54,6 +82,10 @@ func init_game(player_char_id: String, enemy_char_id: String):
 
 func _process(_delta: float):
 	if not GameWorld.game_running or GameWorld.game_over:
+		queue_redraw()
+		# Always show UI for game over
+		return
+	if is_paused:
 		queue_redraw()
 		return
 	var now = Time.get_ticks_msec()
@@ -100,6 +132,7 @@ func _update():
 	PickupSystem.update_pickups_and_end()
 	CharacterSystems.update_assassin_logic()
 	CharacterSystems.update_shadowwarrior_logic()
+	EvokerSystem.update()
 	# Camera
 	var target_cam = GameWorld.player.pos_x - 400.0
 	target_cam = clampf(target_cam, 0, 2400 - 800)
@@ -199,6 +232,12 @@ func _draw():
 
 	# 11. onOverlayDraw hook (placeholder)
 	# Character-specific overlay drawing would be called here.
+
+	# Evoker summons and effects drawing
+	_draw_evoker_summons(cam_x)
+	_draw_evoker_fire_seas(cam_x)
+	_draw_evoker_gravity_balls(cam_x)
+	_draw_evoker_void_rifts(cam_x)
 
 	# 12. Time slow filter
 	if GameWorld.slow_mo_timer > 0:
@@ -416,8 +455,82 @@ func _draw_hud(font: Font):
 		draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 + 42), "按 R 重新开始", HORIZONTAL_ALIGNMENT_CENTER, -1, 12, Color(0.667, 0.667, 0.667))
 		draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 + 58), "按 ESC 返回菜单", HORIZONTAL_ALIGNMENT_CENTER, -1, 10, Color(0.467, 0.467, 0.467))
 
+# ===== Evoker drawing functions =====
+
+func _draw_evoker_summons(cam_x: float):
+	for summon in GameWorld.evoker_summons:
+		var sx = summon["x"] - cam_x
+		var sy = summon["y"]
+		var sw = summon["w"]
+		var sh = summon["h"]
+		var stype = summon["type"]
+		
+		# Choose texture based on type and action
+		var tex = null
+		match stype:
+			0: tex = EVOKER_SERVANT1
+			1:
+				if summon.get("action_timer", 0) > 0 and summon.get("action_type") == "heavy":
+					tex = EVOKER_SERVANT2_HEAVY
+				elif summon.get("action_timer", 0) > 0 and summon.get("action_type") == "skill":
+					tex = EVOKER_SERVANT2_SKILL
+				else:
+					tex = EVOKER_SERVANT2_IDLE
+			2: tex = EVOKER_SERVANT3
+		
+		if tex:
+			# Summon textures are drawn facing left natively; flip toward enemy
+			var owner = summon.get("owner")
+			var face_dir = 1
+			if owner:
+				var enemy = GameWorld.get_opponent(owner)
+				if enemy:
+					face_dir = 1 if (enemy.pos_x + enemy.w/2) > (summon["x"] + sw/2) else -1
+				else:
+					face_dir = owner.facing
+			
+			draw_set_transform(Vector2(sx + sw/2, sy + sh/2), 0.0, Vector2(-face_dir, 1))
+			draw_texture_rect(tex, Rect2(-sw/2, -sh/2, sw, sh), false)
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		
+		# HP bar
+		var hp_pct = summon.get("hp", 0) / maxf(summon.get("max_hp", 1), 1.0)
+		draw_rect(Rect2(sx, sy - 10, sw, 6), Color(0.2, 0.2, 0.2))
+		var hp_color = Color.GREEN if hp_pct > 0.5 else (Color.ORANGE if hp_pct > 0.25 else Color.RED)
+		draw_rect(Rect2(sx, sy - 10, sw * hp_pct, 6), hp_color)
+		# State label
+		draw_string(ThemeDB.fallback_font, Vector2(sx + sw/2, sy - 16), summon.get("state", ""), HORIZONTAL_ALIGNMENT_CENTER, -1, 10, Color.WHITE)
+
+func _draw_evoker_fire_seas(cam_x: float):
+	for fs in GameWorld.evoker_fire_seas:
+		var fx = fs["x"] - cam_x
+		var fy = fs["y"] + 60  # offset to ground level
+		if EVOKER_FIRE_SEA:
+			draw_texture_rect(EVOKER_FIRE_SEA, Rect2(fx, fy, fs["w"], fs["h"]), false, Color(1,1,1,0.7))
+
+func _draw_evoker_gravity_balls(cam_x: float):
+	for b in GameWorld.gravity_balls:
+		var bx = b["x"] - cam_x
+		if EVOKER_PULL_BALL:
+			draw_texture_rect(EVOKER_PULL_BALL, Rect2(bx, b["y"], b["w"], b["h"]), false)
+
+func _draw_evoker_void_rifts(cam_x: float):
+	for rift in GameWorld.void_rifts:
+		var rx = rift["x"] - cam_x
+		if EVOKER_ULT_CRACK:
+			draw_texture_rect(EVOKER_ULT_CRACK, Rect2(rx, rift["y"], rift["w"], rift["h"]), false, Color(1,1,1,0.7))
+		# Pulsing border
+		var pulse = sin(rift.get("timer", 0) * 0.1) * 0.3 + 0.7
+		draw_rect(Rect2(rx, rift["y"], rift["w"], rift["h"]), Color(0.784, 0.392, 1.0, pulse * 0.8), false, 3)
+
 func _unhandled_input(event: InputEvent):
 	if event is InputEventKey:
+		if event.pressed and event.keycode == KEY_ESCAPE:
+			if GameWorld.game_over:
+				get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+			else:
+				_toggle_pause()
+			return
 		var pr = event.pressed
 		match event.keycode:
 			KEY_A, KEY_LEFT: keys["left"] = pr
@@ -430,9 +543,6 @@ func _unhandled_input(event: InputEvent):
 			KEY_R:
 				if pr and GameWorld.game_over:
 					_restart_game()
-			KEY_ESCAPE:
-				if pr and GameWorld.game_over:
-					get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
 func _restart_game():
 	# Clean up old fighters
@@ -443,3 +553,56 @@ func _restart_game():
 	var enemy_chars = ["knight","mage","archer","paladin","witch","assassin","shadowwarrior","evoker"]
 	var ai_char = enemy_chars[randi() % enemy_chars.size()]
 	init_game(GameWorld.selected_char_id, ai_char)
+
+# ===== Pause menu =====
+
+func _toggle_pause():
+	is_paused = not is_paused
+	pause_menu.visible = is_paused
+	# Clear lingering keys so they don't trigger actions right after unpause
+	if not is_paused:
+		keys["attack"] = false
+		keys["skill1"] = false
+		keys["skill2"] = false
+		keys["ult"] = false
+		keys["up"] = false
+
+func _back_to_menu():
+	is_paused = false
+	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+
+func _exit_game():
+	get_tree().quit()
+
+func _style_pause_ui():
+	# Pause button — small, subtle, top-right
+	pause_btn.add_theme_font_size_override("font_size", 14)
+	pause_btn.add_theme_color_override("font_color", Color(1, 1, 1, 0.5))
+	pause_btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	
+	# Pause title
+	var pause_title = $UILayer/PauseMenu/PausePanel/PauseTitle
+	pause_title.add_theme_color_override("font_color", Color(1.0, 0.843, 0.0))
+	
+	# Style the three menu buttons
+	_style_pause_button(continue_btn, Color(0.298, 0.686, 0.314))
+	_style_pause_button(menu_btn, Color(1.0, 0.843, 0.0))
+	_style_pause_button(exit_btn, Color(0.914, 0.271, 0.157))
+
+func _style_pause_button(btn: Button, accent: Color):
+	btn.add_theme_font_size_override("font_size", 16)
+	
+	var normal = StyleBoxFlat.new()
+	normal.bg_color = Color(accent.r, accent.g, accent.b, 0.15)
+	normal.set_corner_radius_all(10)
+	normal.border_width_left = 2; normal.border_width_right = 2
+	normal.border_width_top = 2; normal.border_width_bottom = 2
+	normal.border_color = Color(accent.r, accent.g, accent.b, 0.5)
+	btn.add_theme_stylebox_override("normal", normal)
+	
+	var hover = normal.duplicate()
+	hover.bg_color = Color(accent.r, accent.g, accent.b, 0.35)
+	hover.border_color = accent
+	btn.add_theme_stylebox_override("hover", hover)
+	
+	btn.add_theme_color_override("font_color", accent)

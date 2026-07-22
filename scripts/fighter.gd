@@ -169,6 +169,13 @@ func setup(p_x: float, p_y: float, p_is_player: bool, p_char_id: String, p_skill
 	is_player = p_is_player
 	display_name = "玩家" if is_player else "AI"
 	char_id = p_char_id
+	# evoker-specific field initialization
+	if char_id == "evoker":
+		slow_timer = 0
+		slow_percent = 0.0
+		burn_timer = 0
+		bleed_timer = 0
+		blind_timer = 0
 	skills = p_skills
 	skill_map.clear()
 	for s in skills:
@@ -434,21 +441,25 @@ static func _call_on_damage_received(target: Fighter, attacker: Fighter, dmg: fl
 
 # Evoker onDamageReceived: summon damage transfer + mute debuff
 static func _call_evoker_damage_received(target: Fighter, attacker: Fighter, dmg: float):
-	var summons = GameWorld.evoker_summons
-	if summons.is_empty():
+	var summon = null
+	for s in GameWorld.evoker_summons:
+		if s.get("owner") == target:
+			summon = s
+			break
+	if not summon:
 		return
-	var summon = summons[0]  # current active summon
-	if summon and summon.get("hp", 0) > 0:
-		# 随行：转移60%伤害给召唤物
-		if summon.get("state", "") == "随行":
-			var transfer: int = min(int(dmg * 0.6), int(summon["hp"]))
-			summon["hp"] -= transfer
-			target.hp += transfer
-			emit_particles(summon["x"] + summon["w"] / 2.0, summon["y"] + summon["h"] / 2.0, 8, Color(1.0, 0.0, 0.0), 2, 10)
-		# 1号噤声：当敌人与唤魔者在1号同侧时减伤20%
-		if summon.get("type", -1) == 0 and attacker:
-			if signf(attacker.pos_x - summon["x"]) == signf(target.pos_x - summon["x"]):
-				target.hp += floorf(dmg * 0.2)
+	if summon.get("hp", 0) <= 0:
+		return
+	# 随行：转移60%伤害给召唤物
+	if summon.get("state", "") == "随行":
+		var transfer: int = min(int(dmg * 0.6), int(summon["hp"]))
+		summon["hp"] -= transfer
+		target.hp += transfer
+		Fighter.emit_particles(summon["x"] + summon["w"] / 2.0, summon["y"] + summon["h"] / 2.0, 8, Color.RED, 2, 10)
+	# 1号噤声：减伤20%
+	if summon.get("type", -1) == 0 and attacker:
+		if signf(attacker.pos_x - summon["x"]) == signf(target.pos_x - summon["x"]):
+			target.hp += floorf(dmg * 0.2)
 
 static func emit_particles(px: float, py: float, count: int, color: Color, speed: float, size: float, type: String = "circle", spread: float = 1.0):
 	for i in count:

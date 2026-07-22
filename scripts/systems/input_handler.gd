@@ -233,14 +233,49 @@ static func _input_evoker(p: Fighter, keys: Dictionary):
 	if keys.left: mx = -1
 	if keys.right: mx = 1
 	if keys.up and p.grounded: p.vy = -10; p.grounded = false
+	# Bypass Skill.can_use's "attacking" check — evoker's attack cooldown is managed by attack_cooldown, not attacking
 	if keys.attack:
-		var s = p.get_skill("attack"); if s: var r = s.try_use(p); if r.get("success"): keys.attack = false
+		var s = p.get_skill("attack")
+		# Don't call can_use_func (which checks p.attacking); check attack_cooldown directly
+		if s and p.attack_cooldown <= 0:
+			# Determine energy cost based on summon presence (matching _can_attack logic without attacking check)
+			var has_summon := false
+			for sm in GameWorld.evoker_summons:
+				if sm.get("owner") == p:
+					has_summon = true
+					break
+			var cost: float = 20.0 if has_summon else 10.0
+			if p.energy >= cost:
+				if s.execute_func.is_valid():
+					s.execute_func.call(p)
+				keys.attack = false
 	if keys.skill1:
-		var s = p.get_skill("skill1"); if s: var r = s.try_use(p); if r.get("success"): keys.skill1 = false
+		var s = p.get_skill("skill1")
+		if s and s.cd <= 0 and p.energy >= s.energy_cost:
+			if s.can_use_func.is_valid() and s.can_use_func.call(p):
+				p.energy -= s.energy_cost
+				s.cd = s.cooldown
+				if s.execute_func.is_valid():
+					s.execute_func.call(p)
+				keys.skill1 = false
 	if keys.skill2:
-		var s = p.get_skill("skill2"); if s: var r = s.try_use(p); if r.get("success"): keys.skill2 = false
+		var s = p.get_skill("skill2")
+		if s and s.cd <= 0 and p.energy >= s.energy_cost:
+			if s.can_use_func.is_valid() and s.can_use_func.call(p):
+				p.energy -= s.energy_cost
+				s.cd = s.cooldown
+				if s.execute_func.is_valid():
+					s.execute_func.call(p)
+				keys.skill2 = false
 	if keys.ult:
-		var s = p.get_skill("ult"); if s: var r = s.try_use(p); if r.get("success"): keys.ult = false
+		var s = p.get_skill("ult")
+		if s and s.cd <= 0 and p.energy >= s.energy_cost:
+			if s.can_use_func.is_valid() and s.can_use_func.call(p):
+				p.energy -= s.energy_cost
+				s.cd = s.cooldown
+				if s.execute_func.is_valid():
+					s.execute_func.call(p)
+				keys.ult = false
 	_apply_movement(p, mx, 2.25)
 	_update_state(p, mx)
 

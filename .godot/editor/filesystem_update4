@@ -1,0 +1,6 @@
+res://scripts/main_menu.gd
+res://scripts/game.gd
+res://scripts/characters/evoker.gd
+res://scripts/fighter.gd
+res://scripts/systems/input_handler.gd
+res://scripts/systems/projectile_system.gd

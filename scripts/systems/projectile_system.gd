@@ -64,6 +64,11 @@ static func update_projectiles(game_node: Node):
 					target.ice_hit_count += 1
 					if target.ice_hit_count >= 2:
 						target.add_status("frozen")
+				# 冥炎弹命中效果
+				if p.get("type") == "evoker_fireball":
+					target.slow_timer = 360
+					target.slow_percent = 0.2
+					target.burn_timer = 360
 				if p.get("isGravity"): target.add_status("gravity_debuff")
 				if p.get("burn"): target.add_status("burn")
 				if p.get("slow"): target.add_status("slow")
