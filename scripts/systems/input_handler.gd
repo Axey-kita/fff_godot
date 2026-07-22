@@ -18,6 +18,7 @@ static func _handle_char_input(p: Fighter, keys: Dictionary):
 		"assassin": _input_assassin(p, keys)
 		"shadowwarrior": _input_shadowwarrior(p, keys)
 		"evoker": _input_evoker(p, keys)
+		"rose": _input_rose(p, keys)
 
 static func _input_knight(p: Fighter, keys: Dictionary):
 	var mx = 0
@@ -54,7 +55,7 @@ static func _input_mage(p: Fighter, keys: Dictionary):
 				p.energy -= 10; p.attacking = true; p.attack_timer = 120
 				p.attack_delay = 0; p.attack_hit_dealt = true; p.attack_cooldown = 120; p.state = "attack"
 				var d = p.facing; var px2 = p.pos_x + (p.w if d == 1 else 0); var py2 = p.pos_y + 30
-				GameWorld.projectiles.append({"x":px2-16,"y":py2-12,"w":32,"h":24,"vx":3*d,"vy":0,"life":120,"damage":3,"owner":p,"type":"mage_fire","color":Color(1,0.4,0),"reflected":false,"burn":true})
+				GameWorld.projectiles.append({"x":px2-16,"y":py2-12,"w":32,"h":24,"vx":3*d,"vy":0,"life":120,"damage":3,"owner":p,"type":"mage_fire","color":Color(1,0.4,0),"reflected":false,"burn":true,"img":MageCharacter.PROJ_FIRE})
 			keys.attack = false
 		if keys.skill1 and not p.shield_active:
 			var s = p.get_skill("skill1"); if s: var r = s.try_use(p); if r.get("success"): keys.skill1 = false
@@ -97,7 +98,8 @@ static func _input_archer(p: Fighter, keys: Dictionary):
 			var d = p.facing; var px2 = p.pos_x + (p.w if d == 1 else 0); var py2 = p.pos_y + 30
 			var spd = minf(4 + ct * 2, 10)
 			var c = Color(1,0.53,0) if p.fire_arrow_buff else Color(0.67,0.67,0.67)
-			GameWorld.projectiles.append({"x":px2-16,"y":py2-10,"w":32,"h":20,"vx":spd*d,"vy":0,"life":120,"damage":dmg,"owner":p,"type":"arrow","color":c,"reflected":false,"is_fire":p.fire_arrow_buff,"tracking":p.tracking_buff})
+			var arr_img = ArcherCharacter.PROJ_ARROW_FIRE if p.fire_arrow_buff else ArcherCharacter.PROJ_ARROW
+			GameWorld.projectiles.append({"x":px2-16,"y":py2-10,"w":32,"h":20,"vx":spd*d,"vy":0,"life":120,"damage":dmg,"owner":p,"type":"arrow","color":c,"reflected":false,"is_fire":p.fire_arrow_buff,"tracking":p.tracking_buff,"trackingTarget":GameWorld.get_opponent(p),"img":arr_img})
 		p.charging_attack = false; p.attacking = false; p.state = "idle"
 	if keys.skill1 and not p.shield_active and not p.charging_attack:
 		var s = p.get_skill("skill1"); if s: var r = s.try_use(p); if r.get("success"): keys.skill1 = false
@@ -233,14 +235,85 @@ static func _input_evoker(p: Fighter, keys: Dictionary):
 	if keys.left: mx = -1
 	if keys.right: mx = 1
 	if keys.up and p.grounded: p.vy = -10; p.grounded = false
+	# Bypass Skill.can_use's "attacking" check — evoker's attack cooldown is managed by attack_cooldown, not attacking
 	if keys.attack:
-		var s = p.get_skill("attack"); if s: var r = s.try_use(p); if r.get("success"): keys.attack = false
+		var s = p.get_skill("attack")
+		# Don't call can_use_func (which checks p.attacking); check attack_cooldown directly
+		if s and p.attack_cooldown <= 0:
+			# Determine energy cost based on summon presence (matching _can_attack logic without attacking check)
+			var has_summon := false
+			for sm in GameWorld.evoker_summons:
+				if sm.get("owner") == p:
+					has_summon = true
+					break
+			var cost: float = 20.0 if has_summon else 10.0
+			if p.energy >= cost:
+				if s.execute_func.is_valid():
+					s.execute_func.call(p)
+				keys.attack = false
 	if keys.skill1:
-		var s = p.get_skill("skill1"); if s: var r = s.try_use(p); if r.get("success"): keys.skill1 = false
+		var s = p.get_skill("skill1")
+		if s and s.cd <= 0 and p.energy >= s.energy_cost:
+			if s.can_use_func.is_valid() and s.can_use_func.call(p):
+				p.energy -= s.energy_cost
+				s.cd = s.cooldown
+				if s.execute_func.is_valid():
+					s.execute_func.call(p)
+				keys.skill1 = false
 	if keys.skill2:
-		var s = p.get_skill("skill2"); if s: var r = s.try_use(p); if r.get("success"): keys.skill2 = false
+		var s = p.get_skill("skill2")
+		if s and s.cd <= 0 and p.energy >= s.energy_cost:
+			if s.can_use_func.is_valid() and s.can_use_func.call(p):
+				p.energy -= s.energy_cost
+				s.cd = s.cooldown
+				if s.execute_func.is_valid():
+					s.execute_func.call(p)
+				keys.skill2 = false
 	if keys.ult:
-		var s = p.get_skill("ult"); if s: var r = s.try_use(p); if r.get("success"): keys.ult = false
+		var s = p.get_skill("ult")
+		if s and s.cd <= 0 and p.energy >= s.energy_cost:
+			if s.can_use_func.is_valid() and s.can_use_func.call(p):
+				p.energy -= s.energy_cost
+				s.cd = s.cooldown
+				if s.execute_func.is_valid():
+					s.execute_func.call(p)
+				keys.ult = false
+	_apply_movement(p, mx, 2.25)
+	_update_state(p, mx)
+
+static func _input_rose(p: Fighter, keys: Dictionary):
+	# During enhanced skill2, WASD controls flight direction
+	if p.rose_skill2_enhanced:
+		var jx = 0.0; var jy = 0.0
+		if keys.left: jx -= 1.0
+		if keys.right: jx += 1.0
+		if keys.up: jy -= 1.0
+		if keys.down: jy += 1.0
+		if jx != 0 or jy != 0:
+			GameWorld.rose_joystick_dir = Vector2(jx, jy).normalized()
+		else:
+			GameWorld.rose_joystick_dir = Vector2.ZERO
+		_apply_movement(p, 0, 2.25)
+		_update_state(p, 0)
+		return
+	
+	var mx = 0
+	if keys.left: mx = -1
+	if keys.right: mx = 1
+	if keys.up and p.grounded: p.vy = -10; p.grounded = false
+	if keys.attack and p.attack_cooldown <= 0 and not p.attacking:
+		p.attacking = true; p.attack_timer = 68; p.attack_delay = 8
+		p.attack_hit_dealt = false; p.attack_cooldown = 60; p.state = "attack"
+		keys.attack = false
+	if keys.skill1 and not p.dashing:
+		var s = p.get_skill("skill1")
+		if s: var r = s.try_use(p); if r.get("success"): keys.skill1 = false
+	if keys.skill2 and not p.dashing:
+		var s = p.get_skill("skill2")
+		if s: var r = s.try_use(p); if r.get("success"): keys.skill2 = false
+	if keys.ult:
+		var s = p.get_skill("ult")
+		if s: var r = s.try_use(p); if r.get("success"): keys.ult = false
 	_apply_movement(p, mx, 2.25)
 	_update_state(p, mx)
 

@@ -70,5 +70,5 @@ static func _ult(owner: Fighter) -> Dictionary:
 		target.vy = -10
 		target.vx = owner.facing * 8
 	else:
-		GameWorld.projectiles.append({"x":owner.pos_x+(owner.w if owner.facing>0 else -80),"y":owner.pos_y-10,"w":70,"h":70,"vx":10*owner.facing,"vy":0,"life":35,"damage":25,"owner":owner,"type":"knight_ult","color":Color(1.0,0.87,0.27),"reflected":false})
+		GameWorld.projectiles.append({"x":owner.pos_x+(owner.w if owner.facing>0 else -80),"y":owner.pos_y-10,"w":70,"h":70,"vx":10*owner.facing,"vy":0,"life":35,"damage":25,"owner":owner,"type":"knight_ult","color":Color(1.0,0.87,0.27),"reflected":false,"img":PROJ_SWORD})
 	return {"success": true}

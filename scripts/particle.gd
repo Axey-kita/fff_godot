@@ -33,13 +33,12 @@ func update() -> bool:
 	return life > 0 and size > 0.3
 
 func draw(canvas: CanvasItem):
-	canvas.modulate = Color(color.r, color.g, color.b, alpha)
+	var draw_color = Color(color.r, color.g, color.b, alpha * color.a)
 	match type:
 		"circle":
-			canvas.draw_circle(Vector2(x, y), maxf(1.0, size), color)
+			canvas.draw_circle(Vector2(x, y), maxf(1.0, size), draw_color)
 		"rect":
-			canvas.draw_rect(Rect2(x - size/2, y - size/2, size, size), color)
+			canvas.draw_rect(Rect2(x - size/2, y - size/2, size, size), draw_color)
 		"star":
 			# Star is drawn as a small bright rectangle with glow
-			canvas.draw_rect(Rect2(x - size/2, y - size/2, size, size), color)
-	canvas.modulate = Color.WHITE
+			canvas.draw_rect(Rect2(x - size/2, y - size/2, size, size), draw_color)

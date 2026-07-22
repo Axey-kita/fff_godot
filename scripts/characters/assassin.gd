@@ -14,7 +14,7 @@ static func get_config() -> Dictionary:
 			"idle": load("res://assets/56-20260706194405.png"),
 			"walk": load("res://assets/56-20260706194405.png"),
 			"jump": load("res://assets/60-20260706195326.png"),
-			"attack": load("res://assets/53.png"),
+			"attack": load("res://assets/56-20260706194405.png"),
 			"skill1": load("res://assets/59-20260706194857.png"),
 			"skill2": load("res://assets/55-20260706194334.png"),
 			"ult": load("res://assets/57-20260706194512.png"),
@@ -71,7 +71,7 @@ static func _skill1(owner: Fighter) -> Dictionary:
 	owner.dash_remaining = 80
 	owner.dash_dir = owner.facing
 	owner.dash_speed = 5
-	owner.dash_damage_dealt = false
+	owner.dash_damage_dealt = true  # 一瞬是位移技，不造成伤害和击退
 	owner.attack_cooldown = 0
 	owner.enhanced_slash = true
 	owner.enhanced_slash_timer = 30
@@ -92,5 +92,6 @@ static func _ult(owner: Fighter) -> Dictionary:
 	owner.time_stop = true
 	owner.time_stop_timer = 180
 	owner.state = "ult"
+	owner.image_state = "ult"  # Bypass physics freeze
 	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 120, Color(0.53,0.27,0.8), 14, 18, "star")
 	return {"success": true}

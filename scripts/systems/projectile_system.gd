@@ -54,36 +54,45 @@ static func update_projectiles(game_node: Node):
 		if target.hp > 0:
 			var proj_rect = Rect2(p["x"], p["y"], p["w"], p["h"])
 			if target.get_hit_box().intersects(proj_rect):
-				# Character hooks: onProjectileHit (e.g. evoker fireball, archer fire arrow, witch meteor)
-				if _run_projectile_hit_hook(p, target, i, game_node):
-					continue
-
-				# Status effects on hit
-				var ptype = str(p.get("type", ""))
-				if ptype == "mage_ice":
-					target.ice_hit_count += 1
-					if target.ice_hit_count >= 2:
-						target.add_status("frozen")
-				if p.get("isGravity"): target.add_status("gravity_debuff")
-				if p.get("burn"): target.add_status("burn")
-				if p.get("slow"): target.add_status("slow")
-				if p.get("isFire") or p.get("is_fire"): target.add_status("burn")
-
-				# Damage: mage projectiles have no knockback
-				if ptype == "mage_fire" or ptype == "mage_ice" or ptype == "mage_light":
-					Fighter.apply_damage(target, p["damage"], p["owner"], false)
+				# Piercing: skip if already hit this target
+				if p.get("piercing") and p.has("hitTargets") and p["hitTargets"].has(target):
+					pass  # Already hit, don't deal damage again
 				else:
-					Fighter.apply_damage(target, p["damage"], p["owner"])
+					# Character hooks: onProjectileHit (e.g. evoker fireball, archer fire arrow, witch meteor)
+					if _run_projectile_hit_hook(p, target, i, game_node):
+						continue
 
-				# Hit particles
-				Fighter.emit_particles(p["x"] + p["w"] / 2.0, p["y"] + p["h"] / 2.0, 30, Color(1.0, 0.67, 0.0), 6, 8, "star", 1.2)
+					# Status effects on hit
+					var ptype = str(p.get("type", ""))
+					if ptype == "mage_ice":
+						target.ice_hit_count += 1
+						if target.ice_hit_count >= 2:
+							target.add_status("frozen")
+					# 冥炎弹命中效果
+					if p.get("type") == "evoker_fireball":
+						target.slow_timer = 360
+						target.slow_percent = 0.2
+						target.burn_timer = 360
+					if p.get("isGravity"): target.add_status("gravity_debuff")
+					if p.get("burn"): target.add_status("burn")
+					if p.get("slow"): target.add_status("slow")
+					if p.get("isFire") or p.get("is_fire"): target.add_status("burn")
 
-				# Piercing support
-				if p.get("piercing"):
-					if not p.has("hitTargets"): p["hitTargets"] = []
-					p["hitTargets"].append(target)
-				else:
-					GameWorld.projectiles.remove_at(i)
+					# Damage: mage projectiles have no knockback
+					if ptype == "mage_fire" or ptype == "mage_ice" or ptype == "mage_light":
+						Fighter.apply_damage(target, p["damage"], p["owner"], false)
+					else:
+						Fighter.apply_damage(target, p["damage"], p["owner"])
+
+					# Hit particles
+					Fighter.emit_particles(p["x"] + p["w"] / 2.0, p["y"] + p["h"] / 2.0, 30, Color(1.0, 0.67, 0.0), 6, 8, "star", 1.2)
+
+					# Piercing support
+					if p.get("piercing"):
+						if not p.has("hitTargets"): p["hitTargets"] = []
+						p["hitTargets"].append(target)
+					else:
+						GameWorld.projectiles.remove_at(i)
 
 # ===== Projectile Helpers =====
 static func _reflect_projectile(p: Dictionary) -> bool:

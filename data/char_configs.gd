@@ -10,7 +10,7 @@ static func ensure_init():
 		_init_all()
 
 static func _init_all():
-	var ids = ["knight", "mage", "archer", "paladin", "witch", "assassin", "shadowwarrior", "evoker"]
+	var ids = ["knight", "mage", "archer", "paladin", "witch", "assassin", "shadowwarrior", "evoker", "rose"]
 	print("[CharConfigs] _init_all() start, loading ", ids.size(), " characters...")
 	for cid in ids:
 		print("[CharConfigs] loading config for: ", cid)

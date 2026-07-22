@@ -58,5 +58,6 @@ static func _ult(owner: Fighter) -> Dictionary:
 		var dist = randf() * 150
 		var center_x = owner.pos_x + owner.w/2
 		var tx = center_x + cos(angle) * dist
-		GameWorld.projectiles.append({"x":tx-16,"y":-30-randf()*50,"w":32,"h":20,"vx":(randf()-0.5)*0.5,"vy":3+randf()*2,"life":120,"damage":5,"owner":owner,"type":"arrow_ult","color":Color(0.8,0.53,0.0),"reflected":false,"img":PROJ_ARROW_ULT})
+		var ult_img = PROJ_ARROW_ULT_FIRE if owner.fire_arrow_buff else PROJ_ARROW_ULT
+		GameWorld.projectiles.append({"x":tx-16,"y":-30-randf()*50,"w":32,"h":20,"vx":(randf()-0.5)*0.5,"vy":3+randf()*2,"life":120,"damage":5,"owner":owner,"type":"arrow_ult","color":Color(0.8,0.53,0.0),"reflected":false,"img":ult_img,"is_fire":owner.fire_arrow_buff})
 	return {"success": true}
