@@ -1,6 +1,7 @@
 extends Control
 
 @onready var menu_main = $MenuMain
+@onready var bg_texture = $Background
 @onready var title_texture = $MenuMain/Title
 @onready var pve_button = $MenuMain/ButtonRow/PVEButton
 @onready var coming_button = $MenuMain/ButtonRow/ComingButton
@@ -23,6 +24,12 @@ extends Control
 @onready var start_button = $CharSelect/CharPanel/ButtonRow2/StartButton
 @onready var back_button = $CharSelect/CharPanel/ButtonRow2/BackButton
 @onready var char_title_label = $CharSelect/CharPanel/CharTitle
+@onready var diff_select = $DiffSelect
+@onready var easy_btn = $DiffSelect/DiffPanel/DiffButtonRow/EasyBtn
+@onready var medium_btn = $DiffSelect/DiffPanel/DiffButtonRow/MediumBtn
+@onready var hard_btn = $DiffSelect/DiffPanel/DiffButtonRow/HardBtn
+@onready var diff_back_btn = $DiffSelect/DiffPanel/DiffBackBtn
+@onready var diff_title = $DiffSelect/DiffPanel/DiffTitle
 
 var selected_char := "knight"
 var chars_initialized := false
@@ -32,11 +39,16 @@ const IMG_TITLE = preload("res://assets/34-20260705005653.png")
 const IMG_PVE = preload("res://assets/29-20260705005340.png")
 const IMG_COMING = preload("res://assets/33-20260705005611.png")
 const IMG_PVP = preload("res://assets/31-20260705005426.png")
+const IMG_BG = preload("res://assets/无标题102_20260722154610.png")
+const IMG_DIFF_EASY = preload("res://assets/36-20260705005735.png")
+const IMG_DIFF_MEDIUM = preload("res://assets/38-20260705005805.png")
+const IMG_DIFF_HARD = preload("res://assets/39-20260705005825.png")
 
-const CHAR_IDS = ["knight","mage","archer","paladin","witch","assassin","shadowwarrior","evoker"]
+const CHAR_IDS = ["knight","mage","archer","paladin","witch","assassin","shadowwarrior","evoker","rose"]
 const CHAR_NAMES = {
 	"knight":"骑士","mage":"法师","archer":"弓箭手","paladin":"圣骑士",
-	"witch":"魔女","assassin":"刺客","shadowwarrior":"影武者","evoker":"唤魔者"
+	"witch":"魔女","assassin":"刺客","shadowwarrior":"影武者","evoker":"唤魔者",
+	"rose":"血色蔷薇"
 }
 
 func _ready():
@@ -45,6 +57,7 @@ func _ready():
 	print("[MainMenu] configs initialized, setting up UI...")
 	
 	title_texture.texture = IMG_TITLE
+	bg_texture.texture = IMG_BG
 	pve_button.texture_normal = IMG_PVE; pve_button.texture_pressed = IMG_PVE
 	coming_button.texture_normal = IMG_COMING; coming_button.texture_pressed = IMG_COMING
 	pvp_button.texture_normal = IMG_PVP; pvp_button.texture_pressed = IMG_PVP
@@ -54,6 +67,10 @@ func _ready():
 	pvp_button.pressed.connect(_on_pvp_pressed)
 	pokedex_btn.pressed.connect(_on_pokedex_pressed)
 	exit_btn.pressed.connect(_on_exit_pressed)
+	easy_btn.pressed.connect(_on_easy_pressed)
+	medium_btn.pressed.connect(_on_medium_pressed)
+	hard_btn.pressed.connect(_on_hard_pressed)
+	diff_back_btn.pressed.connect(_on_diff_back_pressed)
 	start_button.pressed.connect(_on_start_pressed)
 	back_button.pressed.connect(_on_back_pressed)
 	dex_close_btn.pressed.connect(_on_dex_close)
@@ -62,6 +79,7 @@ func _ready():
 	_style_pokedex_button()
 	_style_exit_button()
 	_style_dex_overlay()
+	_style_diff_buttons()
 	_style_char_select_buttons()
 	
 	_populate_characters()
@@ -209,6 +227,16 @@ func _style_exit_button():
 	exit_btn.add_theme_color_override("font_color", Color(0.914, 0.271, 0.157))
 	exit_btn.add_theme_color_override("font_hover_color", Color(0.914, 0.271, 0.157, 0.8))
 
+func _style_diff_buttons():
+	easy_btn.texture_normal = IMG_DIFF_EASY
+	easy_btn.texture_pressed = IMG_DIFF_EASY
+	medium_btn.texture_normal = IMG_DIFF_MEDIUM
+	medium_btn.texture_pressed = IMG_DIFF_MEDIUM
+	hard_btn.texture_normal = IMG_DIFF_HARD
+	hard_btn.texture_pressed = IMG_DIFF_HARD
+	diff_title.add_theme_color_override("font_color", Color(1.0, 0.843, 0.0))
+	_style_action_button(diff_back_btn, Color(0.6, 0.6, 0.6), "← 返回")
+
 func _style_char_select_buttons():
 	char_title_label.add_theme_color_override("font_color", Color(1.0, 0.843, 0.0))
 	_style_action_button(start_button, Color(0.298, 0.686, 0.314), "⚔️ 开始战斗")
@@ -345,7 +373,28 @@ func _init_char_configs():
 	chars_initialized = true
 
 func _on_pve_pressed():
-	GameWorld.game_mode = "pve"; _show_char_select()
+	GameWorld.game_mode = "pve"; _show_diff_select()
+
+func _show_diff_select():
+	menu_main.visible = false
+	pokedex_btn.visible = false
+	exit_btn.visible = false
+	diff_select.visible = true
+
+func _on_easy_pressed():
+	GameWorld.difficulty = "easy"; _show_char_select()
+
+func _on_medium_pressed():
+	GameWorld.difficulty = "medium"; _show_char_select()
+
+func _on_hard_pressed():
+	GameWorld.difficulty = "hard"; _show_char_select()
+
+func _on_diff_back_pressed():
+	diff_select.visible = false
+	menu_main.visible = true
+	pokedex_btn.visible = true
+	exit_btn.visible = true
 
 func _on_coming_pressed():
 	_show_toast("功能开发中，敬请期待")
@@ -384,8 +433,7 @@ func _show_char_select():
 
 func _on_back_pressed():
 	char_select.visible = false
-	menu_main.visible = true
-	pokedex_btn.visible = true; exit_btn.visible = true
+	diff_select.visible = true
 
 func _on_exit_pressed():
 	get_tree().quit()

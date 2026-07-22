@@ -278,14 +278,20 @@ static func _update_summons() -> void:
 					if aura_dist < 150.0 and GameWorld.frame % 60 == 0:
 						enemy.energy = maxf(0.0, enemy.energy - 5.0)
 				2:
-					# 凝视：if enemy within 150px, add 60 to skill1/skill2 cd each frame
+					# 凝视：enemy within 150px → skill cd +1s (debuff, removed on leaving)
 					if aura_dist < 150.0:
+						if not enemy.evoker_gazed:
+							var es1 = enemy.get_skill("skill1")
+							if es1: es1.cd += 60
+							var es2 = enemy.get_skill("skill2")
+							if es2: es2.cd += 60
+							enemy.evoker_gazed = true
+					elif enemy.evoker_gazed:
 						var es1 = enemy.get_skill("skill1")
-						if es1:
-							es1.cd += 60
+						if es1: es1.cd = maxi(0, es1.cd - 60)
 						var es2 = enemy.get_skill("skill2")
-						if es2:
-							es2.cd += 60
+						if es2: es2.cd = maxi(0, es2.cd - 60)
+						enemy.evoker_gazed = false
 
 		# === Hit detection (non-随行 state only) ===
 		if state != "随行":

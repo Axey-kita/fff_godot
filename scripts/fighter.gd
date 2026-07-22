@@ -159,6 +159,17 @@ var slow_percent: float = 0.0
 var burn_timer: int = 0
 var bleed_timer: int = 0
 var blind_timer: int = 0
+var evoker_gazed: bool = false
+
+# Rose: blood_abyss
+var blood_abyss: float = 0.0
+var blood_heal_timer: int = 0
+var rose_skill2_active: bool = false
+var rose_skill2_damage_tick: int = 0
+var rose_skill2_tick_damage: float = 3.0
+var rose_skill2_enhanced: bool = false
+var rose_skill2_fly_timer: int = 0
+var rose_grab_center_x: float = -9999.0
 
 # Forced skill timer
 var forced_skill_timer: int = 0
@@ -324,6 +335,13 @@ func apply_physics():
 	update_statuses()
 	for s in skills:
 		s.update()
+	# Blood Abyss healing (1 HP per 120 frames = 2 seconds, when > 0 and HP not full)
+	if char_id == "rose" and blood_abyss > 0 and hp < max_hp:
+		blood_heal_timer += 1
+		if blood_heal_timer >= 120:
+			blood_heal_timer = 0
+			blood_abyss -= 1
+			hp = minf(max_hp, hp + 1)
 	var regen = config.get("energy_regen", 0.083)
 	if energy < max_energy:
 		energy += regen
@@ -340,6 +358,8 @@ func apply_physics():
 		image_state = "charge"
 	elif attacking:
 		image_state = "attack"
+	elif state == "ult":
+		image_state = "ult"
 	elif not grounded:
 		image_state = "jump"
 	elif state == "walk":
@@ -421,6 +441,9 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	target.hp -= final_dmg
 	target.damage_flash = 10
 	target.hit_cooldown = 15
+	# Blood Abyss: attacker gains blood_abyss equal to damage dealt
+	if attacker and attacker.char_id == "rose":
+		attacker.blood_abyss = minf(40.0, attacker.blood_abyss + final_dmg)
 	if knockback and attacker and attacker != target:
 		target.vy = -4
 		target.vx = (attacker.facing if attacker.facing != 0 else (1 if target.is_player else -1)) * 5

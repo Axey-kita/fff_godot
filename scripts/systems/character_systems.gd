@@ -8,11 +8,46 @@ static func update_assassin_logic():
 		if f.is_invincible:
 			f.invincible_timer -= 1
 			if f.invincible_timer <= 0: f.is_invincible = false
+		if f.dodge_slow_mo > 0:
+			f.dodge_slow_mo -= 1
 		if f.enhanced_slash:
 			f.enhanced_slash_timer -= 1
 			if f.enhanced_slash_timer <= 0: f.enhanced_slash = false
+		
+		# 暗影游走：dodge detection during 一瞬 dash
+		if f.dashing and f.is_invincible:
+			var enemy = GameWorld.get_opponent(f)
+			if enemy and enemy.hp > 0 and not f.dodge_success:
+				if enemy.attacking and f.get_hit_box().intersects(enemy.get_attack_box()):
+					f.dodge_success = true
+					f.shadow_energy = minf(f.shadow_energy_max, f.shadow_energy + 1)
+					f.dodge_slow_mo = 15  # Slow-mo frames on successful dodge
+					GameWorld.trigger_slow_motion(15)
+					Fighter.emit_particles(f.pos_x + f.w/2, f.pos_y + f.h/2, 15, Color(0.67, 0.53, 1.0), 4, 6, "star")
+			# Reset dodge_success when invincibility ends (dash over)
+			if f.invincible_timer <= 0:
+				f.dodge_success = false
+		
+		# 暗影游走：activate shadow stance when energy is full
+		if f.shadow_energy >= f.shadow_energy_max and not f.shadow_stance:
+			f.shadow_stance = true
+			f.shadow_stance_timer = 480  # 8 seconds
+			f.shadow_energy = f.shadow_energy_max
+			Fighter.emit_particles(f.pos_x + f.w/2, f.pos_y + f.h/2, 40, Color(0.53, 0.27, 0.8), 6, 10, "star")
+		
 		if f.slash_active:
 			f.slash_timer -= 1
+			# Collision: check if slash hitbox hits enemy
+			if not f.slash_damage_dealt:
+				var enemy = GameWorld.get_opponent(f)
+				if enemy and enemy.hp > 0:
+					var slash_rect = Rect2(f.slash_x, f.slash_y, 100, 40)
+					if slash_rect.intersects(enemy.get_hit_box()):
+						var dmg = 8.0 if f.enhanced_slash else 5.0
+						Fighter.apply_damage(enemy, dmg, f, true, Color(0.67, 0.53, 1.0))
+						f.slash_damage_dealt = true
+						if f.enhanced_slash:
+							f.energy = minf(f.max_energy, f.energy + 5)
 			if f.slash_timer <= 0:
 				f.slash_active = false; f.attacking = false; f.state = "idle"
 		if f.ult_active:
@@ -20,7 +55,11 @@ static func update_assassin_logic():
 			if f.ult_damage_timer >= 15:
 				f.ult_damage_timer = 0
 				var tgt = GameWorld.get_opponent(f)
-				if tgt and tgt.hp > 0: Fighter.apply_damage(tgt, 2.5, f)
+				if tgt and tgt.hp > 0:
+					var dx = tgt.pos_x + tgt.w/2 - f.pos_x - f.w/2
+					var dy = tgt.pos_y + tgt.h/2 - f.pos_y - f.h/2
+					if sqrt(dx*dx + dy*dy) < 200:  # Range check
+						Fighter.apply_damage(tgt, 2.5, f)
 			if f.ult_timer <= 0:
 				f.ult_active = false; f.time_stop = false; f.state = "idle"
 		if f.shadow_stance:
@@ -66,3 +105,97 @@ static func update_shadowwarrior_logic():
 					"attack_delay":0,"attack_hit_dealt":false,"life":300,
 				})
 			f.pending_clones = false
+
+# ===== Rose (血色蔷薇) Logic =====
+static func update_rose_logic():
+	for f in GameWorld.entities:
+		if f.char_id != "rose" or f.hp <= 0:
+			continue
+		
+		# Skill2: bat swarm logic
+		if f.rose_skill2_active:
+			f.is_invincible = true
+			f.image_state = "skill2"
+			
+			if f.rose_skill2_enhanced:
+				# Enhanced: free flight via joystick (3 seconds)
+				f.vx = 0; f.vy = 0  # Disable normal physics
+				var jd = GameWorld.rose_joystick_dir
+				var fly_speed = 3.5
+				f.pos_x = clampf(f.pos_x + jd.x * fly_speed, 10, 2390 - f.w)
+				f.pos_y = clampf(f.pos_y + jd.y * fly_speed, 40, 380 - f.h)
+				f.facing = 1 if jd.x >= 0 else (-1 if jd.x < 0 else f.facing)
+				# Proximity damage
+				f.rose_skill2_damage_tick += 1
+				var enemy = GameWorld.get_opponent(f)
+				if enemy and enemy.hp > 0:
+					var dist = absf(enemy.pos_x + enemy.w/2 - f.pos_x - f.w/2)
+					if dist < 80:
+						if f.rose_skill2_damage_tick >= 12:
+							f.rose_skill2_damage_tick = 0
+							Fighter.apply_damage(enemy, f.rose_skill2_tick_damage, f, false, Color(0.6, 0.1, 0.6))
+				# Timer countdown
+				f.rose_skill2_fly_timer -= 1
+				if f.rose_skill2_fly_timer <= 0:
+					f.rose_skill2_active = false
+					f.rose_skill2_enhanced = false
+					f.is_invincible = false
+					GameWorld.rose_joystick_dir = Vector2.ZERO
+			else:
+				# Normal: dash forward with suction
+				f.rose_skill2_damage_tick += 1
+				var enemy = GameWorld.get_opponent(f)
+				if enemy and enemy.hp > 0:
+					if f.get_hit_box().intersects(enemy.get_hit_box()):
+						# Suction: drag enemy along with character
+						enemy.pos_x = f.pos_x + f.w * f.facing + f.facing * 4
+						enemy.vy = 0
+						# Periodic damage every 12 frames
+						if f.rose_skill2_damage_tick >= 12:
+							f.rose_skill2_damage_tick = 0
+							Fighter.apply_damage(enemy, f.rose_skill2_tick_damage, f, true, Color(0.6, 0.1, 0.6))
+							enemy.vy = 0  # Knockback only, no knock-up
+				if not f.dashing:
+					f.rose_skill2_active = false
+					f.is_invincible = false
+		
+		# Skill1: grab effect — pin enemy to slash center
+		elif f.dashing:
+			if f.image_state != "skill1":
+				f.image_state = "skill1"
+			var enemy = GameWorld.get_opponent(f)
+			if enemy and enemy.hp > 0:
+				if f.get_hit_box().intersects(enemy.get_hit_box()):
+					# Pin enemy to the center of the slash trail
+					enemy.pos_x = f.rose_grab_center_x - enemy.w / 2.0
+					enemy.vx = 0
+					enemy.vy = 0
+		
+		# Continue grab after dash ends (slash persists for 1 second)
+		if f.rose_grab_center_x > -9998 and GameWorld.rose_slash_trails.size() > 0:
+			var enemy = GameWorld.get_opponent(f)
+			if enemy and enemy.hp > 0:
+				enemy.pos_x = f.rose_grab_center_x - enemy.w / 2.0
+				enemy.vx = 0
+				enemy.vy = 0
+		elif f.rose_grab_center_x > -9998 and GameWorld.rose_slash_trails.size() == 0:
+			f.rose_grab_center_x = -9999.0  # Release grab
+
+static func update_rose_trails():
+	var to_remove: Array = []
+	for trail in GameWorld.rose_slash_trails:
+		trail["timer"] -= 1
+		if trail["timer"] <= 0:
+			to_remove.append(trail)
+			continue
+		# Collision check with enemy
+		var slash_owner = trail.get("owner")
+		if not trail["hit_dealt"] and slash_owner:
+			var target = GameWorld.get_opponent(slash_owner)
+			if target and target.hp > 0:
+				var hitbox = Rect2(trail["x"], trail["y"], trail["w"], trail["h"])
+				if hitbox.intersects(target.get_hit_box()):
+					Fighter.apply_damage(target, trail.get("damage", 10), slash_owner)
+					trail["hit_dealt"] = true
+	for t in to_remove:
+		GameWorld.rose_slash_trails.erase(t)

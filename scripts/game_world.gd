@@ -34,6 +34,8 @@ var evoker_summons: Array = []
 var void_rifts: Array = []
 var evoker_fire_seas: Array = []
 var gravity_balls: Array = []
+var rose_slash_trails: Array = []
+var rose_joystick_dir: Vector2 = Vector2.ZERO
 
 # Platforms
 var platforms: Array = []
@@ -71,6 +73,7 @@ func reset_world():
 	void_rifts.clear()
 	evoker_fire_seas.clear()
 	gravity_balls.clear()
+	rose_slash_trails.clear()
 	entities.clear()
 	camera.x = 0
 	pickup_timer = 0
