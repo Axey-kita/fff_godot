@@ -1,6 +1,8 @@
 # 影武者 (shadowwarrior)
 class_name ShadowwarriorCharacter
 
+const SHADOWWARRIOR_ANI_DIR = "res://assets/char_ani/shadowwarrior/"
+
 static func get_config() -> Dictionary:
 	return {
 		"id": "shadowwarrior", "name": "影武者", "hp": 90, "max_energy": 100, "energy_regen": 0.05,
@@ -8,12 +10,12 @@ static func get_config() -> Dictionary:
 		"attack_cooldown": 60, "attack_delay": 8, "attack_duration": 68,
 		"fields": {"stealth_active":false,"stealth_timer":0,"last_skill_time":-999,"retreat_timer":0,"retreat_dir":1,"break_strike_timer":0,"pending_trap":false,"shadow_trap_active":false,"shadow_trap":{},"pending_clones":false,"clone_reveal_timer":0,"iaido_active":false,"iaido_timer":0,"iaido_frozen":false,"iaido_dir":1,"iaido_slash":{}},
 		"world_arrays": ["phantoms"],
-		"images": {
-			"idle": load("res://assets/无标题61_20260708190607.png"),
-			"walk": load("res://assets/无标题75_20260709014958.png"),
-			"jump": load("res://assets/无标题62_20260708190832.png"),
-			"attack": load("res://assets/无标题73_20260708195446.png"),
-			"ult": load("res://assets/无标题68_20260708195710.png"),
+		"animations": {
+			"idle": FrameAnimation.load_from_dir(SHADOWWARRIOR_ANI_DIR + "idle/", "shadowwarrior_idle_f_", "timetable.txt", true),
+			"walk": FrameAnimation.load_from_dir(SHADOWWARRIOR_ANI_DIR + "walk/", "shadowwarrior_walk_f_", "timetable.txt", true),
+			"jump": FrameAnimation.load_from_dir(SHADOWWARRIOR_ANI_DIR + "jump/", "shadowwarrior_jump_f_", "timetable.txt", true),
+			"attack": FrameAnimation.load_from_dir(SHADOWWARRIOR_ANI_DIR + "attack/", "shadowwarrior_attack_f_", "timetable.txt", false),
+			"ult": FrameAnimation.load_from_dir(SHADOWWARRIOR_ANI_DIR + "ult/", "shadowwarrior_ult_f_", "timetable.txt", false),
 		},
 		"dex": {
 			"icon": "🥷",
@@ -60,11 +62,28 @@ static func _skill2(owner: Fighter) -> Dictionary:
 	return {"success": true}
 
 static func _ult(owner: Fighter) -> Dictionary:
+	for entry in GameWorld.active_overlays:
+		if entry.get("overlay_id") == "shadowwarrior_iaido":
+			return {"success": false}
+	
 	var dir = owner.facing
 	owner.iaido_active = true
 	owner.iaido_timer = 180
 	owner.iaido_dir = dir
 	owner.iaido_frozen = true
-	owner.iaido_slash = {"x":owner.pos_x+(owner.w if dir==1 else -360),"y":owner.pos_y-4,"w":360,"h":owner.h+8,"dir":dir,"hit_dealt":false}
-	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 40, Color(0.53,0.27,0.8), 8, 10, "star")
+	owner.iaido_slash = {"x": owner.pos_x + (owner.w if dir == 1 else -360), "y": owner.pos_y - 4, "w": 360, "h": owner.h + 8, "dir": dir, "hit_dealt": false}
+	
+	var anim = FrameAnimation.load_from_dir(SHADOWWARRIOR_ANI_DIR + "ult/", "shadowwarrior_ult_f_", "timetable.txt", false)
+	if anim.frames.is_empty():
+		return {"success": false}
+	anim.play()
+	
+	GameWorld.active_overlays.append({
+		"anim": anim,
+		"position": {"type": "follow", "target": owner, "scale": Vector2(1.5, 1.5), "offset": Vector2(0, -60)},
+		"owner": owner,
+		"overlay_id": "shadowwarrior_iaido",
+	})
+	
+	Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h / 2.0, 40, Color(0.53, 0.27, 0.8), 8, 10, "star")
 	return {"success": true}

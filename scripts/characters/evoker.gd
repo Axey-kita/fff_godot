@@ -2,6 +2,7 @@
 class_name EvokerCharacter
 
 const PROJ_FIREBALL = preload("res://assets/fire.png")
+const EVOKER_ANI_DIR = "res://assets/char_ani/evoker/"
 
 static func get_config() -> Dictionary:
 	return {
@@ -10,12 +11,12 @@ static func get_config() -> Dictionary:
 		"attack_cooldown": 0, "attack_delay": 8, "attack_duration": 68,
 		"fields": {"last_summon_type":-1,"summon_dead1":false,"summon_dead2":false,"summon_dead3":false},
 		"world_arrays": ["evoker_summons","void_rifts","evoker_fire_seas","gravity_balls","phantoms"],
-		"images": {
-			"idle": load("res://assets/evkid.png"),
-			"walk": load("res://assets/evkid.png"),
-			"jump": load("res://assets/evkid.png"),
-			"attack": load("res://assets/evkid.png"),
-			"ult": load("res://assets/evkid.png"),
+		"animations": {
+			"idle": FrameAnimation.load_from_dir(EVOKER_ANI_DIR + "idle/", "evoker_idle_f_", "timetable.txt", true),
+			"walk": FrameAnimation.load_from_dir(EVOKER_ANI_DIR + "walk/", "evoker_walk_f_", "timetable.txt", true),
+			"jump": FrameAnimation.load_from_dir(EVOKER_ANI_DIR + "jump/", "evoker_jump_f_", "timetable.txt", true),
+			"attack": FrameAnimation.load_from_dir(EVOKER_ANI_DIR + "attack/", "evoker_attack_f_", "timetable.txt", false),
+			"ult": FrameAnimation.load_from_dir(EVOKER_ANI_DIR + "ult/", "evoker_ult_f_", "timetable.txt", false),
 		},
 		"dex": {
 			"icon": "🧙",

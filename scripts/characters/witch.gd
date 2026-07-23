@@ -5,6 +5,7 @@ const PROJ_GRAVITY = preload("res://assets/45-20260705224120.png")
 const IMG_TORNADO = preload("res://assets/50-20260705225200.png")
 const IMG_VORTEX = preload("res://assets/47-20260705224456.png")
 const PROJ_METEOR = preload("res://assets/46-20260705224210.png")
+const WITCH_ANI_DIR = "res://assets/char_ani/witch/"
 
 static func get_config() -> Dictionary:
 	return {
@@ -13,12 +14,12 @@ static func get_config() -> Dictionary:
 		"attack_cooldown": 120, "attack_delay": 0, "attack_duration": 0,
 		"fields": {"is_flying":false,"fly_energy_drain":0.133,"gravity_debuff":false,"jump_reduction":1.0,"is_casting_ult":false,"cast_ult_x":0.0,"cast_ult_y":0.0},
 		"world_arrays": ["tornadoes","vortexes"],
-		"images": {
-			"idle": load("res://assets/40-20260705223746.png"),
-			"walk": load("res://assets/43-20260705224001.png"),
-			"jump": load("res://assets/41-20260705223805.png"),
-			"attack": load("res://assets/42-20260705223935.png"),
-			"ult": load("res://assets/44-20260705224021.png"),
+		"animations": {
+			"idle": FrameAnimation.load_from_dir(WITCH_ANI_DIR + "idle/", "witch_idle_f_", "timetable.txt", true),
+			"walk": FrameAnimation.load_from_dir(WITCH_ANI_DIR + "walk/", "witch_walk_f_", "timetable.txt", true),
+			"jump": FrameAnimation.load_from_dir(WITCH_ANI_DIR + "jump/", "witch_jump_f_", "timetable.txt", true),
+			"attack": FrameAnimation.load_from_dir(WITCH_ANI_DIR + "attack/", "witch_attack_f_", "timetable.txt", false),
+			"ult": FrameAnimation.load_from_dir(WITCH_ANI_DIR + "ult/", "witch_ult_f_", "timetable.txt", false),
 		},
 		"dex": {
 			"icon": "🧹",

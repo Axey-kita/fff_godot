@@ -36,6 +36,7 @@ var evoker_fire_seas: Array = []
 var gravity_balls: Array = []
 var rose_slash_trails: Array = []
 var rose_joystick_dir: Vector2 = Vector2.ZERO
+var active_overlays: Array = []  # [{anim, position, owner, overlay_id, on_finish}]
 
 # Platforms
 var platforms: Array = []
@@ -74,6 +75,7 @@ func reset_world():
 	evoker_fire_seas.clear()
 	gravity_balls.clear()
 	rose_slash_trails.clear()
+	active_overlays.clear()
 	entities.clear()
 	camera.x = 0
 	pickup_timer = 0
