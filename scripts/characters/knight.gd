@@ -2,28 +2,20 @@
 class_name KnightCharacter
 
 const PROJ_SWORD = preload("res://assets/IMG-20260702-011106.png")
+const KNIGHT_ANI_DIR = "res://assets/char_ani/knight/"
 
 static func get_config() -> Dictionary:
-	print("[Knight] get_config() start, loading images...")
-	var idle_img = load("res://assets/IMG-20260702-005046.png")
-	var jump_img = load("res://assets/IMG-20260702-005057.png")
-	var atk_img = load("res://assets/IMG-20260702-010935.png")
-	var ult_img = load("res://assets/IMG-20260702-005138.png")
-	print("[Knight] images loaded: idle=", idle_img != null, " jump=", jump_img != null, " attack=", atk_img != null, " ult=", ult_img != null)
-	if idle_img == null:
-		printerr("[Knight] idle image FAILED: res://assets/IMG-20260702-005046.png")
-		print("[Knight] ResourceLoader.exists=", ResourceLoader.exists("res://assets/IMG-20260702-005046.png"))
 	return {
 		"id": "knight", "name": "骑士", "hp": 100, "max_energy": 100, "energy_regen": 0.05,
 		"speed": 2.25, "attack_range": 44, "attack_damage": 5,
 		"attack_cooldown": 60, "attack_delay": 8, "attack_duration": 68,
 		"fields": {}, "world_arrays": [],
-		"images": {
-			"idle": idle_img,
-			"walk": idle_img,
-			"jump": jump_img,
-			"attack": atk_img,
-			"ult": ult_img,
+		"animations": {
+			"idle": FrameAnimation.load_from_dir(KNIGHT_ANI_DIR + "idle/", "knight_idle_f_", "timetable.txt", true),
+			"walk": FrameAnimation.load_from_dir(KNIGHT_ANI_DIR + "walk/", "knight_walk_f_", "timetable.txt", true),
+			"jump": FrameAnimation.load_from_dir(KNIGHT_ANI_DIR + "jump/", "knight_jump_f_", "timetable.txt", true),
+			"attack": FrameAnimation.load_from_dir(KNIGHT_ANI_DIR + "attack/", "knight_attack_f_", "timetable.txt", false),
+			"ult": FrameAnimation.load_from_dir(KNIGHT_ANI_DIR + "ult/", "knight_ult_f_", "timetable.txt", false),
 		},
 		"dex": {
 			"icon": "⚔️",

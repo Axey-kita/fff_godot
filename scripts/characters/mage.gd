@@ -4,6 +4,7 @@ class_name MageCharacter
 const PROJ_FIRE = preload("res://assets/8-20260702202047.png")
 const PROJ_ICE = preload("res://assets/9-20260702202554.png")
 const PROJ_LIGHT = preload("res://assets/10-20260702202815.png")
+const MAGE_ANI_DIR = "res://assets/char_ani/mage/"
 
 static func get_config() -> Dictionary:
 	return {
@@ -11,12 +12,13 @@ static func get_config() -> Dictionary:
 		"speed": 1.9, "attack_range": 30, "attack_damage": 0,
 		"attack_cooldown": 120, "attack_delay": 0, "attack_duration": 120,
 		"fields": {}, "world_arrays": [],
-		"images": {
-			"idle": load("res://assets/5-20260702144646.png"),
-			"walk": load("res://assets/5-20260702144646.png"),
-			"jump": load("res://assets/7-20260702145928.png"),
-			"attack": load("res://assets/12-20260702212001.png"),
-			"ult": load("res://assets/11-20260702203319.png"),
+		"animations": {
+			"idle": FrameAnimation.load_from_dir(MAGE_ANI_DIR + "idle/", "mage_idle_f_", "timetable.txt", true),
+			"walk": FrameAnimation.load_from_dir(MAGE_ANI_DIR + "walk/", "mage_walk_f_", "timetable.txt", true),
+			"jump": FrameAnimation.load_from_dir(MAGE_ANI_DIR + "jump/", "mage_jump_f_", "timetable.txt", true),
+			"attack": FrameAnimation.load_from_dir(MAGE_ANI_DIR + "attack/", "mage_attack_f_", "timetable.txt", false),
+			"ult": FrameAnimation.load_from_dir(MAGE_ANI_DIR + "ult/", "mage_ult_f_", "timetable.txt", false),
+			"charge": FrameAnimation.load_from_dir(MAGE_ANI_DIR + "attack/", "mage_attack_f_", "timetable.txt", true),
 		},
 		"dex": {
 			"icon": "🔮",

@@ -4,6 +4,7 @@ class_name RoseCharacter
 const ROSE_SLASH_IMG = preload("res://assets/%E6%97%A0%E6%A0%87%E9%A2%9893_20260721203233.png")
 const ROSE_SKILL1_IMG = preload("res://assets/无标题108_20260722172633.png")
 const ROSE_SKILL2_IMG = preload("res://assets/无标题96_20260721235635.png")
+const ROSE_ANI_DIR = "res://assets/char_ani/rose/"
 
 static func get_config() -> Dictionary:
 	return {
@@ -13,13 +14,15 @@ static func get_config() -> Dictionary:
 		"image_scale": 1.2,
 		"fields": {},
 		"world_arrays": [],
-		"images": {
-			"idle": load("res://assets/IMG_20260722_161934.png"),
-			"walk": load("res://assets/IMG_20260722_161941.png"),
-			"jump": load("res://assets/IMG_20260722_161946.png"),
-			"attack": load("res://assets/无标题104_20260722170903.png"),
-			"skill1": ROSE_SKILL1_IMG,
-			"skill2": ROSE_SKILL2_IMG,
+		"animations": {
+			"idle": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "idle/", "rose_idle_f_", "timetable.txt", true),
+			"walk": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "walk/", "rose_walk_f_", "timetable.txt", true),
+			"jump": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "jump/", "rose_jump_f_", "timetable.txt", true),
+			"attack": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "attack/", "rose_attack_f_", "timetable.txt", false),
+			"skill1": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "skill1/", "rose_skill1_f_", "timetable.txt", false),
+			"skill2": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "skill2/", "rose_skill2_f_", "timetable.txt", false),
+			"ult": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "ult/", "rose_ult_f_", "timetable.txt", false),
+			"charge": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "charge/", "rose_charge_f_", "timetable.txt", true),
 		},
 		"dex": {
 			"icon": "🌹",
@@ -122,4 +125,32 @@ static func _skill2(owner: Fighter) -> Dictionary:
 	return {"success": true}
 
 static func _ult(owner: Fighter) -> Dictionary:
-	return {"success": false}
+	for entry in GameWorld.active_overlays:
+		if entry.get("overlay_id") == "rose_ult":
+			return {"success": false}
+	
+	var anim = FrameAnimation.load_from_dir(ROSE_ANI_DIR + "ult/", "rose_ult_f_", "timetable.txt", false)
+	if anim.frames.is_empty():
+		return {"success": false}
+	anim.play()
+	
+	GameWorld.active_overlays.append({
+		"anim": anim,
+		"position": {"type": "fullscreen"},
+		"owner": owner,
+		"overlay_id": "rose_ult",
+		"on_finish": func():
+			owner.is_invincible = false
+			owner.time_stop = false
+			owner.time_stop_timer = 0
+			owner.state = "idle"
+	})
+	
+	owner.state = "ult"
+	owner.image_state = "ult"
+	owner.is_invincible = true
+	owner.time_stop = true
+	owner.time_stop_timer = int(anim.total_duration * 60)
+	
+	Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h / 2.0, 80, Color(0.9, 0.15, 0.15), 12, 16, "star", 2.0)
+	return {"success": true}

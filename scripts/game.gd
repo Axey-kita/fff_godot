@@ -139,6 +139,7 @@ func _update():
 	CharacterSystems.update_assassin_logic()
 	CharacterSystems.update_shadowwarrior_logic()
 	CharacterSystems.update_rose_logic()
+	CharacterSystems.update_active_overlays()
 	CharacterSystems.update_rose_trails()
 	EvokerSystem.update()
 	# Camera
@@ -166,10 +167,17 @@ func _draw():
 	_draw_map(cam_x)
 
 	# 2. drawFighter(player) / drawFighter(enemy)
-	if GameWorld.player:
-		_draw_fighter(GameWorld.player, true)
-	if GameWorld.enemy:
-		_draw_fighter(GameWorld.enemy, GameWorld.game_mode == "pvp")
+	# Skip drawing fighters when a fullscreen overlay is active
+	var has_fullscreen_overlay = false
+	for entry in GameWorld.active_overlays:
+		if entry.get("position", {}).get("type") == "fullscreen":
+			has_fullscreen_overlay = true
+			break
+	if not has_fullscreen_overlay:
+		if GameWorld.player:
+			_draw_fighter(GameWorld.player, true)
+		if GameWorld.enemy:
+			_draw_fighter(GameWorld.enemy, GameWorld.game_mode == "pvp")
 
 	# 3. drawProjectiles()
 	for p in GameWorld.projectiles:
@@ -247,7 +255,51 @@ func _draw():
 	_draw_evoker_gravity_balls(cam_x)
 	_draw_evoker_void_rifts(cam_x)
 
-	# 11.5 Rose slash trails
+	# 11.5 Active overlay animations (unified position_spec)
+	for entry in GameWorld.active_overlays:
+		var overlay_anim: FrameAnimation = entry["anim"]
+		if not overlay_anim or not overlay_anim.is_playing():
+			continue
+		var tex = overlay_anim.get_current_texture()
+		if not tex:
+			continue
+		var pos = entry.get("position", {})
+		match pos.get("type", ""):
+			"fullscreen":
+				draw_texture_rect(tex, Rect2(0, 0, Constants.W, Constants.H), false)
+				var progress = overlay_anim.get_progress()
+				var border_color = Color(0.9, 0.15, 0.15)
+				var oid = entry.get("overlay_id", "")
+				if oid.begins_with("assassin"):
+					border_color = Color(0.53, 0.27, 0.8)
+				var border_alpha = 0.3 + sin(progress * PI * 6) * 0.2
+				draw_rect(Rect2(0, 0, Constants.W, Constants.H), Color(border_color.r, border_color.g, border_color.b, border_alpha), false, 8)
+			"fixed":
+				var rect: Rect2 = pos.get("rect", Rect2())
+				draw_texture_rect(tex, rect, false)
+			"follow":
+				var target = pos.get("target")
+				if target and target is Fighter and target.hp > 0:
+					var sx = target.pos_x - cam_x + target.w / 2.0 + pos.get("offset", Vector2.ZERO).x
+					var sy = target.pos_y + target.h / 2.0 + pos.get("offset", Vector2.ZERO).y
+					var sc = pos.get("scale", Vector2.ONE)
+					var tw = tex.get_width() * sc.x
+					var th = tex.get_height() * sc.y
+					if target.facing < 0:
+						draw_set_transform(Vector2(sx, sy), 0.0, Vector2(-sc.x, sc.y))
+						draw_texture_rect(tex, Rect2(-tw / 2.0, -th / 2.0, tw, th), false)
+						draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+					else:
+						draw_set_transform(Vector2(sx, sy), 0.0, Vector2(sc.x, sc.y))
+						draw_texture_rect(tex, Rect2(-tw / 2.0, -th / 2.0, tw, th), false)
+						draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			"world":
+				var wx = pos.get("x", 0.0) - cam_x
+				var wy = pos.get("y", 0.0)
+				var sc = pos.get("scale", Vector2.ONE)
+				draw_texture_rect(tex, Rect2(wx, wy, tex.get_width() * sc.x, tex.get_height() * sc.y), false)
+
+	# 11.6 Rose slash trails
 	for trail in GameWorld.rose_slash_trails:
 		var tx = trail["x"] - cam_x
 		if tx > -200 and tx < Constants.W + 200:
@@ -333,9 +385,17 @@ func _draw_fighter(f: Fighter, is_local: bool = false):
 		alpha_mod = 0.5
 
 	# Draw texture if available, otherwise colored rect
-	var imgs = f.config.get("images", {})
-	var tex_key = f.image_state if imgs.has(f.image_state) else "idle"
-	var tex = imgs.get(tex_key)
+	var tex: Texture2D = null
+	var anim: FrameAnimation = f.current_anim
+	if anim:
+		tex = anim.get_current_texture()
+	# Fallback: try old images dict
+	if not tex:
+		var imgs = f.config.get("images", {})
+		var tex_key = f.image_state if imgs.has(f.image_state) else "idle"
+		tex = imgs.get(tex_key)
+	if not tex:
+		push_warning("FrameAnimation: No texture for " + f.char_id + " image_state=" + f.image_state)
 	if tex is Texture2D:
 		# Fit texture within fighter box, keeping aspect ratio
 		var tw: float = tex.get_width()

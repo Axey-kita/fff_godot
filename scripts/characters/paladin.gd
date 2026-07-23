@@ -1,6 +1,8 @@
 # 圣骑士 (paladin)
 class_name PaladinCharacter
 
+const PALADIN_ANI_DIR = "res://assets/char_ani/paladin/"
+
 static func get_config() -> Dictionary:
 	return {
 		"id": "paladin", "name": "圣骑士", "hp": 120, "max_energy": 100, "energy_regen": 0,
@@ -8,13 +10,13 @@ static func get_config() -> Dictionary:
 		"attack_cooldown": 60, "attack_delay": 8, "attack_duration": 68,
 		"fields": {"divine_shield_active":false,"divine_shield_timer":0,"divine_shield_absorb":0.0,"holy_empower_active":false,"holy_empower_timer":0,"charging_skill1":false,"skill1_charge_time":0},
 		"world_arrays": [],
-		"images": {
-			"idle": load("res://assets/IMG-20260704-155855.png"),
-			"walk": load("res://assets/IMG-20260704-155904.png"),
-			"jump": load("res://assets/IMG-20260704-155900.png"),
-			"attack": load("res://assets/IMG-20260704-155909.png"),
-			"charge": load("res://assets/IMG-20260704-155913.png"),
-			"ult": load("res://assets/IMG-20260704-155909.png"),
+		"animations": {
+			"idle": FrameAnimation.load_from_dir(PALADIN_ANI_DIR + "idle/", "paladin_idle_f_", "timetable.txt", true),
+			"walk": FrameAnimation.load_from_dir(PALADIN_ANI_DIR + "walk/", "paladin_walk_f_", "timetable.txt", true),
+			"jump": FrameAnimation.load_from_dir(PALADIN_ANI_DIR + "jump/", "paladin_jump_f_", "timetable.txt", true),
+			"attack": FrameAnimation.load_from_dir(PALADIN_ANI_DIR + "attack/", "paladin_attack_f_", "timetable.txt", false),
+			"charge": FrameAnimation.load_from_dir(PALADIN_ANI_DIR + "charge/", "paladin_charge_f_", "timetable.txt", true),
+			"ult": FrameAnimation.load_from_dir(PALADIN_ANI_DIR + "ult/", "paladin_ult_f_", "timetable.txt", false),
 		},
 		"dex": {
 			"icon": "🛡️",

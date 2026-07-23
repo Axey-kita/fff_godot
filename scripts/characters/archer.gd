@@ -5,6 +5,7 @@ const PROJ_ARROW = preload("res://assets/16-20260703142620.png")
 const PROJ_ARROW_FIRE = preload("res://assets/18-20260703142934.png")
 const PROJ_ARROW_ULT = preload("res://assets/IMG-20260703-143031.png")
 const PROJ_ARROW_ULT_FIRE = preload("res://assets/IMG-20260703-143038.png")
+const ARCHER_ANI_DIR = "res://assets/char_ani/archer/"
 
 static func get_config() -> Dictionary:
 	return {
@@ -13,12 +14,13 @@ static func get_config() -> Dictionary:
 		"attack_cooldown": 0, "attack_delay": 0, "attack_duration": 0,
 		"fields": {"arrows":10,"max_arrows":10,"arrow_regen_timer":0,"arrow_regen_rate":480,"fire_arrow_buff":false,"fire_arrow_timer":0,"tracking_buff":false,"tracking_timer":0,"charging_attack":false,"charge_start_time":0},
 		"world_arrays": [],
-		"images": {
-			"idle": load("res://assets/13-20260703003612.png"),
-			"walk": load("res://assets/13-20260703003612.png"),
-			"jump": load("res://assets/14-20260703142221.png"),
-			"attack": load("res://assets/15-20260703142258.png"),
-			"ult": load("res://assets/15-20260703142258.png"),
+		"animations": {
+			"idle": FrameAnimation.load_from_dir(ARCHER_ANI_DIR + "idle/", "archer_idle_f_", "timetable.txt", true),
+			"walk": FrameAnimation.load_from_dir(ARCHER_ANI_DIR + "walk/", "archer_walk_f_", "timetable.txt", true),
+			"jump": FrameAnimation.load_from_dir(ARCHER_ANI_DIR + "jump/", "archer_jump_f_", "timetable.txt", true),
+			"attack": FrameAnimation.load_from_dir(ARCHER_ANI_DIR + "attack/", "archer_attack_f_", "timetable.txt", false),
+			"ult": FrameAnimation.load_from_dir(ARCHER_ANI_DIR + "ult/", "archer_ult_f_", "timetable.txt", false),
+			"charge": FrameAnimation.load_from_dir(ARCHER_ANI_DIR + "charge/", "archer_charge_f_", "timetable.txt", true),
 		},
 		"dex": {
 			"icon": "🏹",

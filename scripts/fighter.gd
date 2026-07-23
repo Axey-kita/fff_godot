@@ -43,6 +43,8 @@ var boost_timer: int = 0
 var grounded: bool = false
 var state: String = "idle"
 var image_state: String = "idle"
+var current_anim: FrameAnimation = null
+var desired_image_state: String = ""  # 技能代码设置的覆盖状态，优先级高于 apply_physics 推导
 var damage_flash: int = 0
 
 # Block & shield
@@ -214,6 +216,20 @@ func _init_from_config():
 			set(key, val.duplicate())
 		else:
 			set(key, val)
+	var anims = config.get("animations", {})
+	if anims.has("idle"):
+		current_anim = anims["idle"]
+		current_anim.play()
+		image_state = "idle"
+
+func set_animation_state(state_key: String):
+	image_state = state_key
+	var anims = config.get("animations", {})
+	var new_anim = anims.get(state_key)
+	if new_anim:
+		current_anim = new_anim
+		if not current_anim.is_playing():
+			current_anim.play()
 
 func get_skill(key: String) -> Skill:
 	return skill_map.get(key)
@@ -260,8 +276,10 @@ func apply_physics():
 	if is_casting_ult:
 		vx = 0
 		vy = 0
-		image_state = "ult"
+		set_animation_state("ult")
 	else:
+		if attacking:
+			print("[Charge] apply_physics attacking=", attacking, " charging_attack=", charging_attack, " frame=", GameWorld.frame)
 		if dashing:
 			vx = dash_speed * dash_dir
 		if is_flying:
@@ -354,18 +372,18 @@ func apply_physics():
 	if attacking and attack_timer <= 0 and not charging_attack:
 		attacking = false
 		state = "idle"
-	if dashing:
-		image_state = "charge"
+	if dashing or charging_skill1 or charging:
+		set_animation_state("charge")
 	elif attacking:
-		image_state = "attack"
+		set_animation_state("attack")
 	elif state == "ult":
-		image_state = "ult"
+		set_animation_state("ult")
 	elif not grounded:
-		image_state = "jump"
+		set_animation_state("jump")
 	elif state == "walk":
-		image_state = "walk"
+		set_animation_state("walk")
 	else:
-		image_state = "idle"
+		set_animation_state("idle")
 
 # ===== Static damage function =====
 static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockback: bool = true, hit_color: Color = Color(1.0, 0.53, 0.27), sound_name: String = "hit_enemy"):
