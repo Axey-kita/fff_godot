@@ -21,12 +21,3 @@ const AI_PRESETS := {
 	"medium": {"react": 350, "aggro": 0.5, "dodge": 0.25, "skill_rate": 0.3, "move_speed": 0.9, "jump_rate": 0.02},
 	"hard": {"react": 120, "aggro": 0.8, "dodge": 0.4, "skill_rate": 0.6, "move_speed": 1.1, "jump_rate": 0.05},
 }
-
-# Animation state order (priority-based)
-const ANIM_STATES := [
-	{"key": "ult", "check": "is_casting_ult"},
-	{"key": "charge", "check": "is_dashing"},
-	{"key": "attack", "check": "is_attacking"},
-	{"key": "jump", "check": "is_in_air"},
-	{"key": "walk", "check": "is_walking"},
-]

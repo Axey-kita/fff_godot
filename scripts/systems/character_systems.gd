@@ -112,6 +112,18 @@ static func update_rose_logic():
 		if f.char_id != "rose" or f.hp <= 0:
 			continue
 		
+		# Ult: 全屏大招持续伤害
+		var has_ult_overlay = false
+		for entry in GameWorld.active_overlays:
+			if entry.get("overlay_id") == "rose_ult":
+				has_ult_overlay = true
+				break
+		if has_ult_overlay and GameWorld.frame % 15 == 0:
+			var target = GameWorld.get_opponent(f)
+			if target and target.hp > 0:
+				Fighter.apply_damage(target, 4.0, f, false, Color(0.9, 0.15, 0.15))
+				Fighter.emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 12, Color(0.9, 0.15, 0.15), 5, 7, "star", 0.8)
+		
 		# Skill2: bat swarm logic
 		if f.rose_skill2_active:
 			f.is_invincible = true
@@ -180,6 +192,25 @@ static func update_rose_logic():
 				enemy.vy = 0
 		elif f.rose_grab_center_x > -9998 and GameWorld.rose_slash_trails.size() == 0:
 			f.rose_grab_center_x = -9999.0  # Release grab
+
+static func update_active_overlays():
+	var to_remove: Array = []
+	for entry in GameWorld.active_overlays:
+		var anim: FrameAnimation = entry["anim"]
+		var should_remove = false
+		if not anim or not anim.is_playing():
+			should_remove = true
+		else:
+			anim.update(1)
+			if anim.is_finished():
+				should_remove = true
+		if should_remove:
+			to_remove.append(entry)
+			var cb: Callable = entry.get("on_finish", Callable())
+			if cb.is_valid():
+				cb.call()
+	for e in to_remove:
+		GameWorld.active_overlays.erase(e)
 
 static func update_rose_trails():
 	var to_remove: Array = []

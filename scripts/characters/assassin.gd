@@ -2,6 +2,7 @@
 class_name AssassinCharacter
 
 const PROJ_SLASH2 = preload("res://assets/54.png")
+const ASSASSIN_ANI_DIR = "res://assets/char_ani/assassin/"
 
 static func get_config() -> Dictionary:
 	return {
@@ -10,15 +11,15 @@ static func get_config() -> Dictionary:
 		"attack_cooldown": 60, "attack_delay": 8, "attack_duration": 30,
 		"fields": {"shadow_energy":0.0,"shadow_energy_max":5.0,"shadow_stance":false,"shadow_stance_timer":0,"shadow_energy_drain_rate":0.0104,"is_invincible":false,"invincible_timer":0,"enhanced_slash":false,"enhanced_slash_timer":0,"slash_active":false,"slash_timer":0,"slash_x":0.0,"slash_y":0.0,"slash_facing":1,"slash_damage_dealt":false,"skill2_active":false,"skill2_timer":0,"skill2_x":0.0,"skill2_y":0.0,"skill2_facing":1,"skill2_damage_dealt":false,"ult_active":false,"ult_timer":0,"ult_damage_timer":0,"time_stop":false,"time_stop_timer":0,"dodge_success":false,"dodge_slow_mo":0,"shadow_trail":[],"max_shadow_trail":12},
 		"world_arrays": [],
-		"images": {
-			"idle": load("res://assets/56-20260706194405.png"),
-			"walk": load("res://assets/56-20260706194405.png"),
-			"jump": load("res://assets/60-20260706195326.png"),
-			"attack": load("res://assets/56-20260706194405.png"),
-			"skill1": load("res://assets/59-20260706194857.png"),
-			"skill2": load("res://assets/55-20260706194334.png"),
-			"ult": load("res://assets/57-20260706194512.png"),
-			"charge": load("res://assets/59-20260706194857.png"),
+		"animations": {
+			"idle": FrameAnimation.load_from_dir(ASSASSIN_ANI_DIR + "idle/", "assassin_idle_f_", "timetable.txt", true),
+			"walk": FrameAnimation.load_from_dir(ASSASSIN_ANI_DIR + "walk/", "assassin_walk_f_", "timetable.txt", true),
+			"jump": FrameAnimation.load_from_dir(ASSASSIN_ANI_DIR + "jump/", "assassin_jump_f_", "timetable.txt", true),
+			"attack": FrameAnimation.load_from_dir(ASSASSIN_ANI_DIR + "attack/", "assassin_attack_f_", "timetable.txt", false),
+			"skill1": FrameAnimation.load_from_dir(ASSASSIN_ANI_DIR + "skill1/", "assassin_skill1_f_", "timetable.txt", false),
+			"skill2": FrameAnimation.load_from_dir(ASSASSIN_ANI_DIR + "skill2/", "assassin_skill2_f_", "timetable.txt", false),
+			"ult": FrameAnimation.load_from_dir(ASSASSIN_ANI_DIR + "ult/", "assassin_ult_f_", "timetable.txt", false),
+			"charge": FrameAnimation.load_from_dir(ASSASSIN_ANI_DIR + "charge/", "assassin_charge_f_", "timetable.txt", true),
 		},
 		"dex": {
 			"icon": "🗡️",
@@ -86,12 +87,34 @@ static func _skill2(owner: Fighter) -> Dictionary:
 	return {"success": true}
 
 static func _ult(owner: Fighter) -> Dictionary:
+	for entry in GameWorld.active_overlays:
+		if entry.get("overlay_id") == "assassin_ult":
+			return {"success": false}
+	
+	var anim = FrameAnimation.load_from_dir(ASSASSIN_ANI_DIR + "ult/", "assassin_ult_f_", "timetable.txt", false)
+	if anim.frames.is_empty():
+		return {"success": false}
+	anim.play()
+	
+	GameWorld.active_overlays.append({
+		"anim": anim,
+		"position": {"type": "fullscreen"},
+		"owner": owner,
+		"overlay_id": "assassin_ult",
+		"on_finish": func():
+			owner.ult_active = false
+			owner.time_stop = false
+			owner.time_stop_timer = 0
+			owner.state = "idle"
+	})
+	
 	owner.ult_active = true
-	owner.ult_timer = 180
+	owner.ult_timer = int(anim.total_duration * 60)
 	owner.ult_damage_timer = 0
 	owner.time_stop = true
-	owner.time_stop_timer = 180
+	owner.time_stop_timer = int(anim.total_duration * 60)
 	owner.state = "ult"
-	owner.image_state = "ult"  # Bypass physics freeze
-	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 120, Color(0.53,0.27,0.8), 14, 18, "star")
+	owner.image_state = "ult"
+	
+	Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h / 2.0, 120, Color(0.53, 0.27, 0.8), 14, 18, "star")
 	return {"success": true}

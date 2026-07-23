@@ -86,7 +86,7 @@ static func _input_archer(p: Fighter, keys: Dictionary):
 		p.vy = -10; p.grounded = false
 	if keys.attack and not p.shield_active and p.arrows > 0 and not p.charging_attack:
 		p.charging_attack = true; p.charge_start_time = Time.get_ticks_msec()
-		p.attacking = true; p.state = "attack"
+		p.attacking = true; p.attack_timer = 9999; p.state = "attack"
 	if not keys.attack and p.charging_attack:
 		var ct = (Time.get_ticks_msec() - p.charge_start_time) / 1000.0
 		var dmg: float; var cost: float

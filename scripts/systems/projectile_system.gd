@@ -78,6 +78,14 @@ static func update_projectiles(game_node: Node):
 					if p.get("slow"): target.add_status("slow")
 					if p.get("isFire") or p.get("is_fire"): target.add_status("burn")
 
+					# 弓箭手火矢命中：生成火焰区域
+					if p.get("is_fire") and (ptype == "arrow" or ptype == "arrow_ult"):
+						GameWorld.flame_zones.append({
+							"x": p["x"] - 20, "y": Constants.GROUND_Y - 20,
+							"w": 120, "h": 60, "life": 240, "timer": 0,
+							"damage": 2, "owner": p["owner"]
+						})
+
 					# Damage: mage projectiles have no knockback
 					if ptype == "mage_fire" or ptype == "mage_ice" or ptype == "mage_light":
 						Fighter.apply_damage(target, p["damage"], p["owner"], false)
