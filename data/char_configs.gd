@@ -9,8 +9,17 @@ static func ensure_init():
 	if configs.is_empty():
 		_init_all()
 
+static func get_all_ids() -> Array:
+	return configs.keys()
+
+static func get_char_name(char_id: String) -> String:
+	var cfg = configs.get(char_id, {})
+	if cfg.is_empty():
+		return char_id
+	return cfg.get("name", char_id)
+
 static func _init_all():
-	var ids = ["knight", "mage", "archer", "paladin", "witch", "assassin", "shadowwarrior", "evoker", "rose"]
+	var ids = CharacterFactory._char_registry.keys()
 	print("[CharConfigs] _init_all() start, loading ", ids.size(), " characters...")
 	for cid in ids:
 		print("[CharConfigs] loading config for: ", cid)
@@ -18,6 +27,6 @@ static func _init_all():
 		if configs[cid].is_empty():
 			printerr("[CharConfigs] FAILED to load config for: ", cid)
 		else:
-			var imgs = configs[cid].get("images", {})
-			print("[CharConfigs] ", cid, " loaded OK. images keys=", imgs.keys(), " idle valid=", imgs.get("idle") != null)
+			var anims = configs[cid].get("animations", {})
+			print("[CharConfigs] ", cid, " loaded OK. animations keys=", anims.keys(), " idle valid=", anims.get("idle") != null)
 	print("[CharConfigs] _init_all() done")

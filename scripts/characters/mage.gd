@@ -13,12 +13,12 @@ static func get_config() -> Dictionary:
 		"attack_cooldown": 120, "attack_delay": 0, "attack_duration": 120,
 		"fields": {}, "world_arrays": [],
 		"animations": {
-			"idle": FrameAnimation.load_from_dir(MAGE_ANI_DIR + "idle/", "mage_idle_f_", "timetable.txt", true),
-			"walk": FrameAnimation.load_from_dir(MAGE_ANI_DIR + "walk/", "mage_walk_f_", "timetable.txt", true),
-			"jump": FrameAnimation.load_from_dir(MAGE_ANI_DIR + "jump/", "mage_jump_f_", "timetable.txt", true),
-			"attack": FrameAnimation.load_from_dir(MAGE_ANI_DIR + "attack/", "mage_attack_f_", "timetable.txt", false),
-			"ult": FrameAnimation.load_from_dir(MAGE_ANI_DIR + "ult/", "mage_ult_f_", "timetable.txt", false),
-			"charge": FrameAnimation.load_from_dir(MAGE_ANI_DIR + "attack/", "mage_attack_f_", "timetable.txt", true),
+			"idle": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "idle/", "mage_idle_f_", [{"index": 1, "duration": 999.0}], true),
+			"walk": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "walk/", "mage_walk_f_", [{"index": 1, "duration": 999.0}], true),
+			"jump": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "jump/", "mage_jump_f_", [{"index": 1, "duration": 999.0}], true),
+			"attack": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "attack/", "mage_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"ult": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "ult/", "mage_ult_f_", [{"index": 1, "duration": 3.0}], false),
+			"charge": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "attack/", "mage_attack_f_", [{"index": 1, "duration": 2.0}], true),
 		},
 		"dex": {
 			"icon": "🔮",

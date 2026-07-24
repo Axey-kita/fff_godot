@@ -44,12 +44,6 @@ const IMG_DIFF_EASY = preload("res://assets/36-20260705005735.png")
 const IMG_DIFF_MEDIUM = preload("res://assets/38-20260705005805.png")
 const IMG_DIFF_HARD = preload("res://assets/39-20260705005825.png")
 
-const CHAR_IDS = ["knight","mage","archer","paladin","witch","assassin","shadowwarrior","evoker","rose"]
-const CHAR_NAMES = {
-	"knight":"骑士","mage":"法师","archer":"弓箭手","paladin":"圣骑士",
-	"witch":"魔女","assassin":"刺客","shadowwarrior":"影武者","evoker":"唤魔者",
-	"rose":"血色蔷薇"
-}
 
 func _ready():
 	print("[MainMenu] _ready() start")
@@ -90,11 +84,11 @@ func _ready():
 func _populate_dex_grid():
 	for child in dex_grid.get_children():
 		child.queue_free()
-	for cid in CHAR_IDS:
+	for cid in CharConfigs.get_all_ids():
 		var cfg = CharConfigs.configs.get(cid, {})
 		var dex = cfg.get("dex", {})
 		var icon = dex.get("icon", "?")
-		var name_str = CHAR_NAMES.get(cid, cid)
+		var name_str = CharConfigs.get_char_name(cid)
 		
 		var btn = Button.new()
 		btn.text = icon + " " + name_str
@@ -123,7 +117,7 @@ func _on_dex_card_clicked(char_id: String):
 	var dex = cfg.get("dex", {})
 	
 	dex_detail_icon.text = dex.get("icon", "?")
-	dex_detail_name.text = CHAR_NAMES.get(char_id, char_id)
+	dex_detail_name.text = CharConfigs.get_char_name(char_id)
 	dex_intro_label.text = dex.get("intro", "")
 	
 	# Stats
@@ -264,7 +258,7 @@ func _populate_characters():
 	for child in card_grid.get_children():
 		child.queue_free()
 	char_cards.clear()
-	for cid in CHAR_IDS:
+	for cid in CharConfigs.get_all_ids():
 		var card = _create_char_card(cid)
 		card_grid.add_child(card)
 		char_cards[cid] = card
@@ -272,8 +266,12 @@ func _populate_characters():
 
 func _create_char_card(char_id: String) -> Control:
 	var config = CharConfigs.configs.get(char_id, {})
-	var img = config.get("images", {}).get("idle", null)
-	var name_str = CHAR_NAMES.get(char_id, char_id)
+	var animations = config.get("animations", {})
+	var idle_anim = animations.get("idle", null)
+	var img = null
+	if idle_anim is FrameAnimation and not idle_anim.frames.is_empty():
+		img = idle_anim.frames[0].texture
+	var name_str = CharConfigs.get_char_name(char_id)
 	var hp = config.get("hp", 0)
 	var energy = config.get("max_energy", 0)
 	

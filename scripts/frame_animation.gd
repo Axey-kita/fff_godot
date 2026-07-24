@@ -22,26 +22,18 @@ var _current_index: int = 0
 var _playing: bool = false
 var _finished: bool = false
 
-## 从目录加载动画序列
-## 时间表格式: frameN::Xs[::optional_filename]
-static func load_from_dir(dir_path: String, prefix: String, timetable_path: String, p_loop: bool = false) -> FrameAnimation:
+## 从帧数据加载动画（不依赖外部 .txt 文件）
+## frame_specs: Array[Dictionary] —— [{"index":1, "duration":999.0}, ...]
+## 可选字段 "filename" 用于自定义文件名（省略时使用 prefix+index+.png）
+static func load_from_frames(dir_path: String, prefix: String, frame_specs: Array, p_loop: bool = false) -> FrameAnimation:
 	var anim = FrameAnimation.new()
 	anim.loop = p_loop
 	
-	# 如果 timetable_path 不是完整路径，拼上 dir_path
-	var full_timetable_path = timetable_path
-	if not timetable_path.begins_with("res://"):
-		full_timetable_path = dir_path + timetable_path
-	
-	var timetable = _parse_timetable(full_timetable_path)
-	if timetable.is_empty():
-		push_error("FrameAnimation: Failed to parse timetable: " + full_timetable_path)
-		return anim
-	
-	for entry in timetable:
-		var frame_num = entry["index"]
-		var duration = entry["duration"]
-		var custom_name = entry.get("filename", "")
+	var loaded_count := 0
+	for spec in frame_specs:
+		var frame_num: int = spec.get("index", 0)
+		var duration: float = spec.get("duration", 0.0)
+		var custom_name: String = spec.get("filename", "")
 		
 		var file_name: String
 		if not custom_name.is_empty():
@@ -51,59 +43,23 @@ static func load_from_dir(dir_path: String, prefix: String, timetable_path: Stri
 		
 		var full_path = dir_path + file_name
 		
-		# 回退扩展名：png → jpg
-		if not FileAccess.file_exists(full_path):
-			if file_name.ends_with(".png"):
-				var jpg_path = dir_path + file_name.trim_suffix(".png") + ".jpg"
-				if FileAccess.file_exists(jpg_path):
-					full_path = jpg_path
+		# 直接 load()，不做存在性检查
+		var tex: Texture2D = load(full_path)
 		
-		if not FileAccess.file_exists(full_path):
-			push_error("FrameAnimation: Frame not found: " + full_path)
-			continue
-		var tex = load(full_path)
+		# 回退扩展名：png → jpg
+		if not tex and file_name.ends_with(".png"):
+			var jpg_path = dir_path + file_name.trim_suffix(".png") + ".jpg"
+			tex = load(jpg_path)
+		
 		if tex and tex is Texture2D:
 			anim.add_frame(tex, duration)
+			loaded_count += 1
+		else:
+			push_error("[FrameAnimation] Failed to load frame: " + full_path)
 	
+	print("[FrameAnimation] Loaded ", loaded_count, "/", frame_specs.size(), " frames from ", dir_path)
 	anim._calc_total_duration()
 	return anim
-
-## 解析时间表: frameN::Xs[::filename]
-static func _parse_timetable(path: String) -> Array:
-	var result: Array = []
-	if not FileAccess.file_exists(path):
-		push_error("FrameAnimation: Timetable file not found: " + path)
-		return result
-	
-	var file = FileAccess.open(path, FileAccess.READ)
-	if not file:
-		return result
-	
-	var lines = file.get_as_text().split("\n")
-	for line in lines:
-		var stripped = line.strip_edges()
-		if stripped.is_empty() or stripped.begins_with("end"):
-			break
-		var parts = stripped.split("::")
-		if parts.size() < 2:
-			continue
-		var frame_num_str = parts[0].trim_prefix("frame")
-		if not frame_num_str.is_valid_int():
-			continue
-		var frame_index = frame_num_str.to_int()
-		var dur_str = parts[1].trim_suffix("s").strip_edges()
-		if not dur_str.is_valid_float():
-			continue
-		var duration = dur_str.to_float()
-		
-		var entry = {"index": frame_index, "duration": duration}
-		# 可选第三列：自定义文件名（用于帧复用）
-		if parts.size() >= 3 and not parts[2].strip_edges().is_empty():
-			entry["filename"] = parts[2].strip_edges()
-		
-		result.append(entry)
-	
-	return result
 
 func add_frame(texture: Texture2D, duration_seconds: float):
 	frames.append(FrameData.new(texture, duration_seconds))

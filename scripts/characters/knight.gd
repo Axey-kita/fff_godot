@@ -11,11 +11,11 @@ static func get_config() -> Dictionary:
 		"attack_cooldown": 60, "attack_delay": 8, "attack_duration": 68,
 		"fields": {}, "world_arrays": [],
 		"animations": {
-			"idle": FrameAnimation.load_from_dir(KNIGHT_ANI_DIR + "idle/", "knight_idle_f_", "timetable.txt", true),
-			"walk": FrameAnimation.load_from_dir(KNIGHT_ANI_DIR + "walk/", "knight_walk_f_", "timetable.txt", true),
-			"jump": FrameAnimation.load_from_dir(KNIGHT_ANI_DIR + "jump/", "knight_jump_f_", "timetable.txt", true),
-			"attack": FrameAnimation.load_from_dir(KNIGHT_ANI_DIR + "attack/", "knight_attack_f_", "timetable.txt", false),
-			"ult": FrameAnimation.load_from_dir(KNIGHT_ANI_DIR + "ult/", "knight_ult_f_", "timetable.txt", false),
+			"idle": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "idle/", "knight_idle_f_", [{"index": 1, "duration": 999.0}], true),
+			"walk": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "walk/", "knight_walk_f_", [{"index": 1, "duration": 999.0}], true),
+			"jump": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "jump/", "knight_jump_f_", [{"index": 1, "duration": 999.0}], true),
+			"attack": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "attack/", "knight_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"ult": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "ult/", "knight_ult_f_", [{"index": 1, "duration": 3.0}], false),
 		},
 		"dex": {
 			"icon": "⚔️",

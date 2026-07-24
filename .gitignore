@@ -1,0 +1,9 @@
+# Godot
+.godot/
+
+# Build outputs
+*.apk
+*.exe
+
+# Trae IDE specs
+.trae/

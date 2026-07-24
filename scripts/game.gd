@@ -7,6 +7,7 @@ extends Node2D
 @onready var continue_btn = $UILayer/PauseMenu/PausePanel/ContinueBtn
 @onready var menu_btn = $UILayer/PauseMenu/PausePanel/MenuBtn
 @onready var exit_btn = $UILayer/PauseMenu/PausePanel/ExitBtn
+@onready var touch_controls = $TouchControls
 
 var is_paused := false
 
@@ -684,6 +685,9 @@ func _restart_game():
 func _toggle_pause():
 	is_paused = not is_paused
 	pause_menu.visible = is_paused
+	# Hide/show touch controls with pause state
+	if touch_controls:
+		touch_controls.visible = not is_paused
 	# Clear lingering keys so they don't trigger actions right after unpause
 	if not is_paused:
 		keys["attack"] = false
