@@ -279,7 +279,7 @@ func apply_physics():
 		set_animation_state("ult")
 	else:
 		if attacking:
-			print("[Charge] apply_physics attacking=", attacking, " charging_attack=", charging_attack, " frame=", GameWorld.frame)
+			pass
 		if dashing:
 			vx = dash_speed * dash_dir
 		if is_flying:

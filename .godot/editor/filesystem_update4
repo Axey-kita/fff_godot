@@ -10,3 +10,9 @@ res://scripts/characters/paladin.gd
 res://scripts/characters/rose.gd
 res://scripts/characters/shadowwarrior.gd
 res://scripts/characters/witch.gd
+res://scripts/game_world.gd
+res://scripts/systems/character_systems.gd
+res://scripts/flame_particle.gd
+res://scripts/flame_layer.gd
+res://scripts/fighter.gd
+res://shaders/flame.gdshader
