@@ -15,14 +15,17 @@ static func get_config() -> Dictionary:
 		"fields": {},
 		"world_arrays": [],
 		"animations": {
-			"idle": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "idle/", "rose_idle_f_", "timetable.txt", true),
-			"walk": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "walk/", "rose_walk_f_", "timetable.txt", true),
-			"jump": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "jump/", "rose_jump_f_", "timetable.txt", true),
-			"attack": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "attack/", "rose_attack_f_", "timetable.txt", false),
-			"skill1": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "skill1/", "rose_skill1_f_", "timetable.txt", false),
-			"skill2": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "skill2/", "rose_skill2_f_", "timetable.txt", false),
-			"ult": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "ult/", "rose_ult_f_", "timetable.txt", false),
-			"charge": FrameAnimation.load_from_dir(ROSE_ANI_DIR + "charge/", "rose_charge_f_", "timetable.txt", true),
+			"idle": FrameAnimation.load_from_frames(ROSE_ANI_DIR + "idle/", "rose_idle_f_", [{"index": 1, "duration": 999.0}], true),
+			"walk": FrameAnimation.load_from_frames(ROSE_ANI_DIR + "walk/", "rose_walk_f_", [{"index": 1, "duration": 999.0}], true),
+			"jump": FrameAnimation.load_from_frames(ROSE_ANI_DIR + "jump/", "rose_jump_f_", [{"index": 1, "duration": 999.0}], true),
+			"attack": FrameAnimation.load_from_frames(ROSE_ANI_DIR + "attack/", "rose_attack_f_", [{"index": 1, "duration": 1.0}], false),
+			"skill1": FrameAnimation.load_from_frames(ROSE_ANI_DIR + "skill1/", "rose_skill1_f_", [{"index": 1, "duration": 2.0}], false),
+			"skill2": FrameAnimation.load_from_frames(ROSE_ANI_DIR + "skill2/", "rose_skill2_f_", [{"index": 1, "duration": 3.0}], false),
+			"ult": FrameAnimation.load_from_frames(ROSE_ANI_DIR + "ult/", "rose_ult_f_", [
+				{"index": 1, "duration": 0.797}, {"index": 2, "duration": 0.114}, {"index": 3, "duration": 0.341},
+				{"index": 4, "duration": 0.569}, {"index": 5, "duration": 0.683}, {"index": 6, "duration": 1.0}
+			], false),
+			"charge": FrameAnimation.load_from_frames(ROSE_ANI_DIR + "charge/", "rose_charge_f_", [{"index": 1, "duration": 999.0}], true),
 		},
 		"dex": {
 			"icon": "🌹",
@@ -129,7 +132,10 @@ static func _ult(owner: Fighter) -> Dictionary:
 		if entry.get("overlay_id") == "rose_ult":
 			return {"success": false}
 	
-	var anim = FrameAnimation.load_from_dir(ROSE_ANI_DIR + "ult/", "rose_ult_f_", "timetable.txt", false)
+	var anim = FrameAnimation.load_from_frames(ROSE_ANI_DIR + "ult/", "rose_ult_f_", [
+		{"index": 1, "duration": 0.797}, {"index": 2, "duration": 0.114}, {"index": 3, "duration": 0.341},
+		{"index": 4, "duration": 0.569}, {"index": 5, "duration": 0.683}, {"index": 6, "duration": 1.0}
+	], false)
 	if anim.frames.is_empty():
 		return {"success": false}
 	anim.play()

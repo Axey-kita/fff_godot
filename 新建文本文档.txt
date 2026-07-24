@@ -1,0 +1,1825 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+Vulkan 1.3.215 - Forward+ - Using Device #0: Intel - Intel(R) UHD Graphics 620
+
+[MainMenu] _ready() start
+[CharConfigs] _init_all() start, loading 9 characters...
+[CharConfigs] loading config for: knight
+[CharacterFactory] calling get_config() for: knight
+[FrameAnimation] Loading animation from: res://assets/char_ani/knight/idle/
+ERROR: No loader found for resource: res://assets/char_ani/knight/idle/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/knight.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/knight/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/knight.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/knight/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/knight.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/knight/walk/
+ERROR: No loader found for resource: res://assets/char_ani/knight/walk/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/knight.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/knight/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/knight.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/knight/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/knight.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/knight/jump/
+ERROR: No loader found for resource: res://assets/char_ani/knight/jump/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/knight.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/knight/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/knight.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/knight/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/knight.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/knight/attack/
+ERROR: No loader found for resource: res://assets/char_ani/knight/attack/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/knight.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/knight/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/knight.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/knight/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/knight.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/knight/ult/
+ERROR: No loader found for resource: res://assets/char_ani/knight/ult/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/knight.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/knight/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/knight.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/knight/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/knight.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[CharacterFactory] get_config() returned for: knight empty=false
+[CharConfigs] knight loaded OK. animations keys=["idle", "walk", "jump", "attack", "ult"] idle valid=true
+[CharConfigs] loading config for: mage
+[CharacterFactory] calling get_config() for: mage
+[FrameAnimation] Loading animation from: res://assets/char_ani/mage/idle/
+ERROR: No loader found for resource: res://assets/char_ani/mage/idle/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/mage.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/mage/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/mage.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/mage/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/mage.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/mage/walk/
+ERROR: No loader found for resource: res://assets/char_ani/mage/walk/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/mage.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/mage/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/mage.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/mage/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/mage.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/mage/jump/
+ERROR: No loader found for resource: res://assets/char_ani/mage/jump/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/mage.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/mage/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/mage.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/mage/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/mage.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/mage/attack/
+ERROR: No loader found for resource: res://assets/char_ani/mage/attack/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/mage.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/mage/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/mage.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/mage/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/mage.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/mage/ult/
+ERROR: No loader found for resource: res://assets/char_ani/mage/ult/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/mage.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/mage/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/mage.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/mage/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/mage.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/mage/attack/
+ERROR: No loader found for resource: res://assets/char_ani/mage/attack/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/mage.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/mage/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/mage.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/mage/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/mage.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[CharacterFactory] get_config() returned for: mage empty=false
+[CharConfigs] mage loaded OK. animations keys=["idle", "walk", "jump", "attack", "ult", "charge"] idle valid=true
+[CharConfigs] loading config for: archer
+[CharacterFactory] calling get_config() for: archer
+[FrameAnimation] Loading animation from: res://assets/char_ani/archer/idle/
+ERROR: No loader found for resource: res://assets/char_ani/archer/idle/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/archer.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/archer/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/archer.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/archer/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/archer.gd:11)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/archer/walk/
+ERROR: No loader found for resource: res://assets/char_ani/archer/walk/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/archer.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/archer/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/archer.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/archer/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/archer.gd:11)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/archer/jump/
+ERROR: No loader found for resource: res://assets/char_ani/archer/jump/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/archer.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/archer/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/archer.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/archer/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/archer.gd:11)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/archer/attack/
+ERROR: No loader found for resource: res://assets/char_ani/archer/attack/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/archer.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/archer/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/archer.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/archer/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/archer.gd:11)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/archer/ult/
+ERROR: No loader found for resource: res://assets/char_ani/archer/ult/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/archer.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/archer/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/archer.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/archer/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/archer.gd:11)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/archer/charge/
+ERROR: No loader found for resource: res://assets/char_ani/archer/charge/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/archer.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/archer/charge/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/archer.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/archer/charge/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/archer.gd:11)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[CharacterFactory] get_config() returned for: archer empty=false
+[CharConfigs] archer loaded OK. animations keys=["idle", "walk", "jump", "attack", "ult", "charge"] idle valid=true
+[CharConfigs] loading config for: paladin
+[CharacterFactory] calling get_config() for: paladin
+[FrameAnimation] Loading animation from: res://assets/char_ani/paladin/idle/
+ERROR: No loader found for resource: res://assets/char_ani/paladin/idle/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/paladin.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/paladin/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/paladin.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/paladin/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/paladin.gd:7)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/paladin/walk/
+ERROR: No loader found for resource: res://assets/char_ani/paladin/walk/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/paladin.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/paladin/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/paladin.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/paladin/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/paladin.gd:7)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/paladin/jump/
+ERROR: No loader found for resource: res://assets/char_ani/paladin/jump/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/paladin.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/paladin/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/paladin.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/paladin/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/paladin.gd:7)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/paladin/attack/
+ERROR: No loader found for resource: res://assets/char_ani/paladin/attack/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/paladin.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/paladin/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/paladin.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/paladin/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/paladin.gd:7)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/paladin/charge/
+ERROR: No loader found for resource: res://assets/char_ani/paladin/charge/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/paladin.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/paladin/charge/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/paladin.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/paladin/charge/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/paladin.gd:7)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/paladin/ult/
+ERROR: No loader found for resource: res://assets/char_ani/paladin/ult/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/paladin.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/paladin/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/paladin.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/paladin/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/paladin.gd:7)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[CharacterFactory] get_config() returned for: paladin empty=false
+[CharConfigs] paladin loaded OK. animations keys=["idle", "walk", "jump", "attack", "charge", "ult"] idle valid=true
+[CharConfigs] loading config for: witch
+[CharacterFactory] calling get_config() for: witch
+[FrameAnimation] Loading animation from: res://assets/char_ani/witch/idle/
+ERROR: No loader found for resource: res://assets/char_ani/witch/idle/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/witch.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/witch/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/witch.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/witch/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/witch.gd:11)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/witch/walk/
+ERROR: No loader found for resource: res://assets/char_ani/witch/walk/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/witch.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/witch/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/witch.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/witch/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/witch.gd:11)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/witch/jump/
+ERROR: No loader found for resource: res://assets/char_ani/witch/jump/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/witch.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/witch/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/witch.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/witch/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/witch.gd:11)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/witch/attack/
+ERROR: No loader found for resource: res://assets/char_ani/witch/attack/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/witch.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/witch/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/witch.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/witch/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/witch.gd:11)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/witch/ult/
+ERROR: No loader found for resource: res://assets/char_ani/witch/ult/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/witch.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/witch/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/witch.gd:11)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/witch/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/witch.gd:11)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[CharacterFactory] get_config() returned for: witch empty=false
+[CharConfigs] witch loaded OK. animations keys=["idle", "walk", "jump", "attack", "ult"] idle valid=true
+[CharConfigs] loading config for: assassin
+[CharacterFactory] calling get_config() for: assassin
+[FrameAnimation] Loading animation from: res://assets/char_ani/assassin/idle/
+ERROR: No loader found for resource: res://assets/char_ani/assassin/idle/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/assassin/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/assassin/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/assassin.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/assassin/walk/
+ERROR: No loader found for resource: res://assets/char_ani/assassin/walk/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/assassin/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/assassin/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/assassin.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/assassin/jump/
+ERROR: No loader found for resource: res://assets/char_ani/assassin/jump/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/assassin/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/assassin/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/assassin.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/assassin/attack/
+ERROR: No loader found for resource: res://assets/char_ani/assassin/attack/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/assassin/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/assassin/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/assassin.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/assassin/skill1/
+ERROR: No loader found for resource: res://assets/char_ani/assassin/skill1/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/assassin/skill1/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/assassin/skill1/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/assassin.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/assassin/skill2/
+ERROR: No loader found for resource: res://assets/char_ani/assassin/skill2/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/assassin/skill2/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/assassin/skill2/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/assassin.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/assassin/ult/
+ERROR: No loader found for resource: res://assets/char_ani/assassin/ult/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/assassin/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/assassin/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/assassin.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/assassin/charge/
+ERROR: No loader found for resource: res://assets/char_ani/assassin/charge/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/assassin/charge/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/assassin.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/assassin/charge/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/assassin.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[CharacterFactory] get_config() returned for: assassin empty=false
+[CharConfigs] assassin loaded OK. animations keys=["idle", "walk", "jump", "attack", "skill1", "skill2", "ult", "charge"] idle valid=true
+[CharConfigs] loading config for: shadowwarrior
+[CharacterFactory] calling get_config() for: shadowwarrior
+[FrameAnimation] Loading animation from: res://assets/char_ani/shadowwarrior/idle/
+ERROR: No loader found for resource: res://assets/char_ani/shadowwarrior/idle/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/shadowwarrior/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/shadowwarrior/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/shadowwarrior/walk/
+ERROR: No loader found for resource: res://assets/char_ani/shadowwarrior/walk/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/shadowwarrior/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/shadowwarrior/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/shadowwarrior/jump/
+ERROR: No loader found for resource: res://assets/char_ani/shadowwarrior/jump/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/shadowwarrior/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/shadowwarrior/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/shadowwarrior/attack/
+ERROR: No loader found for resource: res://assets/char_ani/shadowwarrior/attack/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/shadowwarrior/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/shadowwarrior/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/shadowwarrior/ult/
+ERROR: No loader found for resource: res://assets/char_ani/shadowwarrior/ult/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/shadowwarrior/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/shadowwarrior/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/shadowwarrior.gd:7)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[CharacterFactory] get_config() returned for: shadowwarrior empty=false
+[CharConfigs] shadowwarrior loaded OK. animations keys=["idle", "walk", "jump", "attack", "ult"] idle valid=true
+[CharConfigs] loading config for: evoker
+[CharacterFactory] calling get_config() for: evoker
+[FrameAnimation] Loading animation from: res://assets/char_ani/evoker/idle/
+ERROR: No loader found for resource: res://assets/char_ani/evoker/idle/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/evoker.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/evoker/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/evoker.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/evoker/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/evoker.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/evoker/walk/
+ERROR: No loader found for resource: res://assets/char_ani/evoker/walk/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/evoker.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/evoker/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/evoker.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/evoker/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/evoker.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/evoker/jump/
+ERROR: No loader found for resource: res://assets/char_ani/evoker/jump/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/evoker.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/evoker/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/evoker.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/evoker/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/evoker.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/evoker/attack/
+ERROR: No loader found for resource: res://assets/char_ani/evoker/attack/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/evoker.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/evoker/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/evoker.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/evoker/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/evoker.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/evoker/ult/
+ERROR: No loader found for resource: res://assets/char_ani/evoker/ult/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/evoker.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/evoker/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/evoker.gd:8)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/evoker/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/evoker.gd:8)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[CharacterFactory] get_config() returned for: evoker empty=false
+[CharConfigs] evoker loaded OK. animations keys=["idle", "walk", "jump", "attack", "ult"] idle valid=true
+[CharConfigs] loading config for: rose
+[CharacterFactory] calling get_config() for: rose
+[FrameAnimation] Loading animation from: res://assets/char_ani/rose/idle/
+ERROR: No loader found for resource: res://assets/char_ani/rose/idle/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/rose/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/rose/idle/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/rose.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/rose/walk/
+ERROR: No loader found for resource: res://assets/char_ani/rose/walk/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/rose/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/rose/walk/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/rose.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/rose/jump/
+ERROR: No loader found for resource: res://assets/char_ani/rose/jump/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/rose/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/rose/jump/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/rose.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/rose/attack/
+ERROR: No loader found for resource: res://assets/char_ani/rose/attack/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/rose/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/rose/attack/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/rose.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/rose/skill1/
+ERROR: No loader found for resource: res://assets/char_ani/rose/skill1/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/rose/skill1/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/rose/skill1/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/rose.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/rose/skill2/
+ERROR: No loader found for resource: res://assets/char_ani/rose/skill2/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/rose/skill2/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/rose/skill2/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/rose.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/rose/ult/
+ERROR: No loader found for resource: res://assets/char_ani/rose/ult/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/rose/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/rose/ult/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/rose.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[FrameAnimation] Loading animation from: res://assets/char_ani/rose/charge/
+ERROR: No loader found for resource: res://assets/char_ani/rose/charge/timetable.txt (expected type: unknown)
+   at: (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:85)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Timetable file not found: res://assets/char_ani/rose/charge/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _parse_timetable (res://scripts/frame_animation.gd:89)
+       [1] load_from_dir (res://scripts/frame_animation.gd:38)
+       [2] get_config (res://scripts/characters/rose.gd:10)
+       [3] get_config (res://scripts/characters/character_factory.gd:32)
+       [4] _init_all (res://data/char_configs.gd:26)
+       [5] ensure_init (res://data/char_configs.gd:10)
+       [6] _init_char_configs (res://scripts/main_menu.gd:370)
+       [7] _ready (res://scripts/main_menu.gd:50)
+ERROR: [FrameAnimation] Failed to parse timetable: res://assets/char_ani/rose/charge/timetable.txt
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] load_from_dir (res://scripts/frame_animation.gd:40)
+       [1] get_config (res://scripts/characters/rose.gd:10)
+       [2] get_config (res://scripts/characters/character_factory.gd:32)
+       [3] _init_all (res://data/char_configs.gd:26)
+       [4] ensure_init (res://data/char_configs.gd:10)
+       [5] _init_char_configs (res://scripts/main_menu.gd:370)
+       [6] _ready (res://scripts/main_menu.gd:50)
+[CharacterFactory] get_config() returned for: rose empty=false
+[CharConfigs] rose loaded OK. animations keys=["idle", "walk", "jump", "attack", "skill1", "skill2", "ult", "charge"] idle valid=true
+[CharConfigs] _init_all() done
+[MainMenu] configs initialized, setting up UI...

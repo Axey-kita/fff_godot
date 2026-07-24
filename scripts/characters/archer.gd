@@ -15,12 +15,12 @@ static func get_config() -> Dictionary:
 		"fields": {"arrows":10,"max_arrows":10,"arrow_regen_timer":0,"arrow_regen_rate":480,"fire_arrow_buff":false,"fire_arrow_timer":0,"tracking_buff":false,"tracking_timer":0,"charging_attack":false,"charge_start_time":0},
 		"world_arrays": [],
 		"animations": {
-			"idle": FrameAnimation.load_from_dir(ARCHER_ANI_DIR + "idle/", "archer_idle_f_", "timetable.txt", true),
-			"walk": FrameAnimation.load_from_dir(ARCHER_ANI_DIR + "walk/", "archer_walk_f_", "timetable.txt", true),
-			"jump": FrameAnimation.load_from_dir(ARCHER_ANI_DIR + "jump/", "archer_jump_f_", "timetable.txt", true),
-			"attack": FrameAnimation.load_from_dir(ARCHER_ANI_DIR + "attack/", "archer_attack_f_", "timetable.txt", false),
-			"ult": FrameAnimation.load_from_dir(ARCHER_ANI_DIR + "ult/", "archer_ult_f_", "timetable.txt", false),
-			"charge": FrameAnimation.load_from_dir(ARCHER_ANI_DIR + "charge/", "archer_charge_f_", "timetable.txt", true),
+			"idle": FrameAnimation.load_from_frames(ARCHER_ANI_DIR + "idle/", "archer_idle_f_", [{"index": 1, "duration": 999.0}], true),
+			"walk": FrameAnimation.load_from_frames(ARCHER_ANI_DIR + "walk/", "archer_walk_f_", [{"index": 1, "duration": 999.0}], true),
+			"jump": FrameAnimation.load_from_frames(ARCHER_ANI_DIR + "jump/", "archer_jump_f_", [{"index": 1, "duration": 999.0}], true),
+			"attack": FrameAnimation.load_from_frames(ARCHER_ANI_DIR + "attack/", "archer_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"ult": FrameAnimation.load_from_frames(ARCHER_ANI_DIR + "ult/", "archer_ult_f_", [{"index": 1, "duration": 3.0}], false),
+			"charge": FrameAnimation.load_from_frames(ARCHER_ANI_DIR + "charge/", "archer_charge_f_", [{"index": 1, "duration": 999.0}], true),
 		},
 		"dex": {
 			"icon": "🏹",

@@ -12,11 +12,11 @@ static func get_config() -> Dictionary:
 		"fields": {"last_summon_type":-1,"summon_dead1":false,"summon_dead2":false,"summon_dead3":false},
 		"world_arrays": ["evoker_summons","void_rifts","evoker_fire_seas","gravity_balls","phantoms"],
 		"animations": {
-			"idle": FrameAnimation.load_from_dir(EVOKER_ANI_DIR + "idle/", "evoker_idle_f_", "timetable.txt", true),
-			"walk": FrameAnimation.load_from_dir(EVOKER_ANI_DIR + "walk/", "evoker_walk_f_", "timetable.txt", true),
-			"jump": FrameAnimation.load_from_dir(EVOKER_ANI_DIR + "jump/", "evoker_jump_f_", "timetable.txt", true),
-			"attack": FrameAnimation.load_from_dir(EVOKER_ANI_DIR + "attack/", "evoker_attack_f_", "timetable.txt", false),
-			"ult": FrameAnimation.load_from_dir(EVOKER_ANI_DIR + "ult/", "evoker_ult_f_", "timetable.txt", false),
+			"idle": FrameAnimation.load_from_frames(EVOKER_ANI_DIR + "idle/", "evoker_idle_f_", [{"index": 1, "duration": 999.0}], true),
+			"walk": FrameAnimation.load_from_frames(EVOKER_ANI_DIR + "walk/", "evoker_walk_f_", [{"index": 1, "duration": 999.0}], true),
+			"jump": FrameAnimation.load_from_frames(EVOKER_ANI_DIR + "jump/", "evoker_jump_f_", [{"index": 1, "duration": 999.0}], true),
+			"attack": FrameAnimation.load_from_frames(EVOKER_ANI_DIR + "attack/", "evoker_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"ult": FrameAnimation.load_from_frames(EVOKER_ANI_DIR + "ult/", "evoker_ult_f_", [{"index": 1, "duration": 3.0}], false),
 		},
 		"dex": {
 			"icon": "🧙",

@@ -1,3 +1,12 @@
 res://scripts/frame_animation.gd
 res://scripts/game.gd
 res://scripts/touch_controls.gd
+res://scripts/characters/archer.gd
+res://scripts/characters/assassin.gd
+res://scripts/characters/evoker.gd
+res://scripts/characters/knight.gd
+res://scripts/characters/mage.gd
+res://scripts/characters/paladin.gd
+res://scripts/characters/rose.gd
+res://scripts/characters/shadowwarrior.gd
+res://scripts/characters/witch.gd

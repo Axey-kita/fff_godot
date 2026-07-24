@@ -11,11 +11,11 @@ static func get_config() -> Dictionary:
 		"fields": {"stealth_active":false,"stealth_timer":0,"last_skill_time":-999,"retreat_timer":0,"retreat_dir":1,"break_strike_timer":0,"pending_trap":false,"shadow_trap_active":false,"shadow_trap":{},"pending_clones":false,"clone_reveal_timer":0,"iaido_active":false,"iaido_timer":0,"iaido_frozen":false,"iaido_dir":1,"iaido_slash":{}},
 		"world_arrays": ["phantoms"],
 		"animations": {
-			"idle": FrameAnimation.load_from_dir(SHADOWWARRIOR_ANI_DIR + "idle/", "shadowwarrior_idle_f_", "timetable.txt", true),
-			"walk": FrameAnimation.load_from_dir(SHADOWWARRIOR_ANI_DIR + "walk/", "shadowwarrior_walk_f_", "timetable.txt", true),
-			"jump": FrameAnimation.load_from_dir(SHADOWWARRIOR_ANI_DIR + "jump/", "shadowwarrior_jump_f_", "timetable.txt", true),
-			"attack": FrameAnimation.load_from_dir(SHADOWWARRIOR_ANI_DIR + "attack/", "shadowwarrior_attack_f_", "timetable.txt", false),
-			"ult": FrameAnimation.load_from_dir(SHADOWWARRIOR_ANI_DIR + "ult/", "shadowwarrior_ult_f_", "timetable.txt", false),
+			"idle": FrameAnimation.load_from_frames(SHADOWWARRIOR_ANI_DIR + "idle/", "shadowwarrior_idle_f_", [{"index": 1, "duration": 999.0}], true),
+			"walk": FrameAnimation.load_from_frames(SHADOWWARRIOR_ANI_DIR + "walk/", "shadowwarrior_walk_f_", [{"index": 1, "duration": 999.0}], true),
+			"jump": FrameAnimation.load_from_frames(SHADOWWARRIOR_ANI_DIR + "jump/", "shadowwarrior_jump_f_", [{"index": 1, "duration": 999.0}], true),
+			"attack": FrameAnimation.load_from_frames(SHADOWWARRIOR_ANI_DIR + "attack/", "shadowwarrior_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"ult": FrameAnimation.load_from_frames(SHADOWWARRIOR_ANI_DIR + "ult/", "shadowwarrior_ult_f_", [{"index": 1, "duration": 3.0}], false),
 		},
 		"dex": {
 			"icon": "🥷",
@@ -73,7 +73,7 @@ static func _ult(owner: Fighter) -> Dictionary:
 	owner.iaido_frozen = true
 	owner.iaido_slash = {"x": owner.pos_x + (owner.w if dir == 1 else -360), "y": owner.pos_y - 4, "w": 360, "h": owner.h + 8, "dir": dir, "hit_dealt": false}
 	
-	var anim = FrameAnimation.load_from_dir(SHADOWWARRIOR_ANI_DIR + "ult/", "shadowwarrior_ult_f_", "timetable.txt", false)
+	var anim = FrameAnimation.load_from_frames(SHADOWWARRIOR_ANI_DIR + "ult/", "shadowwarrior_ult_f_", [{"index": 1, "duration": 3.0}], false)
 	if anim.frames.is_empty():
 		return {"success": false}
 	anim.play()

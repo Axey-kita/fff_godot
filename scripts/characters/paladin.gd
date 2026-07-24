@@ -11,12 +11,12 @@ static func get_config() -> Dictionary:
 		"fields": {"divine_shield_active":false,"divine_shield_timer":0,"divine_shield_absorb":0.0,"holy_empower_active":false,"holy_empower_timer":0,"charging_skill1":false,"skill1_charge_time":0},
 		"world_arrays": [],
 		"animations": {
-			"idle": FrameAnimation.load_from_dir(PALADIN_ANI_DIR + "idle/", "paladin_idle_f_", "timetable.txt", true),
-			"walk": FrameAnimation.load_from_dir(PALADIN_ANI_DIR + "walk/", "paladin_walk_f_", "timetable.txt", true),
-			"jump": FrameAnimation.load_from_dir(PALADIN_ANI_DIR + "jump/", "paladin_jump_f_", "timetable.txt", true),
-			"attack": FrameAnimation.load_from_dir(PALADIN_ANI_DIR + "attack/", "paladin_attack_f_", "timetable.txt", false),
-			"charge": FrameAnimation.load_from_dir(PALADIN_ANI_DIR + "charge/", "paladin_charge_f_", "timetable.txt", true),
-			"ult": FrameAnimation.load_from_dir(PALADIN_ANI_DIR + "ult/", "paladin_ult_f_", "timetable.txt", false),
+			"idle": FrameAnimation.load_from_frames(PALADIN_ANI_DIR + "idle/", "paladin_idle_f_", [{"index": 1, "duration": 999.0}], true),
+			"walk": FrameAnimation.load_from_frames(PALADIN_ANI_DIR + "walk/", "paladin_walk_f_", [{"index": 1, "duration": 999.0}], true),
+			"jump": FrameAnimation.load_from_frames(PALADIN_ANI_DIR + "jump/", "paladin_jump_f_", [{"index": 1, "duration": 999.0}], true),
+			"attack": FrameAnimation.load_from_frames(PALADIN_ANI_DIR + "attack/", "paladin_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"charge": FrameAnimation.load_from_frames(PALADIN_ANI_DIR + "charge/", "paladin_charge_f_", [{"index": 1, "duration": 999.0}], true),
+			"ult": FrameAnimation.load_from_frames(PALADIN_ANI_DIR + "ult/", "paladin_ult_f_", [{"index": 1, "duration": 3.0}], false),
 		},
 		"dex": {
 			"icon": "🛡️",

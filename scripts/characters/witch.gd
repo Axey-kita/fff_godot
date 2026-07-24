@@ -15,11 +15,11 @@ static func get_config() -> Dictionary:
 		"fields": {"is_flying":false,"fly_energy_drain":0.133,"gravity_debuff":false,"jump_reduction":1.0,"is_casting_ult":false,"cast_ult_x":0.0,"cast_ult_y":0.0},
 		"world_arrays": ["tornadoes","vortexes"],
 		"animations": {
-			"idle": FrameAnimation.load_from_dir(WITCH_ANI_DIR + "idle/", "witch_idle_f_", "timetable.txt", true),
-			"walk": FrameAnimation.load_from_dir(WITCH_ANI_DIR + "walk/", "witch_walk_f_", "timetable.txt", true),
-			"jump": FrameAnimation.load_from_dir(WITCH_ANI_DIR + "jump/", "witch_jump_f_", "timetable.txt", true),
-			"attack": FrameAnimation.load_from_dir(WITCH_ANI_DIR + "attack/", "witch_attack_f_", "timetable.txt", false),
-			"ult": FrameAnimation.load_from_dir(WITCH_ANI_DIR + "ult/", "witch_ult_f_", "timetable.txt", false),
+			"idle": FrameAnimation.load_from_frames(WITCH_ANI_DIR + "idle/", "witch_idle_f_", [{"index": 1, "duration": 999.0}], true),
+			"walk": FrameAnimation.load_from_frames(WITCH_ANI_DIR + "walk/", "witch_walk_f_", [{"index": 1, "duration": 999.0}], true),
+			"jump": FrameAnimation.load_from_frames(WITCH_ANI_DIR + "jump/", "witch_jump_f_", [{"index": 1, "duration": 999.0}], true),
+			"attack": FrameAnimation.load_from_frames(WITCH_ANI_DIR + "attack/", "witch_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"ult": FrameAnimation.load_from_frames(WITCH_ANI_DIR + "ult/", "witch_ult_f_", [{"index": 1, "duration": 3.0}], false),
 		},
 		"dex": {
 			"icon": "🧹",
