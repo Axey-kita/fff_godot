@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/touch_controls.gd" id="2"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1")
@@ -51,3 +52,6 @@ text = "🏠 返回主界面"
 layout_mode = 2
 custom_minimum_size = Vector2(220, 50)
 text = "❌ 退出游戏"
+
+[node name="TouchControls" type="CanvasLayer" parent="."]
+script = ExtResource("2")

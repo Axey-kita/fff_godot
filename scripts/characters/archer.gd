@@ -44,7 +44,7 @@ static func create_skills() -> Array:
 
 static func _skill1(owner: Fighter) -> Dictionary:
 	owner.fire_arrow_buff = true
-	owner.fire_arrow_timer = 420
+	owner.fire_arrow_timer = 600
 	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 30, Color(1.0,0.27,0.0), 4, 6, "star")
 	return {"success": true}
 

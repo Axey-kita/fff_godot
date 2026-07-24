@@ -1,7 +1,3 @@
-res://scripts/characters/archer.gd
-res://scripts/systems/input_handler.gd
+res://scripts/frame_animation.gd
 res://scripts/game.gd
-res://scripts/characters/assassin.gd
-res://scripts/systems/character_systems.gd
-res://scripts/systems/projectile_system.gd
-res://scripts/fighter.gd
+res://scripts/touch_controls.gd

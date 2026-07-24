@@ -33,11 +33,14 @@ static func load_from_dir(dir_path: String, prefix: String, timetable_path: Stri
 	if not timetable_path.begins_with("res://"):
 		full_timetable_path = dir_path + timetable_path
 	
+	print("[FrameAnimation] Loading animation from: ", dir_path)
+	
 	var timetable = _parse_timetable(full_timetable_path)
 	if timetable.is_empty():
-		push_error("FrameAnimation: Failed to parse timetable: " + full_timetable_path)
+		push_error("[FrameAnimation] Failed to parse timetable: " + full_timetable_path)
 		return anim
 	
+	var loaded_count := 0
 	for entry in timetable:
 		var frame_num = entry["index"]
 		var duration = entry["duration"]
@@ -51,32 +54,44 @@ static func load_from_dir(dir_path: String, prefix: String, timetable_path: Stri
 		
 		var full_path = dir_path + file_name
 		
-		# 回退扩展名：png → jpg
-		if not FileAccess.file_exists(full_path):
-			if file_name.ends_with(".png"):
-				var jpg_path = dir_path + file_name.trim_suffix(".png") + ".jpg"
-				if FileAccess.file_exists(jpg_path):
-					full_path = jpg_path
+		# 直接 load()，不做事先存在性检查。
+		# 安卓导出时贴图被压缩为 .ctex，FileAccess/ResourceLoader.exists 可能误判。
+		var tex: Texture2D = load(full_path)
 		
-		if not FileAccess.file_exists(full_path):
-			push_error("FrameAnimation: Frame not found: " + full_path)
-			continue
-		var tex = load(full_path)
+		# 回退扩展名：png → jpg
+		if not tex and file_name.ends_with(".png"):
+			var jpg_path = dir_path + file_name.trim_suffix(".png") + ".jpg"
+			tex = load(jpg_path)
+			if tex:
+				print("[FrameAnimation] Loaded JPG fallback: ", jpg_path)
+		
 		if tex and tex is Texture2D:
 			anim.add_frame(tex, duration)
+			loaded_count += 1
+		else:
+			push_error("[FrameAnimation] Failed to load frame: " + full_path)
 	
+	print("[FrameAnimation] Loaded ", loaded_count, "/", timetable.size(), " frames from ", dir_path)
 	anim._calc_total_duration()
 	return anim
 
 ## 解析时间表: frameN::Xs[::filename]
 static func _parse_timetable(path: String) -> Array:
 	var result: Array = []
+	
+	# 在导出包中，.txt 文件应可通过 FileAccess 读取
 	if not FileAccess.file_exists(path):
-		push_error("FrameAnimation: Timetable file not found: " + path)
-		return result
+		# 回退：尝试 ResourceLoader 加载
+		var res = load(path)
+		if res:
+			push_warning("[FrameAnimation] Timetable loaded via ResourceLoader: " + path)
+		else:
+			push_error("[FrameAnimation] Timetable file not found: " + path)
+			return result
 	
 	var file = FileAccess.open(path, FileAccess.READ)
 	if not file:
+		push_error("[FrameAnimation] Cannot open timetable: " + path)
 		return result
 	
 	var lines = file.get_as_text().split("\n")
