@@ -31,7 +31,7 @@ static func update_ai(ai_think_delay: int) -> int:
 		if nearest:
 			target = nearest
 	
-	var dx = target.pos_x - f.pos_x
+	var dx = (target["x"] if target is Dictionary else target.pos_x) - f.pos_x
 	var dist = absf(dx)
 	var dir_to_target = 1 if dx > 0 else -1
 	

@@ -34,6 +34,7 @@ extends Control
 var selected_char := "knight"
 var chars_initialized := false
 var char_cards := {}
+var _title_click_count := 0  # 作弊计数器
 
 const IMG_TITLE = preload("res://assets/34-20260705005653.png")
 const IMG_PVE = preload("res://assets/29-20260705005340.png")
@@ -50,7 +51,11 @@ func _ready():
 	_init_char_configs()
 	print("[MainMenu] configs initialized, setting up UI...")
 	
-	title_texture.texture = IMG_TITLE
+	title_texture.custom_minimum_size = Vector2(300, 80)
+	title_texture.size_flags_horizontal = 0
+	title_texture.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	title_texture.mouse_filter = Control.MOUSE_FILTER_STOP
+	title_texture.gui_input.connect(_on_title_clicked)
 	bg_texture.texture = IMG_BG
 	pve_button.texture_normal = IMG_PVE; pve_button.texture_pressed = IMG_PVE
 	coming_button.texture_normal = IMG_COMING; coming_button.texture_pressed = IMG_COMING
@@ -435,6 +440,15 @@ func _on_back_pressed():
 
 func _on_exit_pressed():
 	get_tree().quit()
+
+func _on_title_clicked(event: InputEvent):
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_title_click_count += 1
+		if _title_click_count >= 4:
+			_title_click_count = 0
+			GameWorld.infinite_energy = not GameWorld.infinite_energy
+			var status = "开启" if GameWorld.infinite_energy else "关闭"
+			_show_toast("作弊：" + status)
 
 func _on_start_pressed():
 	get_tree().change_scene_to_file("res://scenes/game.tscn")

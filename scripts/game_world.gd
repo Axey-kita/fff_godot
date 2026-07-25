@@ -8,6 +8,7 @@ var game_mode := "pve" # "pve" or "pvp"
 var difficulty := "medium"
 var frame := 0
 var hit_stop := 0
+var infinite_energy := false  # 作弊：无限蓝
 
 # Slow motion
 var slow_mo_timer := 0

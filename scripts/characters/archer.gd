@@ -63,3 +63,29 @@ static func _ult(owner: Fighter) -> Dictionary:
 		var ult_img = PROJ_ARROW_ULT_FIRE if owner.fire_arrow_buff else PROJ_ARROW_ULT
 		GameWorld.projectiles.append({"x":tx-16,"y":-30-randf()*50,"w":32,"h":20,"vx":(randf()-0.5)*0.5,"vy":3+randf()*2,"life":120,"damage":5,"owner":owner,"type":"arrow_ult","color":Color(0.8,0.53,0.0),"reflected":false,"img":ult_img,"is_fire":owner.fire_arrow_buff})
 	return {"success": true}
+
+# ══════════════════════════════════════════════════════════════════
+#  update_systems — 每帧逻辑（CharacterSystems 调度）
+# ══════════════════════════════════════════════════════════════════
+static func update_systems(f: Fighter):
+	if f.char_id != "archer" or f.hp <= 0:
+		return
+
+	# ── 箭矢自动回复 ──
+	if f.arrows < f.max_arrows:
+		f.arrow_regen_timer += 1
+		if f.arrow_regen_timer >= f.arrow_regen_rate:
+			f.arrow_regen_timer = 0
+			f.arrows += 1
+
+	# ── 火矢 buff 计时 ──
+	if f.fire_arrow_buff:
+		f.fire_arrow_timer -= 1
+		if f.fire_arrow_timer <= 0:
+			f.fire_arrow_buff = false
+
+	# ── 追踪 buff 计时 ──
+	if f.tracking_buff:
+		f.tracking_timer -= 1
+		if f.tracking_timer <= 0:
+			f.tracking_buff = false

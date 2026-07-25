@@ -36,12 +36,15 @@ func apply_effect(target: Fighter):
 	match type:
 		"energy":
 			target.energy = minf(target.max_energy, target.energy + 20)
+
 		"health":
 			target.hp = minf(target.max_hp, target.hp + 20)
 		"attack":
 			target.attack_boost = 10
 			target.boost_timer = 180
 		"cooldown":
+			if target.char_id == "archer":
+				target.arrows = mini(target.max_arrows, target.arrows + 5)
 			var skill_keys = ["skill1", "skill2", "ult"]
 			var key = skill_keys[randi() % skill_keys.size()]
 			var skill = target.get_skill(key)

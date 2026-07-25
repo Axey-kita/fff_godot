@@ -29,6 +29,20 @@ const EVOKER_ULT_CRACK = preload("res://assets/utlgro.png")  # 裂隙
 const ROSE_SLASH_IMG = preload("res://assets/%E6%97%A0%E6%A0%87%E9%A2%9893_20260721203233.png")  # 血色蔷薇-刀光
 const ASSASSIN_SLASH_IMG = preload("res://assets/53.png")  # 刺客-次元斩
 
+# Shadowwarrior skill textures
+const SW_TRAP_A        = preload("res://assets/fx_shadow_trap_a.png")
+const SW_TRAP_B        = preload("res://assets/fx_shadow_trap_b.png")
+const SW_CLONE_REVEAL  = preload("res://assets/fx_shadow_clone_reveal.png")
+const SW_IAIDO_SLASH   = preload("res://assets/fx_shadow_iaido_slash.png")
+const SW_RETREAT       = preload("res://assets/fx_shadow_retreat.png")
+const SW_BREAK_STRIKE  = preload("res://assets/fx_shadow_break_strike.png")
+const SW_GRAB          = preload("res://assets/fx_shadow_grab.png")
+const SW_GRAB_BURST    = preload("res://assets/fx_shadow_grab_burst.png")
+const SW_IDLE_IMG      = preload("res://assets/char_ani/shadowwarrior/idle/shadowwarrior_idle_f_1.png")
+const SW_WALK_IMG      = preload("res://assets/char_ani/shadowwarrior/walk/shadowwarrior_walk_f_1.png")
+const SW_ATTACK_IMG    = preload("res://assets/char_ani/shadowwarrior/attack/shadowwarrior_attack_f_1.png")
+const SW_ULT_IMG       = preload("res://assets/char_ani/shadowwarrior/ult/shadowwarrior_ult_f_1.png")
+
 # Input state
 var keys := {
 	"left": false, "right": false, "up": false, "down": false,
@@ -130,6 +144,9 @@ func _update():
 	ai_think_delay = AISystem.update_ai(ai_think_delay)
 	# Apply physics (after input, matching JS order)
 	_apply_physics_all()
+	# 作弊：无限蓝
+	if GameWorld.infinite_energy and GameWorld.player:
+		GameWorld.player.energy = GameWorld.player.max_energy
 	# Systems
 	DashSystem.update_dash()
 	TornadoSystem.update_tornadoes()
@@ -256,6 +273,10 @@ func _draw():
 	_draw_evoker_gravity_balls(cam_x)
 	_draw_evoker_void_rifts(cam_x)
 
+	# Shadowwarrior overlays and phantoms
+	_draw_shadowwarrior_overlays(cam_x)
+	_draw_phantoms(cam_x)
+
 	# 11.5 Active overlay animations (unified position_spec)
 	for entry in GameWorld.active_overlays:
 		var overlay_anim: FrameAnimation = entry["anim"]
@@ -284,8 +305,8 @@ func _draw():
 					var sx = target.pos_x - cam_x + target.w / 2.0 + pos.get("offset", Vector2.ZERO).x
 					var sy = target.pos_y + target.h / 2.0 + pos.get("offset", Vector2.ZERO).y
 					var sc = pos.get("scale", Vector2.ONE)
-					var tw = tex.get_width() * sc.x
-					var th = tex.get_height() * sc.y
+					var tw = target.w * sc.x
+					var th = target.h * sc.y
 					if target.facing < 0:
 						draw_set_transform(Vector2(sx, sy), 0.0, Vector2(-sc.x, sc.y))
 						draw_texture_rect(tex, Rect2(-tw / 2.0, -th / 2.0, tw, th), false)
@@ -376,6 +397,9 @@ func _draw_map(cam_x: float):
 func _draw_fighter(f: Fighter, is_local: bool = false):
 	if not f:
 		return
+	# 影武者居合期间：角色贴图由 _draw_shadowwarrior_overlays 绘制
+	if f.char_id == "shadowwarrior" and f.iaido_active:
+		return
 	var px = f.pos_x - GameWorld.camera.x
 	if px < -80 or px > 880:
 		return
@@ -383,6 +407,9 @@ func _draw_fighter(f: Fighter, is_local: bool = false):
 	# Damage flash
 	var alpha_mod = 1.0
 	if f.damage_flash > 0 and f.damage_flash % 4 < 2:
+		alpha_mod = 0.5
+	# Stealth transparency for shadowwarrior
+	if f.char_id == "shadowwarrior" and f.stealth_active:
 		alpha_mod = 0.5
 
 	# Draw texture if available, otherwise colored rect
@@ -526,6 +553,15 @@ func _draw_hud(font: Font):
 		var se_label = "暗影游走" if p.shadow_stance else "暗影 " + str(int(p.shadow_energy)) + "/5"
 		draw_string(font, Vector2(bar_x + 52, se_y), se_label, HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(0.67, 0.53, 1.0))
 
+	# Arrow count bar (archer only)
+	if p.char_id == "archer":
+		var ar_y = 30.0
+		var ar_h = 6.0
+		draw_rect(Rect2(bar_x, ar_y, bar_w, ar_h), Color(0.05, 0.05, 0.08, 0.8))
+		var ar_pct = float(p.arrows) / maxf(p.max_arrows, 1.0)
+		draw_rect(Rect2(bar_x, ar_y, bar_w * ar_pct, ar_h), Color(0.8, 0.6, 0.2))
+		draw_string(font, Vector2(bar_x + 52, ar_y), "箭矢 " + str(p.arrows), HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1.0, 0.7, 0.3))
+
 	# === Enemy (right side) ===
 	var e_name = e.config.get("name", "AI")
 	var e_bar_x = Constants.W - bar_x - bar_w
@@ -647,6 +683,91 @@ func _draw_evoker_void_rifts(cam_x: float):
 		# Pulsing border
 		var pulse = sin(rift.get("timer", 0) * 0.1) * 0.3 + 0.7
 		draw_rect(Rect2(rx, rift["y"], rift["w"], rift["h"]), Color(0.784, 0.392, 1.0, pulse * 0.8), false, 3)
+
+
+# ── 影武者覆盖层绘制 ──
+func _sw_draw_tex(img: Texture2D, wx: float, wy: float, w: float, h: float, cam_x: float, facing: int = 1, alpha: float = 1.0):
+	if not img: return
+	var px = wx - cam_x
+	var cx = px + w / 2.0
+	var cy = wy + h / 2.0
+	var sc = Vector2(-1 if facing < 0 else 1, 1)
+	draw_set_transform(Vector2(cx, cy), 0.0, sc)
+	draw_texture_rect(img, Rect2(-w / 2.0, -h / 2.0, w, h), false, Color(1, 1, 1, alpha))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_shadowwarrior_overlays(cam_x: float):
+	for f in GameWorld.entities:
+		if f.char_id != "shadowwarrior" or f.hp <= 0: continue
+
+		# 暗影替身（陷阱）
+		if f.shadow_trap_active and not f.shadow_trap.is_empty():
+			var trap = f.shadow_trap
+			match trap["phase"]:
+				"idle":
+					var img = SW_TRAP_A if (trap["anim"] / 30) % 2 == 0 else SW_TRAP_B
+					_sw_draw_tex(img, trap["x"], trap["y"]+f.h*0.4, f.w, f.h*0.6, cam_x, f.facing, 0.7)
+				"capture":
+					var cap: Fighter = trap["captured"]
+					if cap and cap is Fighter and cap.hp > 0:
+						_sw_draw_tex(SW_GRAB, cap.pos_x - 10, cap.pos_y - 10, cap.w + 20, cap.h + 20, cam_x, 1, 0.95)
+				"burst":
+					var cap: Fighter = trap["captured"]
+					var bx = cap.pos_x - 10 if (cap and cap is Fighter) else trap["x"] - 10
+					var by = cap.pos_y - 10 if (cap and cap is Fighter) else trap["y"] - 10
+					var bw = (cap.w + 20 if (cap and cap is Fighter) else trap["w"] + 20)
+					var bh = (cap.h + 20 if (cap and cap is Fighter) else trap["h"] + 20)
+					_sw_draw_tex(SW_GRAB_BURST, bx, by, bw, bh, cam_x, 1, 1.0)
+
+		# 居合刀光 + 定格姿态（替代角色贴图，等比缩放底部对齐）
+		if f.iaido_active and not f.iaido_slash.is_empty():
+			var slash = f.iaido_slash
+			_sw_draw_tex(SW_IAIDO_SLASH, slash["x"], slash["y"], slash["w"], slash["h"], cam_x, slash.get("dir", 1), 0.85)
+			# 定格姿态：等比缩放到角色框内，底部贴地
+			var img_w: float = SW_ULT_IMG.get_width()
+			var img_h: float = SW_ULT_IMG.get_height()
+			var s = minf(f.w / img_w , f.h   / img_h ) 
+			var dw = img_w * s; var dh = img_h * s
+			_sw_draw_tex(SW_ULT_IMG, f.pos_x + (f.w - dw) / 2.0, f.pos_y + f.h - dh*1.5, dw, dh*1.5, cam_x, f.facing, 1.0)
+
+		# 后撤贴图
+		if f.retreat_timer > 0:
+			var alpha = 0.5 if (f == GameWorld.player and f.stealth_active) else 1.0
+			_sw_draw_tex(SW_RETREAT, f.pos_x, f.pos_y, f.w, f.h, cam_x, f.facing, alpha)
+
+		# 幻影·舞遮挡贴图（与角色同尺寸）
+		if f.clone_reveal_timer > 0:
+			_sw_draw_tex(SW_CLONE_REVEAL, f.pos_x, f.pos_y + f.h * 0.5, f.w, f.h * 0.6, cam_x, f.facing, 1.0)
+
+
+func _draw_phantoms(cam_x: float):
+	for ph in GameWorld.phantoms:
+		if ph.get("hp", 0) <= 0: continue
+
+		var state = ph.get("image_state", "idle")
+		var img: Texture2D = SW_IDLE_IMG
+		match state:
+			"attack": img = SW_ATTACK_IMG
+			"walk":   img = SW_WALK_IMG
+
+		var px = ph["x"] - cam_x
+		if px < -ph["w"] or px > Constants.W + ph["w"]: continue
+
+		# 分身绘制（半透明，位置/尺寸与陷阱分身一致）
+		var py = ph["y"] + ph["h"] * 0.5
+		var dh = ph["h"] * 0.6
+		if ph["facing"] < 0:
+			draw_set_transform(Vector2(px + ph["w"], py), 0.0, Vector2(-1, 1))
+			draw_texture_rect(img, Rect2(0, 0, ph["w"], dh), false, Color(1, 1, 1, 0.75))
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		else:
+			draw_texture_rect(img, Rect2(px, py, ph["w"], dh), false, Color(1, 1, 1, 0.75))
+
+		# 分身血条
+		var hp_pct = maxf(0, ph["hp"] / maxf(ph.get("max_hp", 1.0), 1.0))
+		draw_rect(Rect2(px, py - 8, ph["w"], 4), Color(0, 0, 0, 0.5))
+		draw_rect(Rect2(px, py - 8, ph["w"] * hp_pct, 4), Color(0.53, 0.27, 0.8))
 
 func _unhandled_input(event: InputEvent):
 	if event is InputEventKey:

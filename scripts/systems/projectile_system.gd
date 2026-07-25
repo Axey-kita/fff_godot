@@ -37,6 +37,7 @@ static func update_projectiles(game_node: Node):
 			# Character hooks: onProjectileUpdate (expiry handling)
 			if _run_projectile_update_hook(i, p, game_node):
 				continue
+			_reset_casting(p)
 			GameWorld.projectiles.remove_at(i)
 			continue
 
@@ -96,13 +97,20 @@ static func update_projectiles(game_node: Node):
 					Fighter.emit_particles(p["x"] + p["w"] / 2.0, p["y"] + p["h"] / 2.0, 30, Color(1.0, 0.67, 0.0), 6, 8, "star", 1.2)
 
 					# Piercing support
-					if p.get("piercing"):
-						if not p.has("hitTargets"): p["hitTargets"] = []
-						p["hitTargets"].append(target)
-					else:
-						GameWorld.projectiles.remove_at(i)
+				if p.get("piercing"):
+					if not p.has("hitTargets"): p["hitTargets"] = []
+					p["hitTargets"].append(target)
+				else:
+					_reset_casting(p)
+					GameWorld.projectiles.remove_at(i)
 
 # ===== Projectile Helpers =====
+static func _reset_casting(p: Dictionary):
+	if p.get("type") == "meteor":
+		var owner: Fighter = p.get("owner")
+		if owner:
+			owner.is_casting_ult = false
+
 static func _reflect_projectile(p: Dictionary) -> bool:
 	var defender = GameWorld.get_opponent(p["owner"])
 	if not defender.blocking:
