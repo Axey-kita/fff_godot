@@ -132,3 +132,45 @@ static func _ult(owner: Fighter) -> Dictionary:
 	
 	Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h / 2.0, 120, Color(0.53, 0.27, 0.8), 14, 18, "star")
 	return {"success": true}
+
+## 输入处理（替代 input_handler.gd 中的 _input_assassin）
+static func handle_input(owner: Fighter, keys: Dictionary) -> int:
+	var mx = 0
+	if not owner.skill2_active:
+		if keys.left: mx = -1
+		if keys.right: mx = 1
+		if keys.up and owner.grounded:
+			owner.vy = -10
+			owner.grounded = false
+	if keys.attack and not owner.attacking and owner.attack_cooldown <= 0 and not owner.ult_active:
+		var s = owner.get_skill("attack")
+		if s:
+			var r = s.try_use(owner)
+			if r.get("success"):
+				keys.attack = false
+	if keys.skill1 and not owner.attacking and not owner.ult_active and not owner.dashing:
+		var s = owner.get_skill("skill1")
+		if s:
+			var r = s.try_use(owner)
+			if r.get("success"):
+				keys.skill1 = false
+	if keys.skill2 and not owner.attacking and not owner.ult_active and not owner.dashing:
+		var s = owner.get_skill("skill2")
+		if s:
+			var r = s.try_use(owner)
+			if r.get("success"):
+				keys.skill2 = false
+	if keys.ult and not owner.attacking and not owner.ult_active and not owner.dashing:
+		var s = owner.get_skill("ult")
+		if s:
+			var r = s.try_use(owner)
+			if r.get("success"):
+				keys.ult = false
+	if not owner.has_status("frozen") and not owner.dashing and not owner.ult_active and not owner.skill2_active:
+		owner.vx += mx * 0.25
+		if absf(owner.vx) > 2.4:
+			owner.vx = 2.4 * signf(owner.vx)
+	elif owner.skill2_active:
+		owner.vx = 0
+	Fighter.update_state(owner, mx)
+	return mx

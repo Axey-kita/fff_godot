@@ -1,6 +1,9 @@
 class_name Fighter
 extends Node2D
 
+# Component system
+var components: ComponentManager = null
+
 # Position & physics
 var pos_x: float = 0
 var pos_y: float = 0
@@ -198,6 +201,9 @@ func setup(p_x: float, p_y: float, p_is_player: bool, p_char_id: String, p_skill
 	facing = 1 if is_player else -1
 	on_platform = null
 	_init_from_config()
+	# Initialize component manager
+	components = ComponentManager.new()
+	components.init(self)
 
 func _init_from_config():
 	var cfg = CharConfigs.configs.get(char_id, {})
@@ -281,7 +287,13 @@ func get_attack_box() -> Rect2:
 	return Rect2(pos_x + ox, pos_y + 6, attack_range, h - 16)
 
 func apply_physics():
-	if is_casting_ult:
+	# Update character components
+	if components:
+		components.update()
+	
+	# Witch flying state
+	var witch_comp: WitchComponent = components.get("witch") if components else null
+	if witch_comp and witch_comp.is_casting_ult:
 		vx = 0
 		vy = 0
 		set_animation_state("ult")
@@ -290,7 +302,7 @@ func apply_physics():
 			pass
 		if dashing:
 			vx = dash_speed * dash_dir
-		if is_flying:
+		if witch_comp and witch_comp.is_flying:
 			vy = 0
 		elif not grounded:
 			vy += 0.22 # GRAVITY
@@ -351,64 +363,7 @@ func apply_physics():
 		hit_cooldown -= 1
 	if damage_flash > 0:
 		damage_flash -= 1
-	# 通用无敌计时器递减（刺客一瞬 / 影武者后撤等共用）
-	if is_invincible and invincible_timer > 0:
-		invincible_timer -= 1
-		if invincible_timer <= 0:
-			is_invincible = false
-	# 影武者居合状态计时器递减（由 update_systems 处理到期爆炸和重置）
-	if iaido_active and iaido_timer > 0:
-		iaido_timer -= 1
-	# 影武者隐身计时器递减（6 秒后自动解除隐身）
-	if stealth_active and stealth_timer > 0:
-		stealth_timer -= 1
-		if stealth_timer <= 0:
-			stealth_active = false
-			stealth_timer = 0
-	# 影武者后撤计时器递减
-	if retreat_timer > 0:
-		retreat_timer -= 1
-	# 影武者破影一击计时器递减
-	if break_strike_timer > 0:
-		break_strike_timer -= 1
-	# 刺客强化次元斩计时器递减（0.5 秒内未打出次元斩则失效）
-	if enhanced_slash_timer > 0:
-		enhanced_slash_timer -= 1
-		if enhanced_slash_timer <= 0:
-			enhanced_slash = false
-	# 刺客次元斩贴图计时器递减（0.5 秒后贴图自动消失）
-	if slash_active and slash_timer > 0:
-		slash_timer -= 1
-		if slash_timer <= 0:
-			slash_active = false
-	# 刺客闪避慢动作计时器递减
-	if dodge_slow_mo > 0:
-		dodge_slow_mo -= 1
-	# 刺客暗影游走状态：消耗暗影能量，耗尽后退出；移动时留下残影
-	if shadow_stance:
-		shadow_energy -= shadow_energy_drain_rate
-		if shadow_energy <= 0:
-			shadow_energy = 0
-			shadow_stance = false
-			shadow_stance_timer = 0
-			shadow_trail.clear()
-		else:
-			shadow_stance_timer -= 1
-			if shadow_stance_timer <= 0:
-				shadow_stance = false
-				shadow_stance_timer = 0
-				shadow_trail.clear()
-			else:
-				# 移动时记录残影
-				if absf(vx) > 0.5 or dashing:
-					shadow_trail.append({"x": pos_x, "y": pos_y, "facing": facing, "life": 12})
-					if shadow_trail.size() > max_shadow_trail:
-						shadow_trail.pop_front()
-				# 残影生命递减
-				for i in range(shadow_trail.size() - 1, -1, -1):
-					shadow_trail[i]["life"] -= 1
-					if shadow_trail[i]["life"] <= 0:
-						shadow_trail.remove_at(i)
+	# Component-managed timers are updated in components.update() at the start of apply_physics
 	if blocking:
 		block_timer -= 1
 		if block_timer <= 0:
@@ -417,17 +372,6 @@ func apply_physics():
 		shield_timer -= 1
 		if shield_timer <= 0:
 			shield_active = false
-	if divine_shield_active:
-		divine_shield_timer -= 1
-		if divine_shield_timer <= 0:
-			divine_shield_active = false
-	if holy_empower_active:
-		holy_empower_timer += 1
-		if holy_empower_timer >= 60:
-			holy_empower_timer = 0
-			energy = maxf(0, energy - 10)
-			if energy <= 0:
-				holy_empower_active = false
 	# Dragon Knight: 龙鳞护体计时
 	if dragon_scales_active:
 		dragon_scales_timer -= 1
@@ -444,13 +388,6 @@ func apply_physics():
 	update_statuses()
 	for s in skills:
 		s.update()
-	# Blood Abyss healing (1 HP per 120 frames = 2 seconds, when > 0 and HP not full)
-	if char_id == "rose" and blood_abyss > 0 and hp < max_hp:
-		blood_heal_timer += 1
-		if blood_heal_timer >= 120:
-			blood_heal_timer = 0
-			blood_abyss -= 1
-			hp = minf(max_hp, hp + 1)
 	var regen = config.get("energy_regen", 0.083)
 	if energy < max_energy:
 		energy += regen
@@ -484,27 +421,33 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 		return
 	if attacker == target:
 		return
+	
+	# Get character components
+	var assassin_comp: AssassinComponent = target.components.get("assassin") if target.components else null
+	var paladin_comp: PaladinComponent = target.components.get("paladin") if target.components else null
+	var rose_comp: RoseComponent = target.components.get("rose") if target.components else null
+	
 	# 调试日志：追踪伤害来源
-	if target.char_id == "assassin":
-		print("[DAMAGE-DEBUG]刺客受伤: dmg=", dmg, " attacker=", attacker.char_id if attacker else "null", " dashing=", target.dashing, " is_invincible=", target.is_invincible, " invincible_timer=", target.invincible_timer, " hp=", target.hp)
+	if assassin_comp:
+		print("[DAMAGE-DEBUG]刺客受伤: dmg=", dmg, " attacker=", attacker.char_id if attacker else "null", " dashing=", target.dashing, " is_invincible=", assassin_comp.is_invincible, " invincible_timer=", assassin_comp.invincible_timer, " hp=", target.hp)
 
 	# 刺客「一瞬」闪避：冲刺+无敌期间对所有伤害类型触发闪避，完全免疫
-	if target.char_id == "assassin" and target.dashing and target.is_invincible:
-		if not target.dodge_success:
-			target.dodge_success = true
-			target.dodge_slow_mo = 30  # 0.5 秒慢动作
+	if assassin_comp and target.dashing and assassin_comp.is_invincible:
+		if not assassin_comp.dodge_success:
+			assassin_comp.dodge_success = true
+			assassin_comp.dodge_slow_mo = 30  # 0.5 秒慢动作
 			# 积攒 1 格暗影能量，满格触发暗影游走
-			target.shadow_energy = minf(target.shadow_energy_max, target.shadow_energy + 1)
-			if target.shadow_energy >= target.shadow_energy_max and not target.shadow_stance:
-				target.shadow_stance = true
-				target.shadow_stance_timer = 480  # 8 秒
+			assassin_comp.shadow_energy = minf(assassin_comp.shadow_energy_max, assassin_comp.shadow_energy + 1)
+			if assassin_comp.shadow_energy >= assassin_comp.shadow_energy_max and not assassin_comp.shadow_stance:
+				assassin_comp.shadow_stance = true
+				assassin_comp.shadow_stance_timer = 480  # 8 秒
 			emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 15, Color(0.667, 0.533, 1.0), 3, 5, "star", 0.8)
-			print("[DODGE-DEBUG] ★ 闪避触发（apply_damage）！shadow_energy=", target.shadow_energy, " dodge_slow_mo=", target.dodge_slow_mo, " shadow_stance=", target.shadow_stance)
+			print("[DODGE-DEBUG] ★ 闪避触发（apply_damage）！shadow_energy=", assassin_comp.shadow_energy, " dodge_slow_mo=", assassin_comp.dodge_slow_mo, " shadow_stance=", assassin_comp.shadow_stance)
 		# 闪避期间免疫一切伤害
 		return
 
 	# 刺客「一瞬」无敌期间免疫伤害（非冲刺状态下的纯无敌）
-	if target.is_invincible:
+	if assassin_comp and assassin_comp.is_invincible:
 		print("[DAMAGE-DEBUG] ✓ 无敌免疫成功，伤害被拦截")
 		emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 12, Color(0.667, 0.533, 1.0), 3, 5, "star", 0.6)
 		return
@@ -526,38 +469,38 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 			target.hp = minf(target.max_hp, target.hp + heal_amount)
 			emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 15, Color(0.267, 1.0, 0.533), 3, 5, "circle", 0.5)
 		emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 10, Color(0.533, 0.867, 1.0), 3, 5, "circle", 0.5)
-		# updateHUD() would go here
 		return
 
 	# 计算基础伤害
 	var base_dmg: float = dmg
 	if attacker:
 		base_dmg += attacker.attack_boost
-		if attacker.holy_empower_active:
+		var attacker_paladin: PaladinComponent = attacker.components.get("paladin") if attacker.components else null
+		if attacker_paladin and attacker_paladin.holy_empower_active:
 			base_dmg += 5
 		if attacker.dragon_form_active:
 			base_dmg += 8
 
 	# 神圣壁垒：吸收伤害并转化为能量（1:3）
-	if target.divine_shield_active:
+	if paladin_comp and paladin_comp.divine_shield_active:
 		var holy_gain: int = int(base_dmg * 3)
-		target.divine_shield_absorb += base_dmg
+		paladin_comp.divine_shield_absorb += base_dmg
 		target.energy = minf(target.max_energy, target.energy + holy_gain)
 		emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 18, Color(1.0, 0.843, 0.0), 4, 6, "star", 0.8)
 		AudioManager.play_sound("parry")
-		# updateHUD() would go here
 		return
 
 	# 刺客暗影游走暴击判定（50%概率，1.5倍）
 	var is_critical: bool = false
-	if attacker and attacker.char_id == "assassin" and attacker.shadow_stance:
+	var attacker_assassin: AssassinComponent = attacker.components.get("assassin") if attacker and attacker.components else null
+	if attacker_assassin and attacker_assassin.shadow_stance:
 		if randf() < 0.5:
 			is_critical = true
 
 	var final_dmg: float = base_dmg
 
 	# 圣佑：减免50%伤害，免疫击退
-	if target.holy_empower_active:
+	if paladin_comp and paladin_comp.holy_empower_active:
 		final_dmg = maxf(1.0, floorf(base_dmg * 0.5))
 		knockback = false
 
@@ -583,10 +526,13 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	target.damage_flash = 10
 	target.hit_cooldown = 15
 	# Blood Abyss: attacker gains blood_abyss equal to damage dealt
-	if attacker and attacker.char_id == "rose" and not attacker.rose_blood_abyss_suppressed:
-		attacker.blood_abyss = minf(40.0, attacker.blood_abyss + final_dmg)
-	if attacker and attacker.rose_blood_abyss_suppressed:
-		attacker.rose_blood_abyss_suppressed = false
+	if attacker:
+		var attacker_rose: RoseComponent = attacker.components.get("rose") if attacker.components else null
+		if attacker_rose:
+			if not attacker_rose.rose_blood_abyss_suppressed:
+				attacker_rose.blood_abyss = minf(40.0, attacker_rose.blood_abyss + final_dmg)
+			if attacker_rose.rose_blood_abyss_suppressed:
+				attacker_rose.rose_blood_abyss_suppressed = false
 	if knockback and attacker and attacker != target:
 		target.vy = -4
 		target.vx = (attacker.facing if attacker.facing != 0 else (1 if target.is_player else -1)) * 5
@@ -596,36 +542,10 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	AudioManager.play_sound(sound_name)
 	# updateHUD() would go here
 
-# Call character-specific onDamageReceived hooks
+# Call character-specific onDamageReceived hooks via components
 static func _call_on_damage_received(target: Fighter, attacker: Fighter, dmg: float):
-	# Paladin: gain energy equal to damage received
-	if target.char_id == "paladin":
-		target.energy = minf(target.max_energy, target.energy + dmg)
-	# Evoker: summon damage transfer + mute damage reduction
-	if target.char_id == "evoker":
-		_call_evoker_damage_received(target, attacker, dmg)
-
-# Evoker onDamageReceived: summon damage transfer + mute debuff
-static func _call_evoker_damage_received(target: Fighter, attacker: Fighter, dmg: float):
-	var summon = null
-	for s in GameWorld.evoker_summons:
-		if s.get("owner") == target:
-			summon = s
-			break
-	if not summon:
-		return
-	if summon.get("hp", 0) <= 0:
-		return
-	# 随行：转移60%伤害给召唤物
-	if summon.get("state", "") == "随行":
-		var transfer: int = min(int(dmg * 0.6), int(summon["hp"]))
-		summon["hp"] -= transfer
-		target.hp += transfer
-		Fighter.emit_particles(summon["x"] + summon["w"] / 2.0, summon["y"] + summon["h"] / 2.0, 8, Color.RED, 2, 10)
-	# 1号噤声：减伤20%
-	if summon.get("type", -1) == 0 and attacker:
-		if signf(attacker.pos_x - summon["x"]) == signf(target.pos_x - summon["x"]):
-			target.hp += floorf(dmg * 0.2)
+	if target.components:
+		target.components.on_damage_received(attacker, dmg)
 
 static func emit_particles(px: float, py: float, count: int, color: Color, speed: float, size: float, type: String = "circle", spread: float = 1.0):
 	for i in count:

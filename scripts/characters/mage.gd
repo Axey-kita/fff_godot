@@ -56,3 +56,66 @@ static func _skill2(owner: Fighter) -> Dictionary:
 
 static func _ult(owner: Fighter) -> Dictionary:
 	return {"success": false}
+
+## 输入处理（替代 input_handler.gd 中的 _input_mage）
+static func handle_input(owner: Fighter, keys: Dictionary) -> int:
+	var mx = 0
+	if not owner.charging:
+		if keys.left: mx = -1
+		if keys.right: mx = 1
+		if keys.up and owner.grounded and not owner.shield_active:
+			owner.vy = -9
+			owner.grounded = false
+		if keys.attack and not owner.shield_active and owner.attack_cooldown <= 0 and not owner.attacking:
+			if owner.energy >= 10:
+				owner.energy -= 10
+				owner.attacking = true
+				owner.attack_timer = 120
+				owner.attack_delay = 0
+				owner.attack_hit_dealt = true
+				owner.attack_cooldown = 120
+				owner.state = "attack"
+				var d = owner.facing
+				var px2 = owner.pos_x + (owner.w if d == 1 else 0)
+				var py2 = owner.pos_y + 30
+				GameWorld.projectiles.append({"x":px2-16,"y":py2-12,"w":32,"h":24,"vx":3*d,"vy":0,"life":120,"damage":3,"owner":owner,"type":"mage_fire","color":Color(1,0.4,0),"reflected":false,"burn":true,"img":PROJ_FIRE})
+			keys.attack = false
+		if keys.skill1 and not owner.shield_active:
+			var s = owner.get_skill("skill1")
+			if s:
+				var r = s.try_use(owner)
+				if r.get("success"):
+					keys.skill1 = false
+		if keys.skill2 and not owner.shield_active:
+			var s = owner.get_skill("skill2")
+			if s:
+				var r = s.try_use(owner)
+				if r.get("success"):
+					keys.skill2 = false
+	var mage_ult = owner.get_skill("ult")
+	if keys.ult and not owner.shield_active and not owner.charging and (not mage_ult or mage_ult.cd <= 0) and owner.energy >= 40:
+		owner.charging = true
+		owner.charge_start = Time.get_ticks_msec()
+	if not keys.ult and owner.charging:
+		var ct = (Time.get_ticks_msec() - owner.charge_start) / 1000.0
+		var dmg = 20
+		var cost = 40
+		if ct > 3:
+			dmg = 60
+			cost = 120
+		elif ct > 1:
+			dmg = 40
+			cost = 80
+		if owner.energy >= cost:
+			owner.energy -= cost
+			var d = owner.facing
+			var px2 = owner.pos_x + (owner.w if d == 1 else 0)
+			var py2 = owner.pos_y + 30
+			GameWorld.projectiles.append({"x":px2-20,"y":py2-15,"w":40,"h":30,"vx":4*d,"vy":0,"life":200,"damage":dmg,"owner":owner,"type":"mage_light","color":Color(1,1,0.27),"reflected":false,"img":PROJ_LIGHT})
+			var ult = owner.get_skill("ult")
+			if ult:
+				ult.cd = ult.cooldown
+		owner.charging = false
+	Fighter.apply_movement(owner, mx, 2.25)
+	Fighter.update_state(owner, mx)
+	return mx

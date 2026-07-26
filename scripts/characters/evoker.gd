@@ -370,3 +370,62 @@ static func _ult(owner: Fighter) -> Dictionary:
 
 	Fighter.emit_particles(fx, fy, 50, Color(0.667, 0.267, 1.0), 8, 10, "star")
 	return {"success": true}
+
+## 输入处理（替代 input_handler.gd 中的 _input_evoker）
+static func handle_input(owner: Fighter, keys: Dictionary) -> int:
+	var mx = 0
+	if keys.left: mx = -1
+	if keys.right: mx = 1
+	if keys.up and owner.grounded:
+		owner.vy = -10
+		owner.grounded = false
+	
+	# Bypass Skill.can_use's "attacking" check — evoker's attack cooldown is managed by attack_cooldown, not attacking
+	if keys.attack:
+		var s = owner.get_skill("attack")
+		if s and owner.attack_cooldown <= 0:
+			# Determine energy cost based on summon presence
+			var has_summon = false
+			for sm in GameWorld.evoker_summons:
+				if sm.get("owner") == owner:
+					has_summon = true
+					break
+			var cost = 20.0 if has_summon else 10.0
+			if owner.energy >= cost:
+				if s.execute_func.is_valid():
+					s.execute_func.call(owner)
+				keys.attack = false
+	
+	if keys.skill1:
+		var s = owner.get_skill("skill1")
+		if s and s.cd <= 0 and owner.energy >= s.energy_cost:
+			if s.can_use_func.is_valid() and s.can_use_func.call(owner):
+				owner.energy -= s.energy_cost
+				s.cd = s.cooldown
+				if s.execute_func.is_valid():
+					s.execute_func.call(owner)
+				keys.skill1 = false
+	
+	if keys.skill2:
+		var s = owner.get_skill("skill2")
+		if s and s.cd <= 0 and owner.energy >= s.energy_cost:
+			if s.can_use_func.is_valid() and s.can_use_func.call(owner):
+				owner.energy -= s.energy_cost
+				s.cd = s.cooldown
+				if s.execute_func.is_valid():
+					s.execute_func.call(owner)
+				keys.skill2 = false
+	
+	if keys.ult:
+		var s = owner.get_skill("ult")
+		if s and s.cd <= 0 and owner.energy >= s.energy_cost:
+			if s.can_use_func.is_valid() and s.can_use_func.call(owner):
+				owner.energy -= s.energy_cost
+				s.cd = s.cooldown
+				if s.execute_func.is_valid():
+					s.execute_func.call(owner)
+				keys.ult = false
+	
+	Fighter.apply_movement(owner, mx, 2.25)
+	Fighter.update_state(owner, mx)
+	return mx

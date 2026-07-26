@@ -64,3 +64,42 @@ static func _ult(owner: Fighter) -> Dictionary:
 	else:
 		GameWorld.projectiles.append({"x":owner.pos_x+(owner.w if owner.facing>0 else -80),"y":owner.pos_y-10,"w":70,"h":70,"vx":10*owner.facing,"vy":0,"life":35,"damage":25,"owner":owner,"type":"knight_ult","color":Color(1.0,0.87,0.27),"reflected":false,"img":PROJ_SWORD})
 	return {"success": true}
+
+## 输入处理（替代 input_handler.gd 中的 _input_knight）
+static func handle_input(owner: Fighter, keys: Dictionary) -> int:
+	var mx = 0
+	if not owner.charging:
+		if keys.left: mx = -1
+		if keys.right: mx = 1
+		if keys.up and owner.grounded and not owner.shield_active:
+			owner.vy = -10
+			owner.grounded = false
+		if keys.attack and not owner.shield_active and owner.attack_cooldown <= 0 and not owner.attacking:
+			owner.attacking = true
+			owner.attack_timer = 68
+			owner.attack_delay = 8
+			owner.attack_hit_dealt = false
+			owner.attack_cooldown = 60
+			owner.state = "attack"
+			keys.attack = false
+		if keys.skill1 and not owner.shield_active:
+			var s = owner.get_skill("skill1")
+			if s:
+				var r = s.try_use(owner)
+				if r.get("success"):
+					keys.skill1 = false
+		if keys.skill2 and not owner.shield_active:
+			var s = owner.get_skill("skill2")
+			if s:
+				var r = s.try_use(owner)
+				if r.get("success"):
+					keys.skill2 = false
+	if keys.ult and not owner.shield_active:
+		var s = owner.get_skill("ult")
+		if s:
+			var r = s.try_use(owner)
+			if r.get("success"):
+				keys.ult = false
+	Fighter.apply_movement(owner, mx, 2.25)
+	Fighter.update_state(owner, mx)
+	return mx

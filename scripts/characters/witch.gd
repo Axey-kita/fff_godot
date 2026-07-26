@@ -80,3 +80,60 @@ static func _ult(owner: Fighter) -> Dictionary:
 	owner.vx = 0
 	owner.vy = 0
 	return {"success": true}
+
+## 输入处理（替代 input_handler.gd 中的 _input_witch）
+static func handle_input(owner: Fighter, keys: Dictionary) -> int:
+	var mx = 0
+	if keys.up:
+		if owner.grounded and not owner.is_flying:
+			owner.vy = owner.jump_reduction * -10
+			owner.grounded = false
+			keys.up = false
+		elif not owner.grounded and not owner.is_flying and not owner.attacking:
+			if owner.energy > 0:
+				owner.is_flying = true
+				owner.vy = 0
+			keys.up = false
+		elif owner.is_flying:
+			owner.is_flying = false
+			keys.up = false
+	if owner.is_flying:
+		owner.energy -= owner.fly_energy_drain
+		if owner.energy <= 0:
+			owner.energy = 0
+			owner.is_flying = false
+	if keys.left: mx = -1
+	if keys.right: mx = 1
+	if mx != 0:
+		owner.facing = 1 if mx > 0 else -1
+	if not owner.has_status("frozen") and not owner.dashing:
+		var sp = 1.8 if owner.is_flying else 2.0
+		owner.vx += mx * 0.25
+		if absf(owner.vx) > sp:
+			owner.vx = sp * signf(owner.vx)
+	if keys.attack and not owner.attacking and owner.attack_cooldown <= 0:
+		var s = owner.get_skill("attack")
+		if s:
+			var r = s.try_use(owner)
+			if r.get("success"):
+				keys.attack = false
+	if keys.skill1 and not owner.attacking:
+		var s = owner.get_skill("skill1")
+		if s:
+			var r = s.try_use(owner)
+			if r.get("success"):
+				keys.skill1 = false
+	if keys.skill2 and not owner.attacking and owner.grounded:
+		var s = owner.get_skill("skill2")
+		if s:
+			var r = s.try_use(owner)
+			if r.get("success"):
+				keys.skill2 = false
+	if keys.ult and not owner.attacking:
+		var s = owner.get_skill("ult")
+		if s:
+			var r = s.try_use(owner)
+			if r.get("success"):
+				keys.ult = false
+	Fighter.update_state(owner, mx)
+	return mx

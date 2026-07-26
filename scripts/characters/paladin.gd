@@ -57,3 +57,64 @@ static func _ult(owner: Fighter) -> Dictionary:
 	owner.holy_empower_timer = 0
 	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 120, Color(1.0,0.84,0.0), 14, 18, "star")
 	return {"success": true}
+
+## 输入处理（替代 input_handler.gd 中的 _input_paladin）
+static func handle_input(owner: Fighter, keys: Dictionary) -> int:
+	var mx = 0
+	if not owner.dashing:
+		if keys.left: mx = -1
+		if keys.right: mx = 1
+		if not owner.charging_skill1 and keys.up and owner.grounded:
+			owner.vy = -10
+			owner.grounded = false
+		if keys.attack and not owner.charging_skill1 and owner.attack_cooldown <= 0 and not owner.attacking:
+			owner.attacking = true
+			owner.attack_timer = 68
+			owner.attack_delay = 8
+			owner.attack_hit_dealt = false
+			owner.attack_cooldown = 60
+			owner.state = "attack"
+			keys.attack = false
+		if keys.skill1 and not owner.charging_skill1 and owner.grounded:
+			var s = owner.get_skill("skill1")
+			if s:
+				s.try_use(owner)
+		if not keys.skill1 and owner.charging_skill1:
+			_release_paladin_charge(owner)
+		if keys.skill2:
+			var s = owner.get_skill("skill2")
+			if s:
+				var r = s.try_use(owner)
+				if r.get("success"):
+					keys.skill2 = false
+		if keys.ult:
+			var s = owner.get_skill("ult")
+			if s:
+				var r = s.try_use(owner)
+				if r.get("success"):
+					keys.ult = false
+		var ms = 1.2 * 2.1 if owner.charging_skill1 else 2.1
+		if not owner.has_status("frozen"):
+			owner.vx += mx * (0.3 if owner.charging_skill1 else 0.25)
+			if absf(owner.vx) > ms:
+				owner.vx = ms * signf(owner.vx)
+		Fighter.update_state(owner, mx)
+	return mx
+
+## 释放圣骑士蓄力
+static func _release_paladin_charge(owner: Fighter):
+	if not owner.charging_skill1:
+		return
+	var ct = (Time.get_ticks_msec() - owner.charge_start_time) / 1000.0
+	var dist = 100 + minf(ct, 2.0) * 150
+	var d = owner.facing if owner.facing != 0 else 1
+	owner.charging_skill1 = false
+	owner.state = "idle"
+	owner.dashing = true
+	owner.dash_remaining = dist
+	owner.dash_dir = d
+	owner.dash_speed = 4.2
+	owner.dash_damage_dealt = false
+	var s1 = owner.get_skill("skill1")
+	if s1:
+		s1.cd = s1.cooldown

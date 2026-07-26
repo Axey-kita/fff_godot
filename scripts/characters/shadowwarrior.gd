@@ -277,3 +277,77 @@ static func _update_iaido(f: Fighter):
 		# 将角色位置更新到刀光终点（大招结束后停留在终点）
 		var end_x = slash.get("start_x", f.pos_x) + slash["dir"] * slash["w"]
 		f.pos_x = clampf(end_x, 10, 2390 - f.w)
+
+## 输入处理（替代 input_handler.gd 中的 _input_shadowwarrior）
+static func handle_input(owner: Fighter, keys: Dictionary) -> int:
+	if owner.iaido_active and owner.iaido_frozen:
+		owner.vx = 0
+		return 0
+	var mx = 0
+	if not owner.dashing:
+		if keys.left: mx = -1
+		if keys.right: mx = 1
+		if keys.up and owner.grounded:
+			owner.vy = -10
+			owner.grounded = false
+	if keys.attack and not owner.attacking:
+		if owner.stealth_active:
+			# 破影一击：前冲攻击
+			owner.dashing = true
+			owner.dash_remaining = 60
+			owner.dash_dir = owner.facing
+			owner.dash_speed = 4
+			owner.dash_damage_dealt = false
+			owner.break_strike_timer = 60
+			owner.stealth_active = false
+			keys.attack = false
+		elif GameWorld.frame - owner.last_skill_time <= 60:
+			# 技能后 1 秒内攻击：后撤隐身
+			owner.stealth_active = true
+			owner.stealth_timer = 360
+			owner.retreat_timer = 15
+			owner.retreat_dir = owner.facing
+			owner.is_invincible = true
+			owner.invincible_timer = 60
+			owner.dashing = true
+			owner.dash_remaining = 80
+			owner.dash_dir = -owner.facing
+			owner.dash_speed = 2.52
+			owner.dash_damage_dealt = true
+			owner.last_skill_time = -999
+			keys.attack = false
+		else:
+			var s = owner.get_skill("attack")
+			if s:
+				var r = s.try_use(owner)
+				if r.get("success"):
+					keys.attack = false
+	if keys.skill1:
+		var s = owner.get_skill("skill1")
+		if s:
+			var r = s.try_use(owner)
+			if r.get("success"):
+				owner.stealth_active = false
+				keys.skill1 = false
+	if keys.skill2:
+		var s = owner.get_skill("skill2")
+		if s:
+			var r = s.try_use(owner)
+			if r.get("success"):
+				owner.stealth_active = false
+				keys.skill2 = false
+	if keys.ult:
+		var s = owner.get_skill("ult")
+		if s:
+			var r = s.try_use(owner)
+			if r.get("success"):
+				owner.stealth_active = false
+				keys.ult = false
+	if not owner.has_status("frozen") and not owner.dashing:
+		var has_ph = GameWorld.phantoms.size() > 0
+		var boost = 1.1 if has_ph else 1.0
+		owner.vx += mx * 0.25 * boost
+		if absf(owner.vx) > 2.25 * boost:
+			owner.vx = 2.25 * boost * signf(owner.vx)
+	Fighter.update_state(owner, mx)
+	return mx

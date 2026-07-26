@@ -22,8 +22,6 @@ func can_use(owner: Fighter) -> bool:
 		return false
 	if owner.energy < energy_cost:
 		return false
-	if owner.attacking and owner.char_id != "archer":
-		return false
 	if owner.charging_attack:
 		return false
 	if can_use_func.is_valid():
