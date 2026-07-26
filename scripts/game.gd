@@ -603,15 +603,16 @@ func _draw_hud(font: Font):
 	var res_label = p_cfg.get("resource_label", "能量")
 	draw_string(font, Vector2(bar_x + 52, 20), res_label + " " + str(int(p.energy)), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color(0.667, 0.8, 1.0))
 
-	# Blood Abyss bar (rose only) — 从黑板读取
+	# Blood Abyss bar (rose only) — 角色内部状态，直接访问组件
 	if p.char_id == "rose":
-		var ba_val = p.state_flags.get("blood_abyss", 0.0)
-		var ba_y = 30.0
-		var ba_h = 6.0
-		draw_rect(Rect2(bar_x, ba_y, bar_w, ba_h), Color(0.05, 0.05, 0.08, 0.8))
-		var ba_pct = minf(1.0, ba_val / 40.0)
-		draw_rect(Rect2(bar_x, ba_y, bar_w * ba_pct, ba_h), Color(0.9, 0.15, 0.15))
-		draw_string(font, Vector2(bar_x + 52, ba_y), "血渊 " + str(int(ba_val)), HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1.0, 0.4, 0.4))
+		var rose_comp: RoseComponent = p.components.get_component("rose") if p.components else null
+		if rose_comp:
+			var ba_y = 30.0
+			var ba_h = 6.0
+			draw_rect(Rect2(bar_x, ba_y, bar_w, ba_h), Color(0.05, 0.05, 0.08, 0.8))
+			var ba_pct = minf(1.0, rose_comp.blood_abyss / 40.0)
+			draw_rect(Rect2(bar_x, ba_y, bar_w * ba_pct, ba_h), Color(0.9, 0.15, 0.15))
+			draw_string(font, Vector2(bar_x + 52, ba_y), "血渊 " + str(int(rose_comp.blood_abyss)), HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1.0, 0.4, 0.4))
 
 	# Shadow Energy bar (assassin only) — 从黑板读取
 	if p.char_id == "assassin":
@@ -625,15 +626,16 @@ func _draw_hud(font: Font):
 			var se_label = "暗影游走" if assassin_comp.shadow_stance else "暗影 " + str(int(assassin_comp.shadow_energy)) + "/5"
 			draw_string(font, Vector2(bar_x + 52, se_y), se_label, HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(0.67, 0.53, 1.0))
 
-	# Arrow count bar (archer only) — 从黑板读取
+	# Arrow count bar (archer only) — 角色内部状态，直接访问组件
 	if p.char_id == "archer":
-		var ar_val = p.state_flags.get("arrows", 10)
-		var ar_y = 30.0
-		var ar_h = 6.0
-		draw_rect(Rect2(bar_x, ar_y, bar_w, ar_h), Color(0.05, 0.05, 0.08, 0.8))
-		var ar_pct = float(ar_val) / 10.0
-		draw_rect(Rect2(bar_x, ar_y, bar_w * ar_pct, ar_h), Color(0.8, 0.6, 0.2))
-		draw_string(font, Vector2(bar_x + 52, ar_y), "箭矢 " + str(ar_val), HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1.0, 0.7, 0.3))
+		var archer_comp: ArcherComponent = p.components.get_component("archer") if p.components else null
+		if archer_comp:
+			var ar_y = 30.0
+			var ar_h = 6.0
+			draw_rect(Rect2(bar_x, ar_y, bar_w, ar_h), Color(0.05, 0.05, 0.08, 0.8))
+			var ar_pct = float(archer_comp.arrows) / maxf(archer_comp.max_arrows, 1.0)
+			draw_rect(Rect2(bar_x, ar_y, bar_w * ar_pct, ar_h), Color(0.8, 0.6, 0.2))
+			draw_string(font, Vector2(bar_x + 52, ar_y), "箭矢 " + str(archer_comp.arrows), HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1.0, 0.7, 0.3))
 
 	# === Enemy (right side) ===
 	var e_name = e.config.get("name", "AI")

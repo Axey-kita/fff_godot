@@ -102,9 +102,18 @@ var gravity_debuff: bool = false
 var jump_reduction: float = 1.0
 
 # Blackboard: 跨系统状态通信（组件写入，系统只读）
-# 避免系统代码直接查询组件，实现解耦
-# Key 约定：使用语义化字符串，如 "time_stop", "dodge_slow", "iaido_freeze"
+# 只用于全局效果（time_stop, dodge_slow, iaido_active），角色内部状态保留在组件
+# Key 约定：使用语义化字符串
 var state_flags: Dictionary = {}
+
+# Signal for state flag changes (事件驱动，替代每帧轮询)
+signal state_flag_changed(key: String, value: Variant)
+
+# 设置状态标志并触发信号（组件调用此方法）
+func set_state_flag(key: String, value: Variant):
+	if state_flags.get(key) != value:
+		state_flags[key] = value
+		state_flag_changed.emit(key, value)
 
 
 var bleed_timer: int = 0

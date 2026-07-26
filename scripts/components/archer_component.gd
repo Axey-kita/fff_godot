@@ -28,7 +28,4 @@ func update():
 		tracking_timer -= 1
 		if tracking_timer <= 0:
 			tracking_buff = false
-	# 写入黑板：系统只读，不查询组件
-	owner.state_flags["arrows"] = arrows
-	owner.state_flags["fire_arrow"] = fire_arrow_buff
-	owner.state_flags["tracking"] = tracking_buff
+	# 角色内部状态：只有 HUD 和角色脚本需要，直接通过组件访问

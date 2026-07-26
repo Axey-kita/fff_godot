@@ -47,9 +47,9 @@ func update():
 			slash_active = false
 	if dodge_slow_mo > 0:
 		dodge_slow_mo -= 1
-	# 写入黑板：系统只读，不查询组件
-	owner.state_flags["time_stop"] = time_stop
-	owner.state_flags["dodge_slow"] = dodge_slow_mo
+	# 写入黑板（只写全局效果），使用信号驱动
+	owner.set_state_flag("time_stop", time_stop)
+	owner.set_state_flag("dodge_slow", dodge_slow_mo)
 	if shadow_stance:
 		shadow_energy -= shadow_energy_drain_rate
 		if shadow_energy <= 0:

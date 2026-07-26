@@ -19,9 +19,7 @@ func update():
 			owner.energy = maxf(0, owner.energy - 10)
 			if owner.energy <= 0:
 				holy_empower_active = false
-	# 写入黑板：系统只读，不查询组件
-	owner.state_flags["divine_shield"] = divine_shield_active
-	owner.state_flags["holy_empower"] = holy_empower_active
+	# 角色内部状态：只有角色脚本和伤害系统需要，直接通过组件访问
 
 func on_damage_received(attacker: Fighter, dmg: float):
 	# 神圣壁垒：吸收伤害转化为能量

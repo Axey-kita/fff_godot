@@ -30,7 +30,7 @@ func update():
 		retreat_timer -= 1
 	if break_strike_timer > 0:
 		break_strike_timer -= 1
-	# 写入黑板：系统只读，不查询组件
-	owner.state_flags["iaido_active"] = iaido_active
-	owner.state_flags["iaido_timer"] = iaido_timer
-	owner.state_flags["stealth_active"] = stealth_active
+	# 写入黑板（只写全局效果），使用信号驱动
+	owner.set_state_flag("iaido_active", iaido_active)
+	owner.set_state_flag("iaido_timer", iaido_timer)
+	owner.set_state_flag("stealth_active", stealth_active)
