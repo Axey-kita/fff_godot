@@ -1,7 +1,7 @@
 # 骑士 (knight)
 class_name KnightCharacter
 
-const PROJ_SWORD = preload("res://assets/IMG-20260702-011106.png")
+const PROJ_SWORD = preload("res://assets/fx_sword_projectile.png")
 const KNIGHT_ANI_DIR = "res://assets/char_ani/knight/"
 
 static func get_config() -> Dictionary:

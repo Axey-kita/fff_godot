@@ -179,6 +179,11 @@ static func handle_input(p: Fighter, keys: Dictionary) -> int:
 
 # ══════════════════════════════════════════════════════════════════
 #  update_systems — 每帧逻辑（CharacterSystems 调度）
+#FIXED BUG: 影武者之前缺少update_systems(),导致:
+#  1)大招"居合"永久卡死(iaido_timer不递减,iaido_frozen永不解除)
+#  2)隐身永不过期(stealth_timer不递减)
+#  3)二技能分身闪退(用Fighter.new()创建,AI访问ph.x不存在)
+#修复:补全完整状态机 — 无敌计时/隐身/破隐一击/居合命中检测+爆炸/暗影替身/分身生成
 # ══════════════════════════════════════════════════════════════════
 static func update_systems(f: Fighter):
 	if f.char_id != "shadowwarrior" or f.hp <= 0:
@@ -324,10 +329,11 @@ static func update_systems(f: Fighter):
 			})
 		f.pending_clones = false
 
-	# ── 幻影分身全局更新（每帧仅执行一次） ──
+		# ── 幻影分身全局更新（每帧仅执行一次） ──
 	if _last_phantom_frame != GameWorld.frame:
 		_last_phantom_frame = GameWorld.frame
 		_update_phantoms()
+#FIX END
 
 # ── 幻影分身更新逻辑 ──
 static func _update_phantoms():

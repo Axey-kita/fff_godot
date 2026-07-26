@@ -57,3 +57,11 @@ static func _ult(owner: Fighter) -> Dictionary:
 	owner.holy_empower_timer = 0
 	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 120, Color(1.0,0.84,0.0), 14, 18, "star")
 	return {"success": true}
+
+static func update_systems(f: Fighter):
+	#FIXED BUG: 圣骑士一技能正义冲锋结束后charge贴图不重置,因为之前完全没有update_systems
+	#修复:冲刺+蓄力都结束后清空image_state,下一帧apply_physics自动恢复idle/walk
+	if f.hp <= 0: return
+	if not f.dashing and not f.charging_skill1 and f.image_state == "charge":
+		f.image_state = ""
+	#FIX END

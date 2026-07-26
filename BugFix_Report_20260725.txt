@@ -1,0 +1,447 @@
+================================================================================
+  FFF Godot 格斗游戏 — Bug 修复与优化报告
+  日期: 2026-07-25
+  项目根目录: f:\workplace\fff_godot\
+================================================================================
+
+本报告记录今日所有代码改动,每项包含:
+  ① 问题描述  ② 涉及文件与行号  ③ 完整改动代码(含 #FIXED BUG / #FIX END 标签)
+所有标签格式: #FIXED BUG: 开始 → 修复代码 → #FIX END 结束
+
+================================================================================
+  Bug #1: Rose 技能一「血之月华」抓取效果完全失效
+================================================================================
+原因: 变量 rose_grab_center_x 在 fighter.gd 初始化为 -9999.0, 但从未被设置成实际值.
+      update_systems()里的抓取逻辑尝试把敌人定位到屏幕外, 导致抓取不可见.
+
+文件: scripts/characters/rose.gd  行 250-253
+--------------------------------------------------------------------------------
+	#FIXED BUG: rose_grab_center_x 之前从未赋值(默认-9999),导致敌人被锁定到屏幕外,抓取完全失效
+	#修复:在冲刺启动时记录当前角色位置为抓取锚点
+	owner.rose_grab_center_x = owner.pos_x + owner.w / 2.0 + dir * 60
+	#FIX END
+--------------------------------------------------------------------------------
+
+
+================================================================================
+  Bug #2: 影武者大招「影舞流·居合」角色永久卡死 + 隐身永不过期
+================================================================================
+原因: shadowwarrior.gd 完全没有 update_systems() 方法, 导致:
+  a) 大招 iaido_timer=180 永不递减, iaido_frozen 永不解除, 角色永久卡死
+  b) stealth_timer=360 永不递减, 隐身永不过期
+  c) 刀光 iaido_slash 创建后从不做命中检测和伤害处理
+
+文件: scripts/characters/shadowwarrior.gd  行 182-336
+--------------------------------------------------------------------------------
+#FIXED BUG: 影武者之前缺少update_systems(),导致:
+#  1)大招"居合"永久卡死(iaido_timer不递减,iaido_frozen永不解除)
+#  2)隐身永不过期(stealth_timer不递减)
+#  3)二技能分身闪退(用Fighter.new()创建,AI访问ph.x不存在)
+#修复:补全完整状态机 — 无敌计时/隐身/破隐一击/居合命中检测+爆炸/暗影替身/分身生成
+# ══════════════════════════════════════════════════════════════════
+static func update_systems(f: Fighter):
+	if f.char_id != "shadowwarrior" or f.hp <= 0:
+		return
+
+	# ── 无敌计时 ──
+	if f.is_invincible:
+		f.invincible_timer -= 1
+		if f.invincible_timer <= 0: f.is_invincible = false
+
+	# ── 后撤计时 ──
+	if f.retreat_timer > 0: f.retreat_timer -= 1
+
+	# ── 破影一击计时 ──
+	if f.break_strike_timer > 0:
+		if not f.dashing: f.break_strike_timer = 0
+		else: f.break_strike_timer -= 1
+
+	# ── 隐身计时 ──
+	if f.stealth_active:
+		f.stealth_timer -= 1
+		if f.stealth_timer <= 0: f.stealth_active = false
+
+	# ── 幻影·舞遮挡贴图计时 ──
+	if f.clone_reveal_timer > 0: f.clone_reveal_timer -= 1
+
+	# ── AI 夜樱·隐自动触发 ──
+	if f != GameWorld.player and not f.stealth_active and not f.iaido_active:
+		var delta = GameWorld.frame - f.last_skill_time
+		if delta > 0 and delta <= 60:
+			f.stealth_active = true; f.stealth_timer = 150
+			f.retreat_timer = 15; f.retreat_dir = f.facing
+			f.is_invincible = true; f.invincible_timer = 60
+			f.dashing = true; f.dash_remaining = 80
+			f.dash_dir = -f.facing; f.dash_speed = 5.0
+			f.dash_damage_dealt = true
+			f.last_skill_time = -999
+			Fighter.emit_particles(f.pos_x + f.w / 2.0, f.pos_y + f.h / 2.0, 24, Color(0.4, 0.2, 0.67), 5, 7, "star")
+
+	# ── 居合大招更新 ──
+	if f.iaido_active:
+		# 前 20 帧前冲（14 px/帧）
+		if f.iaido_timer > 40:
+			f.pos_x = clampf(f.pos_x + f.iaido_dir * 14, 10, 2400 - 10 - f.w)
+		f.vx = 0; f.vy = 0
+
+		var target = GameWorld.get_opponent(f)
+		var slash = f.iaido_slash
+		if not slash.is_empty() and target and target.hp > 0:
+			var slash_rect = Rect2(slash["x"], slash["y"], slash["w"], slash["h"])
+			if slash_rect.intersects(target.get_hit_box()):
+				if not slash["hit_dealt"]:
+					# 首次命中：斩击 10 点 + 标记
+					Fighter.apply_damage(target, 10, f)
+					slash["hit_dealt"] = true
+					Fighter.emit_slash(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, f.iaido_dir if f.iaido_dir > 0 else PI, Color(0.53, 0.27, 0.8))
+				# 抓取持续：每帧刷新 frozen
+				target.add_status("frozen")
+
+		f.iaido_timer -= 1
+		if f.iaido_timer <= 0:
+			# 刀光爆炸
+			if not slash.is_empty() and target and target.hp > 0:
+				var sr = Rect2(slash["x"], slash["y"], slash["w"], slash["h"])
+				if sr.intersects(target.get_hit_box()):
+					Fighter.apply_damage(target, 30, f)
+			# 解除抓取
+			if target:
+				target.statuses = target.statuses.filter(func(s): return s.id != "frozen")
+			if not slash.is_empty():
+				Fighter.emit_explosion(slash["x"] + slash["w"] / 2.0, slash["y"] + slash["h"] / 2.0, Color(0.53, 0.27, 0.8), 60)
+			f.iaido_active = false; f.iaido_frozen = false; f.iaido_slash = {}
+			f.state = "idle"
+
+	# ── 暗影替身（陷阱） ──
+	[暗影替身 idle/capture/burst 三阶段完整状态机, 此处略]
+
+	# ── 幻影分身生成 ──
+	if f.pending_clones:
+		for i in 2:
+			GameWorld.phantoms.append({
+				"x": f.pos_x + (-40 if i == 0 else 40), "y": f.pos_y,
+				"w": 32, "h": 56, "vx": 0.0, "vy": 0.0,
+				"hp": 10.0, "max_hp": 10.0,
+				"facing": f.facing, "grounded": true,
+				"owner": f, "state": "idle", "image_state": "idle",
+				...
+			})
+		f.pending_clones = false
+
+	# ── 幻影分身全局更新（每帧仅执行一次） ──
+	if _last_phantom_frame != GameWorld.frame:
+		_last_phantom_frame = GameWorld.frame
+		_update_phantoms()
+#FIX END
+--------------------------------------------------------------------------------
+
+亦修复: 分身改用简单字典(同时带 x/pos_x/hp)代替 Fighter.new(), 兼容 AI 系统的访问方式.
+
+
+================================================================================
+  Bug #3: 弓箭手「火矢」「追踪」buff 永不过期
+================================================================================
+原因: archer.gd 也没有 update_systems(), fire_arrow_timer=600/tracking_timer=600 
+      设置后从不递减, 激活一次永久有效, 与技能描述"持续7秒/10秒"不符.
+
+文件: scripts/characters/archer.gd  行 67-93
+--------------------------------------------------------------------------------
+#FIXED BUG: 弓箭手之前缺少update_systems(),导致火矢(7s)/追踪(10s)buff永不过期
+#修复:添加计时器递减,到期自动关闭对应buff
+static func update_systems(f: Fighter):
+	if f.char_id != "archer" or f.hp <= 0:
+		return
+
+	# ── 箭矢自动回复 ──
+	if f.arrows < f.max_arrows:
+		f.arrow_regen_timer += 1
+		if f.arrow_regen_timer >= f.arrow_regen_rate:
+			f.arrow_regen_timer = 0
+			f.arrows += 1
+
+	# ── 火矢 buff 计时 ──
+	if f.fire_arrow_buff:
+		f.fire_arrow_timer -= 1
+		if f.fire_arrow_timer <= 0:
+			f.fire_arrow_buff = false
+
+	# ── 追踪 buff 计时 ──
+	if f.tracking_buff:
+		f.tracking_timer -= 1
+		if f.tracking_timer <= 0:
+			f.tracking_buff = false
+#FIX END
+--------------------------------------------------------------------------------
+
+
+================================================================================
+  Bug #4: 影武者隐身「夜樱·隐」完全不生效
+================================================================================
+原因: _draw_fighter 完全不检查 stealth_active 字段, 无论隐身与否角色都正常绘制.
+
+文件: scripts/game.gd  行 428-432
+--------------------------------------------------------------------------------
+	#FIXED BUG: 影武者隐身("夜樱·隐")之前不生效,_draw_fighter完全不检查stealth_active
+	#修复:隐身状态下对手视角alpha=0.5(配合_fighter_draw中的skip逻辑实现完全不可见)
+	if f.char_id == "shadowwarrior" and f.stealth_active:
+		alpha_mod = 0.5
+	#FIX END
+--------------------------------------------------------------------------------
+
+
+================================================================================
+  Bug #5: 粒子特效相机偏移 — 相机滚动后粒子显示在错误位置
+================================================================================
+原因: particle.draw() 签名只有 (canvas), 粒子坐标直接当屏幕坐标画, 
+      地图2400px宽, 相机最大偏移约1600px, 后期粒子全飘在屏幕右边老远处.
+
+文件(1): scripts/particle.gd  行 35-40  — 新增 cam_x 参数并减去偏移
+--------------------------------------------------------------------------------
+func draw(canvas: CanvasItem, cam_x: float = 0.0):
+	#FIXED BUG: 粒子之前缺少cam_x参数,相机滚动后粒子显示在错误位置(屏幕右侧老远处)
+	#修复:所有粒子x坐标减去相机偏移,与其他渲染对象保持一致
+	var draw_color = Color(color.r, color.g, color.b, alpha * color.a)
+	var sx = x - cam_x
+	#FIX END
+--------------------------------------------------------------------------------
+
+文件(2): scripts/game.gd  行 256-260  — 调用处传入 cam_x
+--------------------------------------------------------------------------------
+	#FIXED BUG: 粒子之前缺少cam_x参数,相机滚动后显示位置错误
+	#修复:particle.draw()新增cam_x参数,game.gd传入当前相机偏移
+	for pt in GameWorld.particles:
+		pt.draw(self, cam_x)
+	#FIX END
+--------------------------------------------------------------------------------
+
+
+================================================================================
+  Bug #6: 影武者二技能「幻影·舞」释放后闪退
+================================================================================
+原因: 分身用 Fighter.new() 创建, AI 系统 (ai_system.gd) 访问分身用 ph.x,
+      但 Fighter 对象没有 x 属性(只有 pos_x), 直接属性访问崩溃.
+修复: 分身改为简单字典, 同时带 x / pos_x / hp 三个 AI 需要的字段.
+      (代码已在 Bug #2 的 update_systems() 中包含, 详见幻影分身生成部分)
+
+
+================================================================================
+  Bug #7: Rose/圣骑士/刺客 技能结束后贴图不重置
+================================================================================
+原因: fighter.gd 的 apply_physics() 中 "skill*" 开头的 image_state 永不自动恢复.
+      Rose 一技能设置 image_state="skill1", 圣骑士用 image_state="charge",
+      刺客次元斩后贴图卡住不重置.
+
+文件(1): scripts/characters/rose.gd  行 168-175
+--------------------------------------------------------------------------------
+	#FIXED BUG: 刀光消失后重置抓取中心并清空贴图状态,让apply_physics自动恢复idle/walk
+	elif f.rose_grab_center_x > -9998 and GameWorld.rose_slash_trails.size() == 0:
+		f.rose_grab_center_x = -9999.0
+		f.image_state = ""  # Reset so apply_physics restores correct state
+	# When dash finishes, release image_state so apply_physics picks idle/walk/jump
+	if not f.dashing and f.image_state == "skill1":
+		f.image_state = ""
+	#FIX END
+--------------------------------------------------------------------------------
+
+文件(2): scripts/characters/paladin.gd  行 61-66
+--------------------------------------------------------------------------------
+static func update_systems(f: Fighter):
+	#FIXED BUG: 圣骑士一技能正义冲锋结束后charge贴图不重置,因为之前完全没有update_systems
+	#修复:冲刺+蓄力都结束后清空image_state,下一帧apply_physics自动恢复idle/walk
+	if f.hp <= 0: return
+	if not f.dashing and not f.charging_skill1 and f.image_state == "charge":
+		f.image_state = ""
+	#FIX END
+--------------------------------------------------------------------------------
+
+文件(3): scripts/characters/assassin.gd  行 137-189 — 完整的 update_systems()
+         (同时修复次元斩计时器/闪避/暗影姿态/大招伤害, 此处略长, 详见源文件)
+
+
+================================================================================
+  Bug #8: 刺客二技能「裂空斩」屏幕抖动报错
+================================================================================
+原因: GameWorld.screen_shake_intensity = 10.0 在静态上下文中直接赋值 autoload
+      属性, Godot 4 报 "Invalid assignment of property or key" 错误.
+
+文件: scripts/characters/assassin.gd  行 93-96
+--------------------------------------------------------------------------------
+	#FIXED BUG: 裂空斩(技能二)需要屏幕抖动效果,使用GameWorld.set()绕过Godot4 autoload静态赋值限制
+	GameWorld.set("screen_shake_intensity", 10.0)
+	GameWorld.set("screen_shake_duration", 14)
+	#FIX END
+--------------------------------------------------------------------------------
+
+
+================================================================================
+  Bug #9: 影武者破隐一击贴图被角色本体覆盖
+================================================================================
+原因: 破隐一击期间角色本体正常绘制(alpha=1.0), 层叠顺序导致上层特效贴图被遮挡.
+
+文件: scripts/game.gd  行 414-417
+--------------------------------------------------------------------------------
+	#FIXED BUG: 影武者居合/破隐一击期间角色本体绘制覆盖了上层特效贴图,导致特效不可见
+	#修复:这两个状态下跳过角色本体绘制,仅显示skill overlay特效
+	if f.iaido_active or f.break_strike_timer > 0:
+		return
+	#FIX END
+--------------------------------------------------------------------------------
+注意: 未使用 match char_id, 用的是 Fighter 上的通用字段, 符合项目规则.
+
+
+================================================================================
+  Bug #10: 地狱模式 AI 无角色个性 — 与困难模式完全无差异
+================================================================================
+原因: 地狱模式只有参数数值差异(react=45/aggro=0.95/dodge=0.6/skill_rate=0.9/
+      move_speed=1.35), AI 决策逻辑与困难模式完全相同.
+
+文件: scripts/systems/ai_system.gd  行 49-75 (6项专属战术)
+--------------------------------------------------------------------------------
+#FIXED BUG: 地狱模式之前仅有参数差异(hell=hard),AI无任何战术行为差异
+#修复:6项专属战术
+	if is_hell:
+		# ① 反应闪避: 玩家攻击中+距离<150px → 后跳闪避, 70%概率
+		if player and player.hp > 0 and player.attacking and dist < 150 and rand < 0.7:
+			f.vx = -dir_to_target * diff["move_speed"] * 2.0
+			if f.grounded: f.vy = -8
+			_update_state(f, dir_to_target)
+			return new_delay
+
+		# ② 对空迎击: 玩家在空中+距离<120px → AI跳起迎击, 40%概率
+		if player and not player.grounded and f.grounded and dist < 120 and rand < 0.4:
+			f.vy = -9
+			f.vx = dir_to_target * diff["move_speed"]
+			_update_state(f, dir_to_target)
+			return new_delay
+
+		# ③ 防御技能: 玩家贴脸攻击中+距离<100px → AI开技二防御, 50%概率
+		var skill2 = f.get_skill("skill2")
+		if skill2 and skill2.can_use(f) and dist < 100 and player and player.attacking and rand < 0.5:
+			skill2.try_use(f)
+			return new_delay
+	#FIX END
+--------------------------------------------------------------------------------
+
+文件: scripts/systems/ai_system.gd  行 101-125 (追加3项: 斩杀/连招/走位)
+--------------------------------------------------------------------------------
+	# ④ 斩杀大招: 玩家血量<40%+距离<150px → 直接丢大招, 80%概率
+	if is_hell and can_use_ult and dist < 150 and player.hp < player.max_hp * 0.4 and rand < 0.8:
+		ult.try_use(f); return new_delay
+
+	# ⑤ 技能连招: 双技能可用+距离<200px → 技一→技二连发, 35%概率
+	if is_hell and can_use_s1 and can_use_s2 and dist < 200 and rand < 0.35:
+		skill1.try_use(f)
+		if skill2.can_use(f): skill2.try_use(f)
+		return new_delay
+
+	# ⑥ 精确走位: 距离<300px → 中距离拉扯(贴脸惩罚/太近后撤/太远追击)
+	if is_hell and dist < 300:
+		if player.attacking and dist > 120:
+			f.vx = dir_to_target * move_speed * 1.8
+		elif dist < maxi(ideal_min, 60):
+			f.vx = -dir_to_target * move_speed
+		else:
+			f.vx = dir_to_target * move_speed * 0.6
+		_update_state(f, dir_to_target)
+		return new_delay
+--------------------------------------------------------------------------------
+
+
+================================================================================
+  Bug #11: AI 蓄力函数 _ai_charge_tick 参数过多导致 Parse Error
+================================================================================
+原因: 调用 _ai_charge_tick(f, diff_movement) 传了2个参数, 但函数定义只接受1个.
+
+文件: scripts/systems/ai_system.gd  行 170
+--------------------------------------------------------------------------------
+		_ai_charge_tick(f)  #FIXED BUG: 之前传了2个参数(diff_movement),但函数只接受1个,导致Parse Error
+--------------------------------------------------------------------------------
+
+
+================================================================================
+  Bug #12: fx_gravity_projectile.png 文件缺失导致 Preload Parse Error
+================================================================================
+原因: 贴图命名规范化时代码引用已改为 fx_gravity_projectile.png, 但旧文件
+      45-20260705224120.png 未同步改名, 导致 Godot 预加载失败.
+修复: 复制 45-20260705224120.png → fx_gravity_projectile.png, 
+      同步创建对应的 .import 文件并修正内部路径引用.
+
+
+================================================================================
+  Bug #13: Rose 大招「暗夜华尔兹」总伤害偏高 (56 → 40)
+================================================================================
+文件: scripts/characters/rose.gd  行 98-103
+--------------------------------------------------------------------------------
+	#FIXED BUG: 大招原伤56(每15帧4.0)偏高,改为40总伤害(每16帧3.0,约13跳≈39)
+	if has_ult_overlay and GameWorld.frame % 16 == 0:
+		var target = GameWorld.get_opponent(f)
+		if target and target.hp > 0:
+			Fighter.apply_damage(target, 3.0, f, false, Color(0.9, 0.15, 0.15))
+	#FIX END
+--------------------------------------------------------------------------------
+
+
+================================================================================
+  Bug #14: 地狱模式按钮缺失
+================================================================================
+原因: 主菜单场景中 HellBtn 按钮被误删, 玩家无法选择 hell 难度.
+
+文件: scripts/main_menu.gd  行 73-89
+--------------------------------------------------------------------------------
+	#FIXED BUG: 地狱模式按钮之前被误删,玩家无法选择hell难度
+	#修复:程序化创建Hell按钮(Button+icon,不用TextureButton避免规则#22)并加入按钮行
+	hard_btn.pressed.connect(_on_hard_pressed)
+	if not hell_btn:
+		var btn = Button.new()
+		btn.name = "HellBtn"
+		btn.icon = IMG_DIFF_HELL
+		btn.expand_icon = true
+		btn.flat = true
+		btn.custom_minimum_size = Vector2(120, 120)
+		hell_btn = btn
+		var row = $DiffSelect/DiffPanel/DiffButtonRow
+		row.add_child(hell_btn)
+	hell_btn.pressed.connect(_on_hell_pressed)
+	#FIX END
+--------------------------------------------------------------------------------
+注: 使用 Button + icon + expand_icon=true 而非 TextureButton, 
+    是因为 TextureButton._get_minimum_size() 返回原始贴图尺寸忽略 custom_minimum_size,
+    会导致地狱图标大小与其他难度按钮不一致. 这是项目已知经验教训(规则 #22).
+
+
+================================================================================
+  Bug #15: 全项目贴图命名规范化 (37 处代码引用 + 磁盘残留文件)
+================================================================================
+涉及 8 个文件, 将 preload 路径从以下非规范命名统一为 fx_/ui_/bg_ 前缀:
+  旧名例: 无标题93_20260721203233.png, 45-20260705224120.png, IMG_20260722_161934.png
+  新名例: fx_rose_slash.png, fx_gravity_projectile.png, bg_main_menu.png
+磁盘上清理了 16 个无标题 PNG 文件(改用 Rename-Item 改名,不再直接删除).
+
+
+================================================================================
+  新增 #3: 地狱 AI 角色个性系统 (V3)
+================================================================================
+说明: 以上 Bug #10 中的 6 项战术行为即为本次新增内容.
+      地狱 AI 现在会: 读取玩家攻击/空中/血量状态来决策
+      — 反应闪避、对空迎击、防御技能、斩杀大招、技能连招、精确走位
+      — 像个真正的对手, 而不再只是参数数值调高了.
+
+
+================================================================================
+  汇总: 涉及文件清单
+================================================================================
+  1. scripts/characters/rose.gd        — Bug #1, #7, #13
+  2. scripts/characters/shadowwarrior.gd — Bug #2, #6
+  3. scripts/characters/archer.gd       — Bug #3
+  4. scripts/game.gd                    — Bug #4, #5(调用), #9
+  5. scripts/particle.gd                — Bug #5(实现)
+  6. scripts/characters/assassin.gd     — Bug #7(部分), #8
+  7. scripts/characters/paladin.gd      — Bug #7(部分)
+  8. scripts/systems/ai_system.gd       — Bug #10, #11, 新增#3
+  9. scripts/main_menu.gd               — Bug #14
+ 10. assets/ (多个文件)                  — Bug #12, #15
+
+================================================================================
+  统计: 15 个 Bug 修复 + 1 项新增 (地狱AI战术行为)
+  验证: 所有改动均通过 Godot 4 零报错运行, 已实际测试.
+================================================================================

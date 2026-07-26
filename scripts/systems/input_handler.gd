@@ -1,6 +1,6 @@
 class_name InputHandler
 
-const PROJ_LIGHT_IMG = preload("res://assets/10-20260702202815.png")
+const PROJ_LIGHT_IMG = preload("res://assets/fx_lightning_projectile.png")
 
 # ===== Player Input =====
 static func update_player_input(world, keys: Dictionary):
@@ -19,6 +19,7 @@ static func _handle_char_input(p: Fighter, keys: Dictionary):
 		"witch": _input_witch(p, keys)
 		"assassin": _input_assassin(p, keys)
 		"evoker": _input_evoker(p, keys)
+		"dragon_knight": CharacterFactory.handle_input(p.char_id, p, keys)
 
 static func _input_knight(p: Fighter, keys: Dictionary):
 	var mx = 0

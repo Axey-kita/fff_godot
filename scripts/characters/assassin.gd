@@ -1,7 +1,7 @@
 # 刺客 (assassin)
 class_name AssassinCharacter
 
-const PROJ_SLASH2 = preload("res://assets/54.png")
+const PROJ_SLASH2 = preload("res://assets/fx_assassin_slash_ult.png")
 const ASSASSIN_ANI_DIR = "res://assets/char_ani/assassin/"
 
 static func get_config() -> Dictionary:
@@ -90,6 +90,10 @@ static func _skill2(owner: Fighter) -> Dictionary:
 	var start_x = owner.pos_x + (owner.w if dir==1 else 0)
 	var start_y = owner.pos_y + 20
 	GameWorld.projectiles.append({"x":start_x,"y":start_y,"w":60,"h":30,"vx":8*dir,"vy":0,"life":240,"damage":15,"owner":owner,"type":"assassin_skill2","color":Color(0.53,0.27,0.8),"reflected":false,"piercing":true,"hit_targets":[],"img":PROJ_SLASH2})
+	#FIXED BUG: 裂空斩(技能二)需要屏幕抖动效果,使用GameWorld.set()绕过Godot4 autoload静态赋值限制
+	GameWorld.set("screen_shake_intensity", 10.0)
+	GameWorld.set("screen_shake_duration", 14)
+	#FIX END
 	return {"success": true}
 
 static func _ult(owner: Fighter) -> Dictionary:
@@ -130,3 +134,77 @@ static func _ult(owner: Fighter) -> Dictionary:
 	
 	Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h / 2.0, 120, Color(0.53, 0.27, 0.8), 14, 18, "star")
 	return {"success": true}
+
+	#FIXED BUG: 刺客之前完全没有update_systems(),character_systems.gd里的update_assassin_logic()是死代码从未被调用
+	#导致: 次元斩计时器不转/贴图不重置/暗影游走闪避无效/暗影姿态不激活/大招持续伤害不触发
+	#修复: 补全完整逻辑 — 无敌计时/闪避检测/暗影姿态/次元斩命中+重置/大招计时/暗影消耗
+static func update_systems(f: Fighter):
+	if f.hp <= 0: return
+	
+	# Invincibility timer
+	if f.is_invincible:
+		f.invincible_timer -= 1
+		if f.invincible_timer <= 0: f.is_invincible = false
+	if f.dodge_slow_mo > 0:
+		f.dodge_slow_mo -= 1
+	if f.enhanced_slash:
+		f.enhanced_slash_timer -= 1
+		if f.enhanced_slash_timer <= 0: f.enhanced_slash = false
+	
+	# Dodge detection during 一瞬 dash
+	if f.dashing and f.is_invincible:
+		var enemy = GameWorld.get_opponent(f)
+		if enemy and enemy.hp > 0 and not f.dodge_success:
+			if enemy.attacking and f.get_hit_box().intersects(enemy.get_attack_box()):
+				f.dodge_success = true
+				f.shadow_energy = minf(f.shadow_energy_max, f.shadow_energy + 1)
+				f.dodge_slow_mo = 15
+				GameWorld.trigger_slow_motion(15)
+				Fighter.emit_particles(f.pos_x + f.w / 2.0, f.pos_y + f.h / 2.0, 15, Color(0.67, 0.53, 1.0), 4, 6, "star")
+		if f.invincible_timer <= 0:
+			f.dodge_success = false
+	
+	# Shadow stance activation
+	if f.shadow_energy >= f.shadow_energy_max and not f.shadow_stance:
+		f.shadow_stance = true; f.shadow_stance_timer = 480
+		f.shadow_energy = f.shadow_energy_max
+		Fighter.emit_particles(f.pos_x + f.w / 2.0, f.pos_y + f.h / 2.0, 40, Color(0.53, 0.27, 0.8), 6, 10, "star")
+	
+	# Slash (次元斩) hit detection + timer
+	if f.slash_active:
+		f.slash_timer -= 1
+		if not f.slash_damage_dealt:
+			var enemy = GameWorld.get_opponent(f)
+			if enemy and enemy.hp > 0:
+				var slash_rect = Rect2(f.slash_x, f.slash_y, 100, 40)
+				if slash_rect.intersects(enemy.get_hit_box()):
+					var dmg = 8.0 if f.enhanced_slash else 5.0
+					Fighter.apply_damage(enemy, dmg, f, true, Color(0.67, 0.53, 1.0))
+					f.slash_damage_dealt = true
+					if f.enhanced_slash:
+						f.energy = minf(f.max_energy, f.energy + 5)
+		if f.slash_timer <= 0:
+			f.slash_active = false; f.attacking = false; f.state = "idle"
+			f.image_state = ""  # reset to let apply_physics pick idle/walk
+	#FIX END
+	
+	# Ult timer
+	if f.ult_active:
+		f.ult_timer -= 1; f.ult_damage_timer += 1
+		if f.ult_damage_timer >= 15:
+			f.ult_damage_timer = 0
+			var tgt = GameWorld.get_opponent(f)
+			if tgt and tgt.hp > 0:
+				var dx = tgt.pos_x + tgt.w / 2.0 - f.pos_x - f.w / 2.0
+				var dy = tgt.pos_y + tgt.h / 2.0 - f.pos_y - f.h / 2.0
+				if sqrt(dx * dx + dy * dy) < 200:
+					Fighter.apply_damage(tgt, 2.5, f)
+		if f.ult_timer <= 0:
+			f.ult_active = false; f.time_stop = false; f.state = "idle"
+	
+	# Shadow stance drain
+	if f.shadow_stance:
+		f.shadow_stance_timer -= 1
+		f.shadow_energy = maxf(0, f.shadow_energy - f.shadow_energy_drain_rate)
+		if f.shadow_stance_timer <= 0 or f.shadow_energy <= 0:
+			f.shadow_stance = false; f.shadow_energy = 0; f.shadow_trail.clear()

@@ -32,13 +32,16 @@ func update() -> bool:
 	size *= 0.97
 	return life > 0 and size > 0.3
 
-func draw(canvas: CanvasItem):
+func draw(canvas: CanvasItem, cam_x: float = 0.0):
+	#FIXED BUG: 粒子之前缺少cam_x参数,相机滚动后粒子显示在错误位置(屏幕右侧老远处)
+	#修复:所有粒子x坐标减去相机偏移,与其他渲染对象保持一致
 	var draw_color = Color(color.r, color.g, color.b, alpha * color.a)
+	var sx = x - cam_x
+	#FIX END
 	match type:
 		"circle":
-			canvas.draw_circle(Vector2(x, y), maxf(1.0, size), draw_color)
+			canvas.draw_circle(Vector2(sx, y), maxf(1.0, size), draw_color)
 		"rect":
-			canvas.draw_rect(Rect2(x - size/2, y - size/2, size, size), draw_color)
+			canvas.draw_rect(Rect2(sx - size/2, y - size/2, size, size), draw_color)
 		"star":
-			# Star is drawn as a small bright rectangle with glow
-			canvas.draw_rect(Rect2(x - size/2, y - size/2, size, size), draw_color)
+			canvas.draw_rect(Rect2(sx - size/2, y - size/2, size, size), draw_color)

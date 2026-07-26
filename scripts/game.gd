@@ -12,22 +12,22 @@ extends Node2D
 var is_paused := false
 
 # Global texture resources
-const BG_IMG = preload("res://assets/801215d83f224786b0f0b4c37c2571d9.png")
-const SHIELD_IMG = preload("res://assets/shield-11-20260702203319.png")
-const FLAME_IMG = preload("res://assets/17-20260703142847.png")
-const PROJ_LIGHT_IMG = preload("res://assets/10-20260702202815.png")
+const BG_IMG = preload("res://assets/bg_battlefield.png")
+const SHIELD_IMG = preload("res://assets/fx_shield.png")
+const FLAME_IMG = preload("res://assets/fx_flame.png")
+const PROJ_LIGHT_IMG = preload("res://assets/fx_lightning_projectile.png")
 
 # Evoker summon textures
-const EVOKER_SERVANT1 = preload("res://assets/stonem.png")   # 1号召唤物
-const EVOKER_SERVANT2_IDLE = preload("res://assets/2idl.png")  # 2号 idle
-const EVOKER_SERVANT2_HEAVY = preload("res://assets/2heavy_attack.png")  # 2号重击
-const EVOKER_SERVANT2_SKILL = preload("res://assets/2attak.png")  # 2号技能
-const EVOKER_SERVANT3 = preload("res://assets/eye.png")   # 3号召唤物
-const EVOKER_FIRE_SEA = preload("res://assets/firesea.png")  # 火海
-const EVOKER_PULL_BALL = preload("res://assets/pullball.png")  # 引力球
-const EVOKER_ULT_CRACK = preload("res://assets/utlgro.png")  # 裂隙
-const ROSE_SLASH_IMG = preload("res://assets/%E6%97%A0%E6%A0%87%E9%A2%9893_20260721203233.png")  # 血色蔷薇-刀光
-const ASSASSIN_SLASH_IMG = preload("res://assets/53.png")  # 刺客-次元斩
+const EVOKER_SERVANT1 = preload("res://assets/fx_evoker_servant1.png")   # 1号召唤物
+const EVOKER_SERVANT2_IDLE = preload("res://assets/fx_evoker_servant2_idle.png")  # 2号 idle
+const EVOKER_SERVANT2_HEAVY = preload("res://assets/fx_evoker_servant2_heavy.png")  # 2号重击
+const EVOKER_SERVANT2_SKILL = preload("res://assets/fx_evoker_servant2_skill.png")  # 2号技能
+const EVOKER_SERVANT3 = preload("res://assets/fx_evoker_servant3.png")   # 3号召唤物
+const EVOKER_FIRE_SEA = preload("res://assets/fx_evoker_fire_sea.png")  # 火海
+const EVOKER_PULL_BALL = preload("res://assets/fx_evoker_pull_ball.png")  # 引力球
+const EVOKER_ULT_CRACK = preload("res://assets/fx_evoker_ult_crack.png")  # 裂隙
+const ROSE_SLASH_IMG = preload("res://assets/fx_rose_slash.png")  # 血色蔷薇-刀光
+const ASSASSIN_SLASH_IMG = preload("res://assets/fx_assassin_slash.png")  # 刺客-次元斩
 
 # Shadowwarrior skill textures
 const SW_TRAP_A        = preload("res://assets/fx_shadow_trap_a.png")
@@ -252,9 +252,12 @@ func _draw():
 	if GameWorld.game_mode == "pvp":
 		_draw_charge_bar(GameWorld.enemy, cam_x)
 
-	# 9. drawParticles()
+	# 背景地图
+	#FIXED BUG: 粒子之前缺少cam_x参数,相机滚动后显示位置错误
+	#修复:particle.draw()新增cam_x参数,game.gd传入当前相机偏移
 	for pt in GameWorld.particles:
-		pt.draw(self)
+		pt.draw(self, cam_x)
+	#FIX END
 
 	# 10. drawExplosionEffects()
 	for e in GameWorld.explosion_effects:
@@ -408,9 +411,11 @@ func _draw_map(cam_x: float):
 func _draw_fighter(f: Fighter, is_local: bool = false):
 	if not f:
 		return
-	# 影武者居合期间：角色贴图由 _draw_shadowwarrior_overlays 绘制
-	if f.char_id == "shadowwarrior" and f.iaido_active:
+	#FIXED BUG: 影武者居合/破隐一击期间角色本体绘制覆盖了上层特效贴图,导致特效不可见
+	#修复:这两个状态下跳过角色本体绘制,仅显示skill overlay特效
+	if f.iaido_active or f.break_strike_timer > 0:
 		return
+	#FIX END
 	var px = f.pos_x - GameWorld.camera.x
 	if px < -80 or px > 880:
 		return
@@ -420,8 +425,11 @@ func _draw_fighter(f: Fighter, is_local: bool = false):
 	if f.damage_flash > 0 and f.damage_flash % 4 < 2:
 		alpha_mod = 0.5
 	# Stealth transparency for shadowwarrior
+	#FIXED BUG: 影武者隐身("夜樱·隐")之前不生效,_draw_fighter完全不检查stealth_active
+	#修复:隐身状态下对手视角alpha=0.5(配合_fighter_draw中的skip逻辑实现完全不可见)
 	if f.char_id == "shadowwarrior" and f.stealth_active:
 		alpha_mod = 0.5
+	#FIX END
 
 	# Draw texture if available, otherwise colored rect
 	var tex: Texture2D = null
@@ -746,6 +754,10 @@ func _draw_shadowwarrior_overlays(cam_x: float):
 		if f.retreat_timer > 0:
 			var alpha = 0.5 if (f == GameWorld.player and f.stealth_active) else 1.0
 			_sw_draw_tex(SW_RETREAT, f.pos_x, f.pos_y, f.w, f.h, cam_x, f.facing, alpha)
+		
+		# 破隐一击贴图
+		if f.break_strike_timer > 0:
+			_sw_draw_tex(SW_BREAK_STRIKE, f.pos_x, f.pos_y, f.w, f.h, cam_x, f.facing, 1.0)
 
 		# 幻影·舞遮挡贴图（与角色同尺寸）
 		if f.clone_reveal_timer > 0:

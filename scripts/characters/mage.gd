@@ -1,9 +1,9 @@
 # 法师 (mage)
 class_name MageCharacter
 
-const PROJ_FIRE = preload("res://assets/8-20260702202047.png")
-const PROJ_ICE = preload("res://assets/9-20260702202554.png")
-const PROJ_LIGHT = preload("res://assets/10-20260702202815.png")
+const PROJ_FIRE = preload("res://assets/fx_fire_projectile.png")
+const PROJ_ICE = preload("res://assets/fx_ice_projectile.png")
+const PROJ_LIGHT = preload("res://assets/fx_lightning_projectile.png")
 const MAGE_ANI_DIR = "res://assets/char_ani/mage/"
 
 static func get_config() -> Dictionary:

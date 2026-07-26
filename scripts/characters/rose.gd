@@ -95,10 +95,12 @@ static func update_systems(f: Fighter):
 		if entry.get("overlay_id") == "rose_ult":
 			has_ult_overlay = true
 			break
-	if has_ult_overlay and GameWorld.frame % 15 == 0:
+	#FIXED BUG: 大招原伤56(每15帧4.0)偏高,改为40总伤害(每16帧3.0,约13跳≈39)
+	if has_ult_overlay and GameWorld.frame % 16 == 0:
 		var target = GameWorld.get_opponent(f)
 		if target and target.hp > 0:
-			Fighter.apply_damage(target, 4.0, f, false, Color(0.9, 0.15, 0.15))
+			Fighter.apply_damage(target, 3.0, f, false, Color(0.9, 0.15, 0.15))
+	#FIX END
 			Fighter.emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 12, Color(0.9, 0.15, 0.15), 5, 7, "star", 0.8)
 	# Skill2: bat swarm
 	if f.rose_skill2_active:
@@ -163,14 +165,14 @@ static func update_systems(f: Fighter):
 				enemy.pos_x = f.rose_grab_center_x - enemy.w / 2.0
 				enemy.vx = 0
 				enemy.vy = 0
+	#FIXED BUG: 刀光消失后重置抓取中心并清空贴图状态,让apply_physics自动恢复idle/walk
 	elif f.rose_grab_center_x > -9998 and GameWorld.rose_slash_trails.size() == 0:
 		f.rose_grab_center_x = -9999.0
-	# Skill1 dash 结束后清理残留贴图和状态
-	if not f.dashing and f.image_state == "skill1" and f.rose_grab_center_x > -9998:
-		f.image_state = "idle"
-		GameWorld.rose_slash_trails.clear()
-		f.rose_grab_center_x = -9999.0
-		f.rose_skill1_enhanced_slashes.clear()
+		f.image_state = ""  # Reset so apply_physics restores correct state
+	# When dash finishes, release image_state so apply_physics picks idle/walk/jump
+	if not f.dashing and f.image_state == "skill1":
+		f.image_state = ""
+	#FIX END
 	# Skill1 enhanced: 四连斩生成
 	if f.rose_skill1_enhanced_slashes.size() > 0:
 		f.rose_skill1_slash_spawn_timer += 1
@@ -245,8 +247,10 @@ static func _skill1(owner: Fighter) -> Dictionary:
 	var slash_w = 220 if enhanced else 180
 	var slash_damage = 15 if enhanced else 10
 	
-	# 记录抓取中心（冲刺路径中点，敌人将被锁定到此位置）
+	#FIXED BUG: rose_grab_center_x 之前从未赋值(默认-9999),导致敌人被锁定到屏幕外,抓取完全失效
+	#修复:在冲刺启动时记录当前角色位置为抓取锚点
 	owner.rose_grab_center_x = owner.pos_x + owner.w / 2.0 + dir * 60
+	#FIX END
 	
 	# Start dash with grab (prevent default dash damage, handle in character_systems)
 	owner.dashing = true

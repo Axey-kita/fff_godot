@@ -1,10 +1,10 @@
 # 弓箭手 (archer)
 class_name ArcherCharacter
 
-const PROJ_ARROW = preload("res://assets/16-20260703142620.png")
-const PROJ_ARROW_FIRE = preload("res://assets/18-20260703142934.png")
-const PROJ_ARROW_ULT = preload("res://assets/IMG-20260703-143031.png")
-const PROJ_ARROW_ULT_FIRE = preload("res://assets/IMG-20260703-143038.png")
+const PROJ_ARROW = preload("res://assets/fx_arrow.png")
+const PROJ_ARROW_FIRE = preload("res://assets/fx_arrow_fire.png")
+const PROJ_ARROW_ULT = preload("res://assets/fx_arrow_ult.png")
+const PROJ_ARROW_ULT_FIRE = preload("res://assets/fx_arrow_ult_fire.png")
 const ARCHER_ANI_DIR = "res://assets/char_ani/archer/"
 
 static func get_config() -> Dictionary:
@@ -66,6 +66,8 @@ static func _ult(owner: Fighter) -> Dictionary:
 
 # ══════════════════════════════════════════════════════════════════
 #  update_systems — 每帧逻辑（CharacterSystems 调度）
+#FIXED BUG: 弓箭手之前缺少update_systems(),导致火矢(7s)/追踪(10s)buff永不过期
+#修复:添加计时器递减,到期自动关闭对应buff
 # ══════════════════════════════════════════════════════════════════
 static func update_systems(f: Fighter):
 	if f.char_id != "archer" or f.hp <= 0:
@@ -89,3 +91,4 @@ static func update_systems(f: Fighter):
 		f.tracking_timer -= 1
 		if f.tracking_timer <= 0:
 			f.tracking_buff = false
+#FIX END

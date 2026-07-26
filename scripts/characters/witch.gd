@@ -1,10 +1,10 @@
 # 魔女 (witch)
 class_name WitchCharacter
 
-const PROJ_GRAVITY = preload("res://assets/45-20260705224120.png")
-const IMG_TORNADO = preload("res://assets/50-20260705225200.png")
-const IMG_VORTEX = preload("res://assets/47-20260705224456.png")
-const PROJ_METEOR = preload("res://assets/46-20260705224210.png")
+const PROJ_GRAVITY = preload("res://assets/fx_gravity_projectile.png")
+const IMG_TORNADO = preload("res://assets/fx_tornado.png")
+const IMG_VORTEX = preload("res://assets/fx_vortex.png")
+const PROJ_METEOR = preload("res://assets/fx_meteor.png")
 const WITCH_ANI_DIR = "res://assets/char_ani/witch/"
 
 static func get_config() -> Dictionary:

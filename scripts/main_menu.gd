@@ -28,6 +28,7 @@ extends Control
 @onready var easy_btn = $DiffSelect/DiffPanel/DiffButtonRow/EasyBtn
 @onready var medium_btn = $DiffSelect/DiffPanel/DiffButtonRow/MediumBtn
 @onready var hard_btn = $DiffSelect/DiffPanel/DiffButtonRow/HardBtn
+@onready var hell_btn = $DiffSelect/DiffPanel/DiffButtonRow/HellBtn
 @onready var diff_back_btn = $DiffSelect/DiffPanel/DiffBackBtn
 @onready var diff_title = $DiffSelect/DiffPanel/DiffTitle
 
@@ -36,14 +37,15 @@ var chars_initialized := false
 var char_cards := {}
 var _title_click_count := 0  # 作弊计数器
 
-const IMG_TITLE = preload("res://assets/34-20260705005653.png")
-const IMG_PVE = preload("res://assets/29-20260705005340.png")
-const IMG_COMING = preload("res://assets/33-20260705005611.png")
-const IMG_PVP = preload("res://assets/31-20260705005426.png")
-const IMG_BG = preload("res://assets/无标题102_20260722154610.png")
-const IMG_DIFF_EASY = preload("res://assets/36-20260705005735.png")
-const IMG_DIFF_MEDIUM = preload("res://assets/38-20260705005805.png")
-const IMG_DIFF_HARD = preload("res://assets/39-20260705005825.png")
+const IMG_TITLE = preload("res://assets/ui_title.png")
+const IMG_PVE = preload("res://assets/ui_btn_pve.png")
+const IMG_COMING = preload("res://assets/ui_btn_coming.png")
+const IMG_PVP = preload("res://assets/ui_btn_pvp.png")
+const IMG_BG = preload("res://assets/bg_main_menu.png")
+const IMG_DIFF_EASY = preload("res://assets/ui_diff_easy.png")
+const IMG_DIFF_MEDIUM = preload("res://assets/ui_diff_medium.png")
+const IMG_DIFF_HARD = preload("res://assets/ui_diff_hard.png")
+const IMG_DIFF_HELL = preload("res://assets/ui_diff_hell.png")
 
 
 func _ready():
@@ -68,7 +70,23 @@ func _ready():
 	exit_btn.pressed.connect(_on_exit_pressed)
 	easy_btn.pressed.connect(_on_easy_pressed)
 	medium_btn.pressed.connect(_on_medium_pressed)
+	#FIXED BUG: 地狱模式按钮之前被误删,玩家无法选择hell难度
+	#修复:程序化创建Hell按钮(Button+icon,不用TextureButton避免规则#22)并加入按钮行
 	hard_btn.pressed.connect(_on_hard_pressed)
+	if not hell_btn:
+		# Use Button with icon (not TextureButton) per project rules:
+		# TextureButton._get_minimum_size() returns raw texture size, ignoring custom_minimum_size
+		var btn = Button.new()
+		btn.name = "HellBtn"
+		btn.icon = IMG_DIFF_HELL
+		btn.expand_icon = true
+		btn.flat = true
+		btn.custom_minimum_size = Vector2(120, 120)
+		hell_btn = btn
+		var row = $DiffSelect/DiffPanel/DiffButtonRow
+		row.add_child(hell_btn)
+	hell_btn.pressed.connect(_on_hell_pressed)
+	#FIX END
 	diff_back_btn.pressed.connect(_on_diff_back_pressed)
 	start_button.pressed.connect(_on_start_pressed)
 	back_button.pressed.connect(_on_back_pressed)
@@ -233,6 +251,11 @@ func _style_diff_buttons():
 	medium_btn.texture_pressed = IMG_DIFF_MEDIUM
 	hard_btn.texture_normal = IMG_DIFF_HARD
 	hard_btn.texture_pressed = IMG_DIFF_HARD
+	# hell_btn is a Button with icon (not TextureButton)
+	hell_btn.icon = IMG_DIFF_HELL
+	hell_btn.pressed.connect(_on_hell_pressed)
+	# Ensure hell button has same size as other diff buttons (per project rules)
+	hell_btn.custom_minimum_size = easy_btn.custom_minimum_size
 	diff_title.add_theme_color_override("font_color", Color(1.0, 0.843, 0.0))
 	_style_action_button(diff_back_btn, Color(0.6, 0.6, 0.6), "← 返回")
 
@@ -392,6 +415,9 @@ func _on_medium_pressed():
 
 func _on_hard_pressed():
 	GameWorld.difficulty = "hard"; _show_char_select()
+
+func _on_hell_pressed():
+	GameWorld.difficulty = "hell"; _show_char_select()
 
 func _on_diff_back_pressed():
 	diff_select.visible = false

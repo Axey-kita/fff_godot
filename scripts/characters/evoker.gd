@@ -1,7 +1,7 @@
 # 唤魔者 (evoker)
 class_name EvokerCharacter
 
-const PROJ_FIREBALL = preload("res://assets/fire.png")
+const PROJ_FIREBALL = preload("res://assets/fx_fireball.png")
 const EVOKER_ANI_DIR = "res://assets/char_ani/evoker/"
 
 static func get_config() -> Dictionary:
