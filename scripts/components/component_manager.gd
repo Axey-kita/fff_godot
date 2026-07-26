@@ -18,36 +18,9 @@ func init(owner: Fighter):
 	_setup_components()
 
 func _setup_components():
-	var char_id = owner.char_id
-	match char_id:
-		"archer":
-			var comp = ArcherComponent.new()
-			comp.init(owner)
-			components["archer"] = comp
-		"paladin":
-			var comp = PaladinComponent.new()
-			comp.init(owner)
-			components["paladin"] = comp
-		"witch":
-			var comp = WitchComponent.new()
-			comp.init(owner)
-			components["witch"] = comp
-		"assassin":
-			var comp = AssassinComponent.new()
-			comp.init(owner)
-			components["assassin"] = comp
-		"shadowwarrior":
-			var comp = ShadowwarriorComponent.new()
-			comp.init(owner)
-			components["shadowwarrior"] = comp
-		"evoker":
-			var comp = EvokerComponent.new()
-			comp.init(owner)
-			components["evoker"] = comp
-		"rose":
-			var comp = RoseComponent.new()
-			comp.init(owner)
-			components["rose"] = comp
+	var comp = CharacterFactory.create_component(owner.char_id, owner)
+	if comp:
+		components[owner.char_id] = comp
 
 func update():
 	for comp in components.values():

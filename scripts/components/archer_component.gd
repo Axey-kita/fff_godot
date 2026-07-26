@@ -28,4 +28,8 @@ func update():
 		tracking_timer -= 1
 		if tracking_timer <= 0:
 			tracking_buff = false
-	# 角色内部状态：只有 HUD 和角色脚本需要，直接通过组件访问
+
+func get_hud_data() -> Dictionary:
+	return {
+		"arrows": { "value": arrows, "max": max_arrows, "label": "箭矢", "fill_color": Color(0.8, 0.6, 0.2), "label_color": Color(1.0, 0.7, 0.3) }
+	}

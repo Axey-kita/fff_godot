@@ -30,3 +30,8 @@ func on_attack_hit(target: Fighter, dmg: float):
 		blood_abyss = minf(40.0, blood_abyss + dmg)
 	if rose_blood_abyss_suppressed:
 		rose_blood_abyss_suppressed = false
+
+func get_hud_data() -> Dictionary:
+	return {
+		"blood_abyss": { "value": blood_abyss, "max": 40.0, "label": "血渊", "fill_color": Color(0.9, 0.15, 0.15), "label_color": Color(1.0, 0.4, 0.4) }
+	}

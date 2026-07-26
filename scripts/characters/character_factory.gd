@@ -11,17 +11,29 @@ const Evoker = preload("res://scripts/characters/evoker.gd")
 const Rose = preload("res://scripts/characters/rose.gd")
 const DragonKnight = preload("res://scripts/characters/dragon_knight.gd")
 
+# Component preloads
+const COMP_ARCHER = preload("res://scripts/components/archer_component.gd")
+const COMP_PALADIN = preload("res://scripts/components/paladin_component.gd")
+const COMP_WITCH = preload("res://scripts/components/witch_component.gd")
+const COMP_ASSASSIN = preload("res://scripts/components/assassin_component.gd")
+const COMP_SHADOWWARRIOR = preload("res://scripts/components/shadowwarrior_component.gd")
+const COMP_EVOKER = preload("res://scripts/components/evoker_component.gd")
+const COMP_ROSE = preload("res://scripts/components/rose_component.gd")
+const COMP_KNIGHT = preload("res://scripts/components/char_component.gd")  # fallback: no special component
+const COMP_MAGE = preload("res://scripts/components/char_component.gd")    # fallback
+const COMP_DRAGON_KNIGHT = preload("res://scripts/components/char_component.gd")  # fallback
+
 static var _char_registry := {
-	"knight": { "cls": Knight, "config": null },
-	"mage": { "cls": Mage, "config": null },
-	"archer": { "cls": Archer, "config": null },
-	"paladin": { "cls": Paladin, "config": null },
-	"witch": { "cls": Witch, "config": null },
-	"assassin": { "cls": Assassin, "config": null },
-	"shadowwarrior": { "cls": Shadowwarrior, "config": null },
-	"evoker": { "cls": Evoker, "config": null },
-	"rose": { "cls": Rose, "config": null },
-	"dragon_knight": { "cls": DragonKnight, "config": null },
+	"knight": { "cls": Knight, "config": null, "comp": COMP_KNIGHT },
+	"mage": { "cls": Mage, "config": null, "comp": COMP_MAGE },
+	"archer": { "cls": Archer, "config": null, "comp": COMP_ARCHER },
+	"paladin": { "cls": Paladin, "config": null, "comp": COMP_PALADIN },
+	"witch": { "cls": Witch, "config": null, "comp": COMP_WITCH },
+	"assassin": { "cls": Assassin, "config": null, "comp": COMP_ASSASSIN },
+	"shadowwarrior": { "cls": Shadowwarrior, "config": null, "comp": COMP_SHADOWWARRIOR },
+	"evoker": { "cls": Evoker, "config": null, "comp": COMP_EVOKER },
+	"rose": { "cls": Rose, "config": null, "comp": COMP_ROSE },
+	"dragon_knight": { "cls": DragonKnight, "config": null, "comp": COMP_DRAGON_KNIGHT },
 }
 
 static func get_config(char_id: String) -> Dictionary:
@@ -62,3 +74,13 @@ static func call_rose_trails():
 	var cls = entry.get("cls")
 	if cls and cls.has_method("update_rose_trails"):
 		cls.update_rose_trails()
+
+## 创建角色组件（替代 ComponentManager 中的 match char_id）
+static func create_component(char_id: String, owner: Fighter) -> CharComponent:
+	var entry = _char_registry.get(char_id, {})
+	var comp_cls = entry.get("comp")
+	if comp_cls:
+		var comp = comp_cls.new()
+		comp.init(owner)
+		return comp
+	return null

@@ -82,3 +82,13 @@ func on_damage_received(attacker: Fighter, dmg: float):
 			shadow_stance = true
 			shadow_stance_timer = 480
 		Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h / 2.0, 15, Color(0.667, 0.533, 1.0), 3, 5, "star", 0.8)
+
+func get_hud_data() -> Dictionary:
+	return {
+		"shadow_energy": {
+			"value": shadow_energy, "max": shadow_energy_max,
+			"label": "暗影", "label_color": Color(0.67, 0.53, 1.0),
+			"fill_color": Color(0.53, 0.27, 0.8),
+			"is_stance": shadow_stance, "stance_label": "暗影游走"
+		}
+	}
