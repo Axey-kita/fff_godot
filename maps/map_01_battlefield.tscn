@@ -1,0 +1,49 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/terrain_tile.gd" id="1"]
+
+[node name="Map" type="Node2D"]
+
+[node name="PlatformContainer" type="Node2D" parent="."]
+
+[node name="Ground" type="Sprite2D" parent="PlatformContainer"]
+script = ExtResource("1")
+tile_type = 0
+block_w = 2400
+block_h = 10
+position = Vector2(0, 380)
+
+[node name="WallLeft" type="Sprite2D" parent="PlatformContainer"]
+script = ExtResource("1")
+tile_type = 1
+block_w = 15
+block_h = 380
+position = Vector2(0, 0)
+
+[node name="WallRight" type="Sprite2D" parent="PlatformContainer"]
+script = ExtResource("1")
+tile_type = 1
+block_w = 15
+block_h = 380
+position = Vector2(2385, 0)
+
+[node name="Plat1" type="Sprite2D" parent="PlatformContainer"]
+script = ExtResource("1")
+tile_type = 2
+block_w = 120
+block_h = 12
+position = Vector2(400, 260)
+
+[node name="Plat2" type="Sprite2D" parent="PlatformContainer"]
+script = ExtResource("1")
+tile_type = 2
+block_w = 140
+block_h = 12
+position = Vector2(1000, 220)
+
+[node name="Plat3" type="Sprite2D" parent="PlatformContainer"]
+script = ExtResource("1")
+tile_type = 2
+block_w = 130
+block_h = 12
+position = Vector2(1600, 270)

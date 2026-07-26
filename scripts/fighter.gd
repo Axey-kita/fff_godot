@@ -23,6 +23,8 @@ var vx: float = 0
 var vy: float = 0
 var facing: int = 1
 var on_platform = null
+var passthrough_platform = null  # 当前穿透的平台（悬挂平台下落）
+var passthrough_timer := 0
 
 # Identity
 var display_name: String = ""
@@ -238,6 +240,12 @@ func apply_physics():
 		vy = 0
 		set_animation_state("ult")
 	else:
+		# Passthrough timer: 穿透悬挂平台期间
+		if passthrough_timer > 0:
+			passthrough_timer -= 1
+		else:
+			passthrough_platform = null
+
 		if attacking:
 			pass
 		if dashing:
@@ -257,6 +265,10 @@ func apply_physics():
 		pos_y += vy
 		grounded = false
 		for p in GameWorld.platforms:
+			if p == passthrough_platform:
+				continue  # 穿透当前悬挂平台
+			if p.get("terrain_type", -1) == 3:
+				continue  # 虚空：无碰撞，可穿过
 			if vy >= 0 and pos_x + w > p["x"] + 4 and pos_x < p["x"] + p["w"] - 4 and \
 			   pos_y + h >= p["y"] and pos_y + h <= p["y"] + p["h"] + 6:
 				pos_y = p["y"] - h
@@ -264,11 +276,33 @@ func apply_physics():
 				grounded = true
 				on_platform = p
 				break
-		if not grounded and pos_y >= 380 - h: # GROUND_Y
-			pos_y = 380 - h
+		if not grounded and pos_y >= 380 - h:
+			# 检查下方是否有地面平台
+			var has_ground_below = false
+			for p in GameWorld.platforms:
+				if p.get("is_ground", false) and p.get("terrain_type", -1) != 3 \
+					and pos_x + w > p["x"] and pos_x < p["x"] + p["w"] \
+					and absf((pos_y + h) - p["y"]) < 30:
+					has_ground_below = true
+					break
+			if has_ground_below:
+				pos_y = 380 - h
+				vy = 0
+				grounded = true
+		# 虚空：穿透后兜底硬地板
+		if not grounded and pos_y > 500:
+			pos_y = 500
 			vy = 0
 			grounded = true
 		pos_x = clampf(pos_x, 10, 2400 - 10 - w) # MAP_W
+		if char_id == "rose" and dashing and image_state == "skill1" and GameWorld.enemy:
+			var clamped = clampf(pos_x, 10, 2400 - 10 - w)
+			if absf(pos_x - clamped) > 0.5:
+				print("[ROSE-GRAB] physics.clamp: rose.pos_x=", pos_x, " → ", clamped)
+		if is_player == false and char_id != "rose":
+			var clamped = clampf(pos_x, 10, 2400 - 10 - w)
+			if absf(pos_x - clamped) > 0.5:
+				print("[ROSE-GRAB] enemy.clamp: enemy.pos_x=", pos_x, " → ", clamped, " vx=", vx, " dashing=", dashing)
 		if absf(vx) > 0.5 and not dashing:
 			facing = 1 if vx > 0 else -1
 		if dashing:
@@ -298,6 +332,21 @@ func apply_physics():
 						assassin_comp.enhanced_slash = false
 						assassin_comp.enhanced_slash_timer = 0
 					Fighter.apply_damage(target, dmg, self)
+				# 近战攻击也能命中影武者分身（之前只有投射物能打分身）
+				#FIXED BUG: 影武者分身之前只能被投射物命中,近战角色完全无法伤害分身,导致"锁满血"
+				if GameWorld.phantoms.size() > 0:
+					var atk_dmg: float = attack_damage
+					if assassin_comp and char_id == "assassin" and assassin_comp.enhanced_slash and assassin_comp.enhanced_slash_timer > 0:
+						atk_dmg = 8
+					for pi in range(GameWorld.phantoms.size() - 1, -1, -1):
+						var ph = GameWorld.phantoms[pi]
+						if ph.hp <= 0: continue
+						if ph.get("owner") == self: continue  # 不打自己的分身
+						var ph_rect = Rect2(ph["x"], ph["y"], ph["w"], ph["h"])
+						if box.intersects(ph_rect):
+							ph["hp"] -= atk_dmg
+							Fighter.emit_particles(ph["x"] + ph["w"] / 2.0, ph["y"] + ph["h"] / 2.0, 15, Color(0.53, 0.27, 0.8), 4, 6, "star", 0.8)
+				#FIX END
 	if attack_cooldown > 0:
 		attack_cooldown -= 1
 	if hit_cooldown > 0:

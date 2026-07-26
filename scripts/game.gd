@@ -8,6 +8,7 @@ const RoseComponent = preload("res://scripts/components/rose_component.gd")
 const ArcherComponent = preload("res://scripts/components/archer_component.gd")
 const WitchComponent = preload("res://scripts/components/witch_component.gd")
 const EvokerComponent = preload("res://scripts/components/evoker_component.gd")
+const TrackSystem = preload("res://scripts/systems/track.gd")
 
 # UI nodes (CanvasLayer)
 @onready var ui_layer = $UILayer
@@ -66,6 +67,9 @@ var _accumulator := 0.0
 # AI
 var ai_think_delay := 0
 
+# 当前地图实例
+var _current_map: Node2D = null
+
 func _ready():
 	print("[Game] _ready() start")
 	_last_time = Time.get_ticks_msec()
@@ -91,14 +95,21 @@ func init_game(player_char_id: String, enemy_char_id: String):
 	CharConfigs.ensure_init()
 	print("Configs available: ", CharConfigs.configs.keys())
 	GameWorld.reset_world()
+	
+	# 随机选图并加载平台
+	_load_random_map()
+	
+	# 计算双方出生位置（站在最近的平台上）
+	var spawns = _find_spawn_positions()
+	
 	var p_skills = CharacterFactory.create_skills(player_char_id)
 	var e_skills = CharacterFactory.create_skills(enemy_char_id)
 	print("Skills created: p=", p_skills.size(), " e=", e_skills.size())
 	GameWorld.player = Fighter.new()
-	GameWorld.player.setup(160, 380 - 56, true, player_char_id, p_skills)
+	GameWorld.player.setup(spawns.player_x, spawns.player_y, true, player_char_id, p_skills)
 	add_child(GameWorld.player)
 	GameWorld.enemy = Fighter.new()
-	GameWorld.enemy.setup(600, 380 - 56, false, enemy_char_id, e_skills)
+	GameWorld.enemy.setup(spawns.enemy_x, spawns.enemy_y, false, enemy_char_id, e_skills)
 	add_child(GameWorld.enemy)
 	GameWorld.entities = [GameWorld.player, GameWorld.enemy]
 	PickupSystem.init_pickups()
@@ -106,6 +117,103 @@ func init_game(player_char_id: String, enemy_char_id: String):
 	GameWorld.game_over = false
 	GameWorld.frame = 0
 	print("Game initialized! player.hp=", GameWorld.player.hp, " enemy.hp=", GameWorld.enemy.hp)
+
+## 根据已加载的平台计算出生位置,确保角色站在地面/平台上
+func _find_spawn_positions() -> Dictionary:
+	var player_x = 160
+	var enemy_x = 600
+	var player_y = Constants.GROUND_Y - Constants.FIGHTER_H
+	var enemy_y = Constants.GROUND_Y - Constants.FIGHTER_H
+	
+	if GameWorld.platforms.is_empty():
+		return {"player_x": player_x, "player_y": player_y, "enemy_x": enemy_x, "enemy_y": enemy_y}
+	
+	var best_player_plat = null
+	var best_player_dist = INF
+	var best_enemy_plat = null
+	var best_enemy_dist = INF
+	
+	for p in GameWorld.platforms:
+		if p.get("is_void", false):
+			continue
+		var plat_x = p["x"] + p["w"] / 2.0
+		var plat_top = p["y"]
+		
+		# 左半场（玩家）
+		if plat_x < Constants.MAP_W / 2.0:
+			var dist_to_default = absf(plat_top - Constants.GROUND_Y)
+			if dist_to_default < best_player_dist:
+				# 确保角色宽度能站在平台上
+				if p["w"] >= Constants.FIGHTER_W:
+					best_player_dist = dist_to_default
+					best_player_plat = p
+		# 右半场（敌方）
+		else:
+			var dist_to_default = absf(plat_top - Constants.GROUND_Y)
+			if dist_to_default < best_enemy_dist:
+				if p["w"] >= Constants.FIGHTER_W:
+					best_enemy_dist = dist_to_default
+					best_enemy_plat = p
+	
+	if best_player_plat:
+		player_y = best_player_plat["y"] - Constants.FIGHTER_H
+		# 角色居中放在平台上
+		player_x = best_player_plat["x"] + best_player_plat["w"] / 2.0 - Constants.FIGHTER_W / 2.0
+	if best_enemy_plat:
+		enemy_y = best_enemy_plat["y"] - Constants.FIGHTER_H
+		enemy_x = best_enemy_plat["x"] + best_enemy_plat["w"] / 2.0 - Constants.FIGHTER_W / 2.0
+	
+	print("[Spawn] 玩家: (", player_x, ", ", player_y, ") 敌人: (", enemy_x, ", ", enemy_y, ")")
+	return {"player_x": player_x, "player_y": player_y, "enemy_x": enemy_x, "enemy_y": enemy_y}
+
+## 随机选一张地图,实例化并加载平台
+func _load_random_map():
+	# 清理旧地图
+	if _current_map:
+		_current_map.queue_free()
+		_current_map = null
+	GameWorld.platforms.clear()
+	
+	MapManager.ensure_init()
+	var map_path = MapManager.pick_random()
+	print("[Map] 选中地图: ", map_path)
+	
+	var map_scene = load(map_path)
+	if not map_scene:
+		push_error("[Map] 加载地图场景失败: ", map_path)
+		GameWorld.init_platforms()
+		return
+	
+	_current_map = map_scene.instantiate()
+	add_child(_current_map)
+	
+	# 从 PlatformContainer 读取地形块
+	var container = _current_map.get_node_or_null("PlatformContainer")
+	if not container:
+		push_error("[Map] 地图缺少 PlatformContainer 节点: ", map_path)
+		GameWorld.init_platforms()
+		return
+	
+	for child in container.get_children():
+		var tile_script = child.get_script()
+		if tile_script and tile_script.resource_path == "res://scripts/terrain_tile.gd":
+			var tt = child
+			var ttype = tt.tile_type
+			var is_ground = ttype == 0
+			var is_wall = ttype == 1
+			GameWorld.platforms.append({
+				"x": tt.position.x,
+				"y": tt.position.y,
+				"w": tt.block_w,
+				"h": tt.block_h,
+				"is_ground": is_ground,
+				"is_wall": is_wall,
+				"terrain_type": ttype,
+			})
+	
+	# 隐藏地形块节点（_draw_map 已接管渲染，避免双重绘制）
+	container.visible = false
+	print("[Map] 加载 ", GameWorld.platforms.size(), " 个地形块, 地图=", MapManager.get_display_name(map_path))
 
 func _process(_delta: float):
 	if not GameWorld.game_running or GameWorld.game_over:
@@ -156,6 +264,8 @@ func _update():
 		GameWorld.hit_stop -= 1
 		return
 	GameWorld.frame += 1
+	if GameWorld.player and GameWorld.player.dashing and GameWorld.player.image_state == "skill1":
+		print("[ROSE-GRAB] === 帧开始 === frame=", GameWorld.frame, " rose.pos_x=", GameWorld.player.pos_x, " enemy.pos_x=", GameWorld.enemy.pos_x if GameWorld.enemy else "N/A", " enemy.vx=", GameWorld.enemy.vx if GameWorld.enemy else "N/A", " trails.size=", GameWorld.rose_slash_trails.size())
 	# Cap particles to prevent performance leak
 	if GameWorld.particles.size() > 300:
 		GameWorld.particles = GameWorld.particles.slice(GameWorld.particles.size() - 300)
@@ -165,9 +275,12 @@ func _update():
 			sk.update()
 	# Input & AI (must happen BEFORE physics, so vx/vy from input take effect same frame)
 	InputHandler.update_player_input(GameWorld, keys)
-	ai_think_delay = AISystem.update_ai(ai_think_delay)
+	ai_think_delay = TrackSystem.update_track(ai_think_delay)
+	# ai_think_delay = AISystem.update_ai(ai_think_delay)  # 旧 AI（含技能/攻击/闪避）已注释
 	# Apply physics (after input, matching JS order)
 	_apply_physics_all()
+	if GameWorld.player and GameWorld.player.dashing and GameWorld.player.image_state == "skill1":
+		print("[ROSE-GRAB] physics后: frame=", GameWorld.frame, " rose.pos_x=", GameWorld.player.pos_x, " enemy.pos_x=", GameWorld.enemy.pos_x if GameWorld.enemy else "N/A", " enemy.vx=", GameWorld.enemy.vx if GameWorld.enemy else "N/A")
 	# 作弊：无限蓝
 	if GameWorld.infinite_energy and GameWorld.player:
 		GameWorld.player.energy = GameWorld.player.max_energy
@@ -186,6 +299,8 @@ func _update():
 	SlowSystem.update_slow()
 	PickupSystem.update_pickups_and_end()
 	CharacterSystems.update_characters()
+	if GameWorld.enemy and GameWorld.player and GameWorld.player.dashing and GameWorld.player.image_state == "skill1":
+		print("[ROSE-GRAB] 敌人位置(update_characters后): frame=", GameWorld.frame, " enemy.pos_x=", GameWorld.enemy.pos_x, " enemy.vx=", GameWorld.enemy.vx)
 	CharacterSystems.update_active_overlays()
 	CharacterFactory.call_rose_trails()
 	EvokerSystem.update()
@@ -284,8 +399,11 @@ func _draw():
 		_draw_charge_bar(GameWorld.enemy, cam_x)
 
 	# 9. drawParticles()
+	#FIXED BUG: 粒子之前缺少cam_x参数,相机滚动后显示位置错误
+	#修复:particle.draw()新增cam_x参数,game.gd传入当前相机偏移
 	for pt in GameWorld.particles:
-		pt.draw(self)
+		pt.draw(self, cam_x)
+	#FIX END
 
 	# 10. drawExplosionEffects()
 	for e in GameWorld.explosion_effects:
@@ -433,25 +551,25 @@ func _draw_map(cam_x: float):
 		])
 		draw_polygon(pts, PackedColorArray([Color(0.267, 0.267, 0.424, 0.3)]))
 
-	# Ground
-	draw_rect(Rect2(0, Constants.GROUND_Y, Constants.W, Constants.H - Constants.GROUND_Y), Color(0.239, 0.239, 0.361))
-
-	# Ground tile stripes
-	for i in range(0, Constants.MAP_W, 40):
-		var sx = i - cam_x * 0.8
-		if sx > -20 and sx < Constants.W + 20:
-			draw_rect(Rect2(sx, Constants.GROUND_Y + 4, 20, 4), Color(0.31, 0.31, 0.435))
-
-	# Platforms
+	# 地形块渲染（每个 tile 独立绘制）
 	for pl in GameWorld.platforms:
-		if pl.get("is_ground"):
-			continue
 		var sx = pl["x"] - cam_x
 		if sx < -pl["w"] - 20 or sx > Constants.W + 20:
 			continue
-		draw_rect(Rect2(sx, pl["y"], pl["w"], pl["h"]), Color(0.416, 0.298, 0.612))
-		draw_rect(Rect2(sx + 4, pl["y"] - 2, pl["w"] - 8, 4), Color(0.541, 0.424, 0.737))
-		draw_rect(Rect2(sx + 4, pl["y"] + pl["h"], pl["w"] - 8, 4), Color(0, 0, 0, 0.3))
+		var ttype = pl.get("terrain_type", -1)
+		if ttype == 0:  # GROUND
+			draw_rect(Rect2(sx, pl["y"], pl["w"], pl["h"]), Color(0.227, 0.227, 0.322))
+			draw_rect(Rect2(sx, pl["y"], pl["w"], 3), Color(0.31, 0.31, 0.435))
+		elif ttype == 1:  # WALL
+			draw_rect(Rect2(sx, pl["y"], pl["w"], pl["h"]), Color(0.18, 0.18, 0.28))
+			draw_rect(Rect2(sx, pl["y"], pl["w"], pl["h"]), Color(0.3, 0.22, 0.45, 0.3), false, 2)
+		elif ttype == 2 or ttype == -1:  # PLATFORM
+			draw_rect(Rect2(sx, pl["y"], pl["w"], pl["h"]), Color(0.416, 0.298, 0.612))
+			draw_rect(Rect2(sx + 4, pl["y"] - 2, pl["w"] - 8, 4), Color(0.541, 0.424, 0.737))
+			draw_rect(Rect2(sx + 4, pl["y"] + pl["h"], pl["w"] - 8, 4), Color(0, 0, 0, 0.3))
+		elif ttype == 3:  # VOID
+			draw_rect(Rect2(sx, pl["y"], pl["w"], pl["h"]), Color(0.102, 0.039, 0.18))
+			draw_rect(Rect2(sx, pl["y"], pl["w"], 2), Color(0.416, 0.227, 0.667, 0.6))
 
 	# Map boundary markers
 	draw_rect(Rect2(0 - cam_x, Constants.GROUND_Y - 10, 10, 10), Color(0.914, 0.271, 0.157))
@@ -464,7 +582,7 @@ func _draw_fighter(f: Fighter, is_local: bool = false):
 	var sw_comp: ShadowwarriorComponent = null
 	if f.char_id == "shadowwarrior":
 		sw_comp = f.components.get_component("shadowwarrior") if f.components else null
-		if sw_comp and sw_comp.iaido_active:
+		if sw_comp and (sw_comp.iaido_active or sw_comp.break_strike_timer > 0):
 			return
 	var px = f.pos_x - GameWorld.camera.x
 	if px < -80 or px > 880:
@@ -883,6 +1001,7 @@ func _restart_game():
 	# Clean up old fighters
 	if GameWorld.player: GameWorld.player.queue_free()
 	if GameWorld.enemy: GameWorld.enemy.queue_free()
+	# 清理旧地图 (由 _load_random_map 负责清理)
 	GameWorld.player = null
 	GameWorld.enemy = null
 	var enemy_chars = ["knight","mage","archer","paladin","witch","assassin","shadowwarrior","evoker","rose"]
@@ -916,6 +1035,9 @@ func _back_to_menu():
 	if GameWorld.enemy:
 		GameWorld.enemy.queue_free()
 		GameWorld.enemy = null
+	if _current_map:
+		_current_map.queue_free()
+		_current_map = null
 	GameWorld.reset_world()
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
