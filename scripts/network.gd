@@ -29,13 +29,13 @@ static func fighter_state(f) -> Dictionary:
 		"blocking": f.blocking, "shield_active": f.shield_active,
 		"dashing": f.dashing, "dash_dir": f.dash_dir,
 		"charging": f.charging, "charging_skill1": f.charging_skill1,
-		# Character-specific fields via components
-		"time_stop": (f.components.is_time_stopped() if f.components else false),
-		"divine_shield_active": (f.components.get_component("paladin").divine_shield_active if f.components and f.components.has_component("paladin") else false),
-		"holy_empower_active": (f.components.get_component("paladin").holy_empower_active if f.components and f.components.has_component("paladin") else false),
-		"is_flying": (f.components.get_component("witch").is_flying if f.components and f.components.has_component("witch") else false),
-		"is_casting_ult": (f.components.get_component("witch").is_casting_ult if f.components and f.components.has_component("witch") else false),
-		"stealth_active": (f.components.get_component("shadowwarrior").stealth_active if f.components and f.components.has_component("shadowwarrior") else false),
+		# Character-specific fields via blackboard
+		"time_stop": f.state_flags.get("time_stop", false),
+		"divine_shield_active": f.state_flags.get("divine_shield", false),
+		"holy_empower_active": f.state_flags.get("holy_empower", false),
+		"is_flying": f.state_flags.get("is_flying", false),
+		"is_casting_ult": f.state_flags.get("is_casting_ult", false),
+		"stealth_active": f.state_flags.get("stealth_active", false),
 		"shadow_stance": (f.components.get_component("assassin").shadow_stance if f.components and f.components.has_component("assassin") else false),
 		# Status effects simplified
 		"frozen": f.has_status("frozen"),

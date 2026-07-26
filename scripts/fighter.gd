@@ -101,6 +101,11 @@ var invincible_timer: int = 0
 var gravity_debuff: bool = false
 var jump_reduction: float = 1.0
 
+# Blackboard: 跨系统状态通信（组件写入，系统只读）
+# 避免系统代码直接查询组件，实现解耦
+# Key 约定：使用语义化字符串，如 "time_stop", "dodge_slow", "iaido_freeze"
+var state_flags: Dictionary = {}
+
 
 var bleed_timer: int = 0
 var blind_timer: int = 0

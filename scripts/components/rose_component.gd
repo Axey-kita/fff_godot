@@ -22,6 +22,9 @@ func update():
 			blood_heal_timer = 0
 			blood_abyss -= 1
 			owner.hp = minf(owner.max_hp, owner.hp + 1)
+	# 写入黑板：系统只读，不查询组件
+	owner.state_flags["time_stop"] = time_stop
+	owner.state_flags["blood_abyss"] = blood_abyss
 
 func on_attack_hit(target: Fighter, dmg: float):
 	if not rose_blood_abyss_suppressed:

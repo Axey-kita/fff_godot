@@ -13,3 +13,6 @@ func update():
 		if owner.energy <= 0:
 			owner.energy = 0
 			is_flying = false
+	# 写入黑板：系统只读，不查询组件
+	owner.state_flags["is_flying"] = is_flying
+	owner.state_flags["is_casting_ult"] = is_casting_ult

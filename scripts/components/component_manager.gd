@@ -75,12 +75,3 @@ func keys() -> Array:
 
 func values() -> Array:
 	return components.values()
-
-func is_time_stopped() -> bool:
-	var assassin_comp: AssassinComponent = components.get("assassin")
-	if assassin_comp and assassin_comp.time_stop:
-		return true
-	var rose_comp: RoseComponent = components.get("rose")
-	if rose_comp and rose_comp.time_stop:
-		return true
-	return false

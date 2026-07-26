@@ -141,12 +141,14 @@ func _update():
 	# 仅递减 iaido_timer；平移阶段（90<t<=120）和爆炸阶段（t<=0）正常运行
 	var iaido_freeze = false
 	for f in GameWorld.entities:
-		if f.char_id == "shadowwarrior":
-			var sw_comp: ShadowwarriorComponent = f.components.get_component("shadowwarrior") if f.components else null
-			if sw_comp and sw_comp.iaido_active:
-				if sw_comp.iaido_timer > 120 or (0 < sw_comp.iaido_timer and sw_comp.iaido_timer <= 90):
+		if f.state_flags.get("iaido_active", false):
+			var iaido_timer = f.state_flags.get("iaido_timer", 0)
+			if iaido_timer > 120 or (0 < iaido_timer and iaido_timer <= 90):
+				# 通过组件递减 timer（需要写回黑板）
+				var sw_comp: ShadowwarriorComponent = f.components.get_component("shadowwarrior") if f.components else null
+				if sw_comp:
 					sw_comp.iaido_timer -= 1
-					iaido_freeze = true
+				iaido_freeze = true
 	if iaido_freeze:
 		GameWorld.frame += 1
 		return
@@ -172,8 +174,7 @@ func _update():
 	# 闪避慢动作：刺客 dodge_slow_mo 期间，跳过敌方实体和投射物更新
 	var dodge_slow_active = false
 	for f in GameWorld.entities:
-		var assassin_comp: AssassinComponent = f.components.get_component("assassin") if f.components else null
-		if assassin_comp and assassin_comp.dodge_slow_mo > 0:
+		if f.state_flags.get("dodge_slow", 0) > 0:
 			dodge_slow_active = true
 			break
 	# Systems
@@ -197,7 +198,7 @@ func _apply_physics_all():
 	# Time stop check — skip physics if any entity has time_stop active
 	var time_stopped = false
 	for f in GameWorld.entities:
-		if f.components and f.components.is_time_stopped():
+		if f.state_flags.get("time_stop", false):
 			time_stopped = true
 			break
 	if not time_stopped:
@@ -602,18 +603,17 @@ func _draw_hud(font: Font):
 	var res_label = p_cfg.get("resource_label", "能量")
 	draw_string(font, Vector2(bar_x + 52, 20), res_label + " " + str(int(p.energy)), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color(0.667, 0.8, 1.0))
 
-	# Blood Abyss bar (rose only)
+	# Blood Abyss bar (rose only) — 从黑板读取
 	if p.char_id == "rose":
-		var rose_comp: RoseComponent = p.components.get_component("rose") if p.components else null
-		if rose_comp:
-			var ba_y = 30.0
-			var ba_h = 6.0
-			draw_rect(Rect2(bar_x, ba_y, bar_w, ba_h), Color(0.05, 0.05, 0.08, 0.8))
-			var ba_pct = minf(1.0, rose_comp.blood_abyss / 40.0)
-			draw_rect(Rect2(bar_x, ba_y, bar_w * ba_pct, ba_h), Color(0.9, 0.15, 0.15))
-			draw_string(font, Vector2(bar_x + 52, ba_y), "血渊 " + str(int(rose_comp.blood_abyss)), HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1.0, 0.4, 0.4))
+		var ba_val = p.state_flags.get("blood_abyss", 0.0)
+		var ba_y = 30.0
+		var ba_h = 6.0
+		draw_rect(Rect2(bar_x, ba_y, bar_w, ba_h), Color(0.05, 0.05, 0.08, 0.8))
+		var ba_pct = minf(1.0, ba_val / 40.0)
+		draw_rect(Rect2(bar_x, ba_y, bar_w * ba_pct, ba_h), Color(0.9, 0.15, 0.15))
+		draw_string(font, Vector2(bar_x + 52, ba_y), "血渊 " + str(int(ba_val)), HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1.0, 0.4, 0.4))
 
-	# Shadow Energy bar (assassin only)
+	# Shadow Energy bar (assassin only) — 从黑板读取
 	if p.char_id == "assassin":
 		var assassin_comp: AssassinComponent = p.components.get_component("assassin") if p.components else null
 		if assassin_comp:
@@ -625,16 +625,15 @@ func _draw_hud(font: Font):
 			var se_label = "暗影游走" if assassin_comp.shadow_stance else "暗影 " + str(int(assassin_comp.shadow_energy)) + "/5"
 			draw_string(font, Vector2(bar_x + 52, se_y), se_label, HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(0.67, 0.53, 1.0))
 
-	# Arrow count bar (archer only)
+	# Arrow count bar (archer only) — 从黑板读取
 	if p.char_id == "archer":
-		var archer_comp: ArcherComponent = p.components.get_component("archer") if p.components else null
-		if archer_comp:
-			var ar_y = 30.0
-			var ar_h = 6.0
-			draw_rect(Rect2(bar_x, ar_y, bar_w, ar_h), Color(0.05, 0.05, 0.08, 0.8))
-			var ar_pct = float(archer_comp.arrows) / maxf(archer_comp.max_arrows, 1.0)
-			draw_rect(Rect2(bar_x, ar_y, bar_w * ar_pct, ar_h), Color(0.8, 0.6, 0.2))
-			draw_string(font, Vector2(bar_x + 52, ar_y), "箭矢 " + str(archer_comp.arrows), HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1.0, 0.7, 0.3))
+		var ar_val = p.state_flags.get("arrows", 10)
+		var ar_y = 30.0
+		var ar_h = 6.0
+		draw_rect(Rect2(bar_x, ar_y, bar_w, ar_h), Color(0.05, 0.05, 0.08, 0.8))
+		var ar_pct = float(ar_val) / 10.0
+		draw_rect(Rect2(bar_x, ar_y, bar_w * ar_pct, ar_h), Color(0.8, 0.6, 0.2))
+		draw_string(font, Vector2(bar_x + 52, ar_y), "箭矢 " + str(ar_val), HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1.0, 0.7, 0.3))
 
 	# === Enemy (right side) ===
 	var e_name = e.config.get("name", "AI")
