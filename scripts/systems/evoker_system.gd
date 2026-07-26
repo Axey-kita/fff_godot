@@ -1,5 +1,8 @@
 class_name EvokerSystem
 
+# Component preloads for type resolution
+const EvokerComponent = preload("res://scripts/components/evoker_component.gd")
+
 # ===== Evoker Runtime System =====
 # Handles all per-frame updates for evoker entities: status effects, fire seas,
 # gravity balls, void rifts, and the summon state machine.
@@ -153,7 +156,12 @@ static func _update_summons() -> void:
 		if summon.get("hp", 0.0) <= 0.0:
 			var st: int = summon.get("type", -1)
 			if st >= 0:
-				owner.set("summon_dead" + str(st + 1), true)
+				var evoker_comp: EvokerComponent = owner.components.get_component("evoker") if owner.components else null
+				if evoker_comp:
+					match st:
+						0: evoker_comp.summon_dead1 = true
+						1: evoker_comp.summon_dead2 = true
+						2: evoker_comp.summon_dead3 = true
 			GameWorld.evoker_summons.remove_at(i)
 			continue
 
@@ -280,18 +288,20 @@ static func _update_summons() -> void:
 				2:
 					# 凝视：enemy within 150px → skill cd +1s (debuff, removed on leaving)
 					if aura_dist < 150.0:
-						if not enemy.evoker_gazed:
+						if not enemy.has_status("evoker_gazed"):
 							var es1 = enemy.get_skill("skill1")
 							if es1: es1.cd += 60
 							var es2 = enemy.get_skill("skill2")
 							if es2: es2.cd += 60
-							enemy.evoker_gazed = true
-					elif enemy.evoker_gazed:
+							enemy.add_status("evoker_gazed")
+					elif enemy.has_status("evoker_gazed"):
 						var es1 = enemy.get_skill("skill1")
 						if es1: es1.cd = maxi(0, es1.cd - 60)
 						var es2 = enemy.get_skill("skill2")
 						if es2: es2.cd = maxi(0, es2.cd - 60)
-						enemy.evoker_gazed = false
+						for s in enemy.statuses:
+							if s.id == "evoker_gazed":
+								s.timer = 0
 
 		# === Hit detection (non-随行 state only) ===
 		if state != "随行":

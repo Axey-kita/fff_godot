@@ -1,6 +1,8 @@
 # 刺客 (assassin)
 class_name AssassinCharacter
 
+const AssassinComponent = preload("res://scripts/components/assassin_component.gd")
+
 const PROJ_SLASH2 = preload("res://assets/54.png")
 const ASSASSIN_ANI_DIR = "res://assets/char_ani/assassin/"
 
@@ -41,12 +43,28 @@ static func get_config() -> Dictionary:
 		},
 	}
 
+static func _can_use_attack(owner: Fighter) -> bool:
+	var comp: AssassinComponent = owner.components.get_component("assassin") if owner.components else null
+	return owner.attack_cooldown <= 0 and not owner.attacking and (not comp or not comp.ult_active)
+
+static func _can_use_skill1(owner: Fighter) -> bool:
+	var comp: AssassinComponent = owner.components.get_component("assassin") if owner.components else null
+	return not owner.dashing and not owner.attacking and (not comp or not comp.ult_active)
+
+static func _can_use_skill2(owner: Fighter) -> bool:
+	var comp: AssassinComponent = owner.components.get_component("assassin") if owner.components else null
+	return not owner.attacking and not owner.dashing and (not comp or (not comp.ult_active and not comp.skill2_active))
+
+static func _can_use_ult(owner: Fighter) -> bool:
+	var comp: AssassinComponent = owner.components.get_component("assassin") if owner.components else null
+	return not owner.attacking and not owner.dashing and (not comp or not comp.ult_active)
+
 static func create_skills() -> Array:
 	return [
-		Skill.new("attack", "次元斩", 60, 0, func(owner: Fighter): return owner.attack_cooldown <= 0 and not owner.attacking and not owner.ult_active, Callable(_attack)),
-		Skill.new("skill1", "一瞬", 0, 25, func(owner: Fighter): return not owner.dashing and not owner.ult_active and not owner.attacking, Callable(_skill1)),
-		Skill.new("skill2", "裂空斩", 780, 20, func(owner: Fighter): return not owner.attacking and not owner.ult_active and not owner.dashing, Callable(_skill2)),
-		Skill.new("ult", "天地灭尽", 0, 100, func(owner: Fighter): return not owner.ult_active and not owner.attacking and not owner.dashing, Callable(_ult)),
+		Skill.new("attack", "次元斩", 60, 0, Callable(_can_use_attack), Callable(_attack)),
+		Skill.new("skill1", "一瞬", 0, 25, Callable(_can_use_skill1), Callable(_skill1)),
+		Skill.new("skill2", "裂空斩", 780, 20, Callable(_can_use_skill2), Callable(_skill2)),
+		Skill.new("ult", "天地灭尽", 0, 100, Callable(_can_use_ult), Callable(_ult)),
 	]
 
 static func _attack(owner: Fighter) -> Dictionary:
@@ -56,33 +74,35 @@ static func _attack(owner: Fighter) -> Dictionary:
 	owner.attack_hit_dealt = false
 	owner.attack_cooldown = 60
 	owner.state = "attack"
-	owner.slash_active = true
-	owner.slash_timer = 30
-	owner.slash_facing = owner.facing
-	owner.slash_damage_dealt = false
-	if owner.enhanced_slash and owner.enhanced_slash_timer > 0:
-		# 强化次元斩：斩击出现在身后，伤害提升至 8 点（由 fighter.gd apply_physics 命中时处理）
-		# 命中后恢复 5 能量并重置强化状态
-		owner.slash_x = owner.pos_x - (owner.facing * 40) + owner.w/2 - 50
-		owner.slash_y = owner.pos_y + 10
-	else:
-		owner.slash_x = owner.pos_x + (owner.w if owner.facing>0 else -60) + 10
-		owner.slash_y = owner.pos_y + 10
+	var comp: AssassinComponent = owner.components.get_component("assassin") if owner.components else null
+	if comp:
+		comp.slash_active = true
+		comp.slash_timer = 30
+		comp.slash_facing = owner.facing
+		comp.slash_damage_dealt = false
+		if comp.enhanced_slash and comp.enhanced_slash_timer > 0:
+			comp.slash_x = owner.pos_x - (owner.facing * 40) + owner.w/2 - 50
+			comp.slash_y = owner.pos_y + 10
+		else:
+			comp.slash_x = owner.pos_x + (owner.w if owner.facing>0 else -60) + 10
+			comp.slash_y = owner.pos_y + 10
 	return {"success": true}
 
 static func _skill1(owner: Fighter) -> Dictionary:
-	owner.is_invincible = true
-	owner.invincible_timer = 20
-	owner.dodge_success = false
+	var comp: AssassinComponent = owner.components.get_component("assassin") if owner.components else null
+	if comp:
+		comp.is_invincible = true
+		comp.invincible_timer = 20
+		comp.dodge_success = false
+		comp.enhanced_slash = true
+		comp.enhanced_slash_timer = 30
 	owner.dashing = true
 	owner.dash_remaining = 80
 	owner.dash_dir = owner.facing
 	owner.dash_speed = 5
 	owner.dash_damage_dealt = true  # 一瞬是位移技，不造成伤害和击退
 	owner.attack_cooldown = 0
-	owner.enhanced_slash = true
-	owner.enhanced_slash_timer = 30
-	print("[DODGE-DEBUG] 一瞬释放: dashing=", owner.dashing, " is_invincible=", owner.is_invincible, " invincible_timer=", owner.invincible_timer, " dash_remaining=", owner.dash_remaining)
+	print("[DODGE-DEBUG] 一瞬释放: dashing=", owner.dashing, " is_invincible=", comp.is_invincible if comp else false, " invincible_timer=", comp.invincible_timer if comp else 0, " dash_remaining=", owner.dash_remaining)
 	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 20, Color(0.67,0.53,1.0), 4, 6, "star")
 	return {"success": true}
 
@@ -110,23 +130,27 @@ static func _ult(owner: Fighter) -> Dictionary:
 		return {"success": false}
 	anim.play()
 	
+	var comp: AssassinComponent = owner.components.get_component("assassin") if owner.components else null
+	
 	GameWorld.active_overlays.append({
 		"anim": anim,
 		"position": {"type": "fullscreen"},
 		"owner": owner,
 		"overlay_id": "assassin_ult",
 		"on_finish": func():
-			owner.ult_active = false
-			owner.time_stop = false
-			owner.time_stop_timer = 0
+			if comp:
+				comp.ult_active = false
+				comp.time_stop = false
+				comp.time_stop_timer = 0
 			owner.state = "idle"
 	})
 	
-	owner.ult_active = true
-	owner.ult_timer = int(anim.total_duration * 60)
-	owner.ult_damage_timer = 0
-	owner.time_stop = true
-	owner.time_stop_timer = int(anim.total_duration * 60)
+	if comp:
+		comp.ult_active = true
+		comp.ult_timer = int(anim.total_duration * 60)
+		comp.ult_damage_timer = 0
+		comp.time_stop = true
+		comp.time_stop_timer = int(anim.total_duration * 60)
 	owner.state = "ult"
 	owner.image_state = "ult"
 	
@@ -136,41 +160,44 @@ static func _ult(owner: Fighter) -> Dictionary:
 ## 输入处理（替代 input_handler.gd 中的 _input_assassin）
 static func handle_input(owner: Fighter, keys: Dictionary) -> int:
 	var mx = 0
-	if not owner.skill2_active:
+	var comp: AssassinComponent = owner.components.get_component("assassin") if owner.components else null
+	var skill2_active = comp.skill2_active if comp else false
+	var ult_active = comp.ult_active if comp else false
+	if not skill2_active:
 		if keys.left: mx = -1
 		if keys.right: mx = 1
 		if keys.up and owner.grounded:
 			owner.vy = -10
 			owner.grounded = false
-	if keys.attack and not owner.attacking and owner.attack_cooldown <= 0 and not owner.ult_active:
+	if keys.attack and not owner.attacking and owner.attack_cooldown <= 0 and not ult_active:
 		var s = owner.get_skill("attack")
 		if s:
 			var r = s.try_use(owner)
 			if r.get("success"):
 				keys.attack = false
-	if keys.skill1 and not owner.attacking and not owner.ult_active and not owner.dashing:
+	if keys.skill1 and not owner.attacking and not ult_active and not owner.dashing:
 		var s = owner.get_skill("skill1")
 		if s:
 			var r = s.try_use(owner)
 			if r.get("success"):
 				keys.skill1 = false
-	if keys.skill2 and not owner.attacking and not owner.ult_active and not owner.dashing:
+	if keys.skill2 and not owner.attacking and not ult_active and not owner.dashing:
 		var s = owner.get_skill("skill2")
 		if s:
 			var r = s.try_use(owner)
 			if r.get("success"):
 				keys.skill2 = false
-	if keys.ult and not owner.attacking and not owner.ult_active and not owner.dashing:
+	if keys.ult and not owner.attacking and not ult_active and not owner.dashing:
 		var s = owner.get_skill("ult")
 		if s:
 			var r = s.try_use(owner)
 			if r.get("success"):
 				keys.ult = false
-	if not owner.has_status("frozen") and not owner.dashing and not owner.ult_active and not owner.skill2_active:
+	if not owner.has_status("frozen") and not owner.dashing and not ult_active and not skill2_active:
 		owner.vx += mx * 0.25
 		if absf(owner.vx) > 2.4:
 			owner.vx = 2.4 * signf(owner.vx)
-	elif owner.skill2_active:
+	elif skill2_active:
 		owner.vx = 0
 	Fighter.update_state(owner, mx)
 	return mx

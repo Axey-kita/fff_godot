@@ -1,5 +1,14 @@
 extends Node2D
 
+# Component preloads for type resolution
+const AssassinComponent = preload("res://scripts/components/assassin_component.gd")
+const ShadowwarriorComponent = preload("res://scripts/components/shadowwarrior_component.gd")
+const PaladinComponent = preload("res://scripts/components/paladin_component.gd")
+const RoseComponent = preload("res://scripts/components/rose_component.gd")
+const ArcherComponent = preload("res://scripts/components/archer_component.gd")
+const WitchComponent = preload("res://scripts/components/witch_component.gd")
+const EvokerComponent = preload("res://scripts/components/evoker_component.gd")
+
 # UI nodes (CanvasLayer)
 @onready var ui_layer = $UILayer
 @onready var pause_btn = $UILayer/PauseBtn
@@ -132,10 +141,12 @@ func _update():
 	# 仅递减 iaido_timer；平移阶段（90<t<=120）和爆炸阶段（t<=0）正常运行
 	var iaido_freeze = false
 	for f in GameWorld.entities:
-		if f.char_id == "shadowwarrior" and f.iaido_active:
-			if f.iaido_timer > 120 or (0 < f.iaido_timer and f.iaido_timer <= 90):
-				f.iaido_timer -= 1
-				iaido_freeze = true
+		if f.char_id == "shadowwarrior":
+			var sw_comp: ShadowwarriorComponent = f.components.get_component("shadowwarrior") if f.components else null
+			if sw_comp and sw_comp.iaido_active:
+				if sw_comp.iaido_timer > 120 or (0 < sw_comp.iaido_timer and sw_comp.iaido_timer <= 90):
+					sw_comp.iaido_timer -= 1
+					iaido_freeze = true
 	if iaido_freeze:
 		GameWorld.frame += 1
 		return
@@ -161,7 +172,8 @@ func _update():
 	# 闪避慢动作：刺客 dodge_slow_mo 期间，跳过敌方实体和投射物更新
 	var dodge_slow_active = false
 	for f in GameWorld.entities:
-		if f.dodge_slow_mo > 0:
+		var assassin_comp: AssassinComponent = f.components.get_component("assassin") if f.components else null
+		if assassin_comp and assassin_comp.dodge_slow_mo > 0:
 			dodge_slow_active = true
 			break
 	# Systems
@@ -185,7 +197,7 @@ func _apply_physics_all():
 	# Time stop check — skip physics if any entity has time_stop active
 	var time_stopped = false
 	for f in GameWorld.entities:
-		if f.time_stop:
+		if f.components and f.components.is_time_stopped():
 			time_stopped = true
 			break
 	if not time_stopped:
@@ -358,32 +370,36 @@ func _draw():
 
 	# 11.6 Assassin dimensional slash
 	for f in GameWorld.entities:
-		if f.char_id == "assassin" and f.slash_active:
-			var sx = f.slash_x - cam_x
-			if sx > -120 and sx < Constants.W + 120:
-				if f.slash_facing < 0:
-					draw_set_transform(Vector2(sx + 100, f.slash_y), 0.0, Vector2(-1, 1))
-					draw_texture_rect(ASSASSIN_SLASH_IMG, Rect2(0, 0, 100, 40), false, Color(1, 1, 1, 0.9))
-					draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-				else:
-					draw_texture_rect(ASSASSIN_SLASH_IMG, Rect2(sx, f.slash_y, 100, 40), false, Color(1, 1, 1, 0.9))
+		if f.char_id == "assassin":
+			var assassin_comp: AssassinComponent = f.components.get_component("assassin") if f.components else null
+			if assassin_comp and assassin_comp.slash_active:
+				var sx = assassin_comp.slash_x - cam_x
+				if sx > -120 and sx < Constants.W + 120:
+					if assassin_comp.slash_facing < 0:
+						draw_set_transform(Vector2(sx + 100, assassin_comp.slash_y), 0.0, Vector2(-1, 1))
+						draw_texture_rect(ASSASSIN_SLASH_IMG, Rect2(0, 0, 100, 40), false, Color(1, 1, 1, 0.9))
+						draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+					else:
+						draw_texture_rect(ASSASSIN_SLASH_IMG, Rect2(sx, assassin_comp.slash_y, 100, 40), false, Color(1, 1, 1, 0.9))
 
 	# 11.7 Assassin shadow trail (暗影游走残影)
 	for f in GameWorld.entities:
-		if f.char_id == "assassin" and f.shadow_stance and f.shadow_trail.size() > 0:
-			for trail in f.shadow_trail:
-				var tx = trail["x"] - cam_x
-				if tx > -60 and tx < Constants.W + 60:
-					var alpha = trail["life"] / 12.0
-					if trail["facing"] < 0:
-						draw_set_transform(Vector2(tx + f.w, trail["y"]), 0.0, Vector2(-1, 1))
-					else:
-						draw_set_transform(Vector2(tx, trail["y"]), 0.0, Vector2.ONE)
-					# 使用刺客当前动画帧绘制残影
-					var anim = f.current_anim
-					if anim and anim.current_texture:
-						draw_texture_rect(anim.current_texture, Rect2(0, 0, f.w, f.h), false, Color(0.4, 0.27, 0.6, alpha * 0.5))
-					draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		if f.char_id == "assassin":
+			var assassin_comp: AssassinComponent = f.components.get_component("assassin") if f.components else null
+			if assassin_comp and assassin_comp.shadow_stance and assassin_comp.shadow_trail.size() > 0:
+				for trail in assassin_comp.shadow_trail:
+					var tx = trail["x"] - cam_x
+					if tx > -60 and tx < Constants.W + 60:
+						var alpha = trail["life"] / 12.0
+						if trail["facing"] < 0:
+							draw_set_transform(Vector2(tx + f.w, trail["y"]), 0.0, Vector2(-1, 1))
+						else:
+							draw_set_transform(Vector2(tx, trail["y"]), 0.0, Vector2.ONE)
+						# 使用刺客当前动画帧绘制残影
+						var anim = f.current_anim
+						if anim and anim.current_texture:
+							draw_texture_rect(anim.current_texture, Rect2(0, 0, f.w, f.h), false, Color(0.4, 0.27, 0.6, alpha * 0.5))
+						draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# 12. Time slow filter
 	if GameWorld.slow_mo_timer > 0:
@@ -444,8 +460,11 @@ func _draw_fighter(f: Fighter, is_local: bool = false):
 	if not f:
 		return
 	# 影武者居合期间：角色贴图由 _draw_shadowwarrior_overlays 绘制
-	if f.char_id == "shadowwarrior" and f.iaido_active:
-		return
+	var sw_comp: ShadowwarriorComponent = null
+	if f.char_id == "shadowwarrior":
+		sw_comp = f.components.get_component("shadowwarrior") if f.components else null
+		if sw_comp and sw_comp.iaido_active:
+			return
 	var px = f.pos_x - GameWorld.camera.x
 	if px < -80 or px > 880:
 		return
@@ -455,7 +474,7 @@ func _draw_fighter(f: Fighter, is_local: bool = false):
 	if f.damage_flash > 0 and f.damage_flash % 4 < 2:
 		alpha_mod = 0.5
 	# Stealth transparency for shadowwarrior
-	if f.char_id == "shadowwarrior" and f.stealth_active:
+	if sw_comp and sw_comp.stealth_active:
 		alpha_mod = 0.5
 
 	# Draw texture if available, otherwise colored rect
@@ -494,11 +513,14 @@ func _draw_fighter(f: Fighter, is_local: bool = false):
 		var sw: float = SHIELD_IMG.get_width()
 		var sh: float = SHIELD_IMG.get_height()
 		draw_texture_rect(SHIELD_IMG, Rect2(px + f.w / 2.0 - sw / 2.0, f.pos_y + f.h / 2.0 - sh / 2.0, sw, sh), false, Color(1,1,1,0.6))
-	if f.divine_shield_active or f.holy_empower_active:
-		var alpha_s = 0.32 if f.divine_shield_active else 0.24
-		draw_arc(Vector2(px + f.w / 2.0, f.pos_y + f.h / 2.0), maxf(f.w, f.h) * 0.75, 0, PI * 2, 32, Color(1.0, 0.843, 0.0, alpha_s), 4)
-		if f.holy_empower_active:
-			draw_circle(Vector2(px + f.w / 2.0, f.pos_y + f.h / 2.0), maxf(f.w, f.h) * 1.18, Color(1.0, 0.843, 0.0, 0.12))
+	# Paladin divine shield / holy empower effects
+	if f.char_id == "paladin":
+		var p_comp: PaladinComponent = f.components.get_component("paladin") if f.components else null
+		if p_comp and (p_comp.divine_shield_active or p_comp.holy_empower_active):
+			var alpha_s = 0.32 if p_comp.divine_shield_active else 0.24
+			draw_arc(Vector2(px + f.w / 2.0, f.pos_y + f.h / 2.0), maxf(f.w, f.h) * 0.75, 0, PI * 2, 32, Color(1.0, 0.843, 0.0, alpha_s), 4)
+			if p_comp.holy_empower_active:
+				draw_circle(Vector2(px + f.w / 2.0, f.pos_y + f.h / 2.0), maxf(f.w, f.h) * 1.18, Color(1.0, 0.843, 0.0, 0.12))
 
 	# Status effect overlays
 	for s in f.statuses:
@@ -582,31 +604,37 @@ func _draw_hud(font: Font):
 
 	# Blood Abyss bar (rose only)
 	if p.char_id == "rose":
-		var ba_y = 30.0
-		var ba_h = 6.0
-		draw_rect(Rect2(bar_x, ba_y, bar_w, ba_h), Color(0.05, 0.05, 0.08, 0.8))
-		var ba_pct = minf(1.0, p.blood_abyss / 40.0)
-		draw_rect(Rect2(bar_x, ba_y, bar_w * ba_pct, ba_h), Color(0.9, 0.15, 0.15))
-		draw_string(font, Vector2(bar_x + 52, ba_y), "血渊 " + str(int(p.blood_abyss)), HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1.0, 0.4, 0.4))
+		var rose_comp: RoseComponent = p.components.get_component("rose") if p.components else null
+		if rose_comp:
+			var ba_y = 30.0
+			var ba_h = 6.0
+			draw_rect(Rect2(bar_x, ba_y, bar_w, ba_h), Color(0.05, 0.05, 0.08, 0.8))
+			var ba_pct = minf(1.0, rose_comp.blood_abyss / 40.0)
+			draw_rect(Rect2(bar_x, ba_y, bar_w * ba_pct, ba_h), Color(0.9, 0.15, 0.15))
+			draw_string(font, Vector2(bar_x + 52, ba_y), "血渊 " + str(int(rose_comp.blood_abyss)), HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1.0, 0.4, 0.4))
 
 	# Shadow Energy bar (assassin only)
 	if p.char_id == "assassin":
-		var se_y = 30.0
-		var se_h = 6.0
-		draw_rect(Rect2(bar_x, se_y, bar_w, se_h), Color(0.05, 0.05, 0.08, 0.8))
-		var se_pct = minf(1.0, p.shadow_energy / 5.0)
-		draw_rect(Rect2(bar_x, se_y, bar_w * se_pct, se_h), Color(0.53, 0.27, 0.8))
-		var se_label = "暗影游走" if p.shadow_stance else "暗影 " + str(int(p.shadow_energy)) + "/5"
-		draw_string(font, Vector2(bar_x + 52, se_y), se_label, HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(0.67, 0.53, 1.0))
+		var assassin_comp: AssassinComponent = p.components.get_component("assassin") if p.components else null
+		if assassin_comp:
+			var se_y = 30.0
+			var se_h = 6.0
+			draw_rect(Rect2(bar_x, se_y, bar_w, se_h), Color(0.05, 0.05, 0.08, 0.8))
+			var se_pct = minf(1.0, assassin_comp.shadow_energy / 5.0)
+			draw_rect(Rect2(bar_x, se_y, bar_w * se_pct, se_h), Color(0.53, 0.27, 0.8))
+			var se_label = "暗影游走" if assassin_comp.shadow_stance else "暗影 " + str(int(assassin_comp.shadow_energy)) + "/5"
+			draw_string(font, Vector2(bar_x + 52, se_y), se_label, HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(0.67, 0.53, 1.0))
 
 	# Arrow count bar (archer only)
 	if p.char_id == "archer":
-		var ar_y = 30.0
-		var ar_h = 6.0
-		draw_rect(Rect2(bar_x, ar_y, bar_w, ar_h), Color(0.05, 0.05, 0.08, 0.8))
-		var ar_pct = float(p.arrows) / maxf(p.max_arrows, 1.0)
-		draw_rect(Rect2(bar_x, ar_y, bar_w * ar_pct, ar_h), Color(0.8, 0.6, 0.2))
-		draw_string(font, Vector2(bar_x + 52, ar_y), "箭矢 " + str(p.arrows), HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1.0, 0.7, 0.3))
+		var archer_comp: ArcherComponent = p.components.get_component("archer") if p.components else null
+		if archer_comp:
+			var ar_y = 30.0
+			var ar_h = 6.0
+			draw_rect(Rect2(bar_x, ar_y, bar_w, ar_h), Color(0.05, 0.05, 0.08, 0.8))
+			var ar_pct = float(archer_comp.arrows) / maxf(archer_comp.max_arrows, 1.0)
+			draw_rect(Rect2(bar_x, ar_y, bar_w * ar_pct, ar_h), Color(0.8, 0.6, 0.2))
+			draw_string(font, Vector2(bar_x + 52, ar_y), "箭矢 " + str(archer_comp.arrows), HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color(1.0, 0.7, 0.3))
 
 	# === Enemy (right side) ===
 	var e_name = e.config.get("name", "AI")
@@ -760,10 +788,12 @@ func _sw_draw_tex(img: Texture2D, wx: float, wy: float, w: float, h: float, cam_
 func _draw_shadowwarrior_overlays(cam_x: float):
 	for f in GameWorld.entities:
 		if f.char_id != "shadowwarrior" or f.hp <= 0: continue
+		var sw_comp: ShadowwarriorComponent = f.components.get_component("shadowwarrior") if f.components else null
+		if not sw_comp: continue
 
 		# 暗影替身（陷阱）
-		if f.shadow_trap_active and not f.shadow_trap.is_empty():
-			var trap = f.shadow_trap
+		if sw_comp.shadow_trap_active and not sw_comp.shadow_trap.is_empty():
+			var trap = sw_comp.shadow_trap
 			match trap["phase"]:
 				"idle":
 					var img = SW_TRAP_A if (trap["anim"] / 30) % 2 == 0 else SW_TRAP_B
@@ -781,14 +811,14 @@ func _draw_shadowwarrior_overlays(cam_x: float):
 					_sw_draw_tex(SW_GRAB_BURST, bx, by, bw, bh, cam_x, 1, 1.0)
 
 		# 居合刀光 + 定格姿态（替代角色贴图，姿态沿刀光平移）
-		if f.iaido_active and not f.iaido_slash.is_empty():
-			var slash = f.iaido_slash
+		if sw_comp.iaido_active and not sw_comp.iaido_slash.is_empty():
+			var slash = sw_comp.iaido_slash
 			_sw_draw_tex(SW_IAIDO_SLASH, slash["x"], slash["y"], slash["w"], slash["h"], cam_x, slash.get("dir", 1), 0.85)
 			# 定格姿态平移时序（总 150 帧 = 2.5 秒）：
 			#   0~30 帧（0.5 秒）：定格在起点（progress=0）
 			#   30~60 帧（0.5 秒）：从起点平移到终点（progress 0→1）
 			#   60~150 帧（1.5 秒）：停留在终点（progress=1）
-			var t = f.iaido_timer
+			var t = sw_comp.iaido_timer
 			var progress: float
 			if t > 120:  # 150→120，前 30 帧（0.5 秒定格）
 				progress = 0.0

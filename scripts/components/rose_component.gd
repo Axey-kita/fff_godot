@@ -12,6 +12,8 @@ var rose_grab_center_x: float = -9999.0
 var rose_skill1_enhanced_slashes: Array = []
 var rose_skill1_slash_spawn_timer: int = 0
 var rose_blood_abyss_suppressed: bool = false
+var time_stop: bool = false
+var time_stop_timer: int = 0
 
 func update():
 	if blood_abyss > 0 and owner.hp < owner.max_hp:

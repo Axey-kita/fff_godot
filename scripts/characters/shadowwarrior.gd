@@ -1,6 +1,8 @@
 # 影武者 (shadowwarrior)
 class_name ShadowwarriorCharacter
 
+const ShadowwarriorComponent = preload("res://scripts/components/shadowwarrior_component.gd")
+
 const SHADOWWARRIOR_ANI_DIR = "res://assets/char_ani/shadowwarrior/"
 
 static func get_config() -> Dictionary:
@@ -31,12 +33,20 @@ static func get_config() -> Dictionary:
 		},
 	}
 
+static func _can_use_skill1(owner: Fighter) -> bool:
+	var comp: ShadowwarriorComponent = owner.components.get_component("shadowwarrior") if owner.components else null
+	return not owner.attacking and (not comp or not comp.shadow_trap_active)
+
+static func _can_use_ult(owner: Fighter) -> bool:
+	var comp: ShadowwarriorComponent = owner.components.get_component("shadowwarrior") if owner.components else null
+	return owner.energy >= 100 and not owner.attacking and (not comp or not comp.iaido_active)
+
 static func create_skills() -> Array:
 	return [
 		Skill.new("attack", "胧月·斩", 60, 0, func(owner: Fighter): return owner.attack_cooldown <= 0 and not owner.attacking, Callable(_attack)),
-		Skill.new("skill1", "影缚·袭", 720, 15, func(owner: Fighter): return not owner.shadow_trap_active, Callable(_skill1)),
+		Skill.new("skill1", "影缚·袭", 720, 15, Callable(_can_use_skill1), Callable(_skill1)),
 		Skill.new("skill2", "幻影·舞", 1200, 25, Callable(), Callable(_skill2)),
-		Skill.new("ult", "影舞流·居合", 480, 100, func(owner: Fighter): return owner.energy >= 100 and not owner.iaido_active, Callable(_ult)),
+		Skill.new("ult", "影舞流·居合", 480, 100, Callable(_can_use_ult), Callable(_ult)),
 	]
 
 static func _attack(owner: Fighter) -> Dictionary:
@@ -49,29 +59,36 @@ static func _attack(owner: Fighter) -> Dictionary:
 	return {"success": true}
 
 static func _skill1(owner: Fighter) -> Dictionary:
-	owner.pending_trap = true
-	owner.last_skill_time = GameWorld.frame
+	var comp: ShadowwarriorComponent = owner.components.get_component("shadowwarrior") if owner.components else null
+	if comp:
+		comp.pending_trap = true
+		comp.last_skill_time = GameWorld.frame
 	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 20, Color(0.4,0.2,0.67), 4, 6, "star")
 	return {"success": true}
 
 static func _skill2(owner: Fighter) -> Dictionary:
-	owner.pending_clones = true
-	owner.last_skill_time = GameWorld.frame
+	var comp: ShadowwarriorComponent = owner.components.get_component("shadowwarrior") if owner.components else null
+	if comp:
+		comp.pending_clones = true
+		comp.last_skill_time = GameWorld.frame
 	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 30, Color(0.53,0.27,0.8), 5, 7, "star")
 	return {"success": true}
 
 static func _ult(owner: Fighter) -> Dictionary:
+	var comp: ShadowwarriorComponent = owner.components.get_component("shadowwarrior") if owner.components else null
+	if not comp:
+		return {"success": false}
 	# 居合进行中则不能再放
-	if owner.iaido_active:
+	if comp.iaido_active:
 		return {"success": false}
 
 	var dir = owner.facing
-	owner.iaido_active = true
-	owner.iaido_timer = 150
-	owner.iaido_dir = dir
-	owner.iaido_frozen = true
+	comp.iaido_active = true
+	comp.iaido_timer = 150
+	comp.iaido_dir = dir
+	comp.iaido_frozen = true
 	# 刀光：从角色当前位置起，沿 facing 方向延伸 360 像素
-	owner.iaido_slash = {
+	comp.iaido_slash = {
 		"x": owner.pos_x + (owner.w if dir == 1 else -360),
 		"y": owner.pos_y - 4,
 		"w": 360,
@@ -86,11 +103,15 @@ static func _ult(owner: Fighter) -> Dictionary:
 
 ## 影武者系统更新：技能1陷阱 + 技能2分身 + 大招居合
 static func update_systems(f: Fighter):
+	var comp: ShadowwarriorComponent = f.components.get_component("shadowwarrior") if f.components else null
+	if not comp:
+		return
+	
 	# === 技能1：影缚·袭 - 创建陷阱 ===
-	if f.pending_trap:
-		f.pending_trap = false
-		f.shadow_trap_active = true
-		f.shadow_trap = {
+	if comp.pending_trap:
+		comp.pending_trap = false
+		comp.shadow_trap_active = true
+		comp.shadow_trap = {
 			"x": f.pos_x,
 			"y": f.pos_y,
 			"w": f.w,
@@ -102,8 +123,8 @@ static func update_systems(f: Fighter):
 		}
 
 	# === 技能2：幻影·舞 - 创建分身 ===
-	if f.pending_clones:
-		f.pending_clones = false
+	if comp.pending_clones:
+		comp.pending_clones = false
 		var opp = GameWorld.get_opponent(f)
 		for i in range(2):
 			var offset_x = (i - 0.5) * 30
@@ -128,19 +149,19 @@ static func update_systems(f: Fighter):
 			GameWorld.phantoms.append(ph)
 
 	# === 技能1：陷阱逻辑更新 ===
-	if f.shadow_trap_active and not f.shadow_trap.is_empty():
-		_update_shadow_trap(f)
+	if comp.shadow_trap_active and not comp.shadow_trap.is_empty():
+		_update_shadow_trap(f, comp)
 
 	# === 技能2：分身逻辑更新 ===
 	_update_phantoms(f)
 
 	# === 大招：居合刀光命中 + 到期爆炸 ===
-	if f.iaido_active:
-		_update_iaido(f)
+	if comp.iaido_active:
+		_update_iaido(f, comp)
 
 # 技能1：暗影替身陷阱更新
-static func _update_shadow_trap(f: Fighter):
-	var trap = f.shadow_trap
+static func _update_shadow_trap(f: Fighter, comp: ShadowwarriorComponent):
+	var trap = comp.shadow_trap
 	trap["anim"] += 1
 	trap["timer"] -= 1
 
@@ -172,13 +193,13 @@ static func _update_shadow_trap(f: Fighter):
 				Fighter.emit_particles(trap["x"] + trap["w"] / 2.0, trap["y"] + trap["h"] / 2.0, 30, Color(0.4, 0.2, 0.67), 6, 8, "star", 0.8)
 		"burst":
 			if trap["timer"] <= 0:
-				f.shadow_trap_active = false
-				f.shadow_trap = {}
+				comp.shadow_trap_active = false
+				comp.shadow_trap = {}
 
 	# 5 秒后陷阱消失
 	if trap["timer"] <= 0 and trap["phase"] == "idle":
-		f.shadow_trap_active = false
-		f.shadow_trap = {}
+		comp.shadow_trap_active = false
+		comp.shadow_trap = {}
 
 # 技能2：幻影分身更新
 static func _update_phantoms(f: Fighter):
@@ -239,8 +260,8 @@ static func _update_phantoms(f: Fighter):
 		GameWorld.phantoms.erase(ph)
 
 # 大招：居合刀光命中 + 到期爆炸
-static func _update_iaido(f: Fighter):
-	var slash = f.iaido_slash
+static func _update_iaido(f: Fighter, comp: ShadowwarriorComponent):
+	var slash = comp.iaido_slash
 	if slash.is_empty():
 		return
 
@@ -259,28 +280,31 @@ static func _update_iaido(f: Fighter):
 				slash["captured"] = target
 
 	# 到期爆炸：iaido_timer 归零时造成 30 点伤害
-	if f.iaido_timer <= 0:
+	if comp.iaido_timer <= 0:
 		var cap = slash.get("captured")
 		if cap and cap.hp > 0:
 			Fighter.apply_damage(cap, 30.0, f)
 			# 爆炸击退
-			cap.vx = f.iaido_dir * 6
+			cap.vx = comp.iaido_dir * 6
 			cap.vy = -5
 		# 爆炸特效
 		var cx = slash["x"] + slash["w"] / 2.0
 		var cy = slash["y"] + slash["h"] / 2.0
 		Fighter.emit_particles(cx, cy, 50, Color(0.67, 0.2, 0.93), 10, 14, "star", 1.0)
 		# 重置状态，角色停留在终点
-		f.iaido_active = false
-		f.iaido_frozen = false
-		f.iaido_slash = {}
+		comp.iaido_active = false
+		comp.iaido_frozen = false
+		comp.iaido_slash = {}
 		# 将角色位置更新到刀光终点（大招结束后停留在终点）
 		var end_x = slash.get("start_x", f.pos_x) + slash["dir"] * slash["w"]
 		f.pos_x = clampf(end_x, 10, 2390 - f.w)
 
 ## 输入处理（替代 input_handler.gd 中的 _input_shadowwarrior）
 static func handle_input(owner: Fighter, keys: Dictionary) -> int:
-	if owner.iaido_active and owner.iaido_frozen:
+	var comp: ShadowwarriorComponent = owner.components.get_component("shadowwarrior") if owner.components else null
+	var iaido_active = comp.iaido_active if comp else false
+	var iaido_frozen = comp.iaido_frozen if comp else false
+	if iaido_active and iaido_frozen:
 		owner.vx = 0
 		return 0
 	var mx = 0
@@ -291,30 +315,30 @@ static func handle_input(owner: Fighter, keys: Dictionary) -> int:
 			owner.vy = -10
 			owner.grounded = false
 	if keys.attack and not owner.attacking:
-		if owner.stealth_active:
+		var stealth_active = comp.stealth_active if comp else false
+		if stealth_active:
 			# 破影一击：前冲攻击
 			owner.dashing = true
 			owner.dash_remaining = 60
 			owner.dash_dir = owner.facing
 			owner.dash_speed = 4
 			owner.dash_damage_dealt = false
-			owner.break_strike_timer = 60
-			owner.stealth_active = false
+			if comp:
+				comp.break_strike_timer = 60
+				comp.stealth_active = false
 			keys.attack = false
-		elif GameWorld.frame - owner.last_skill_time <= 60:
+		elif comp and GameWorld.frame - comp.last_skill_time <= 60:
 			# 技能后 1 秒内攻击：后撤隐身
-			owner.stealth_active = true
-			owner.stealth_timer = 360
-			owner.retreat_timer = 15
-			owner.retreat_dir = owner.facing
-			owner.is_invincible = true
-			owner.invincible_timer = 60
+			comp.stealth_active = true
+			comp.stealth_timer = 360
+			comp.retreat_timer = 15
+			comp.retreat_dir = owner.facing
 			owner.dashing = true
 			owner.dash_remaining = 80
 			owner.dash_dir = -owner.facing
 			owner.dash_speed = 2.52
 			owner.dash_damage_dealt = true
-			owner.last_skill_time = -999
+			comp.last_skill_time = -999
 			keys.attack = false
 		else:
 			var s = owner.get_skill("attack")
@@ -327,21 +351,24 @@ static func handle_input(owner: Fighter, keys: Dictionary) -> int:
 		if s:
 			var r = s.try_use(owner)
 			if r.get("success"):
-				owner.stealth_active = false
+				if comp:
+					comp.stealth_active = false
 				keys.skill1 = false
 	if keys.skill2:
 		var s = owner.get_skill("skill2")
 		if s:
 			var r = s.try_use(owner)
 			if r.get("success"):
-				owner.stealth_active = false
+				if comp:
+					comp.stealth_active = false
 				keys.skill2 = false
 	if keys.ult:
 		var s = owner.get_skill("ult")
 		if s:
 			var r = s.try_use(owner)
 			if r.get("success"):
-				owner.stealth_active = false
+				if comp:
+					comp.stealth_active = false
 				keys.ult = false
 	if not owner.has_status("frozen") and not owner.dashing:
 		var has_ph = GameWorld.phantoms.size() > 0

@@ -1,6 +1,8 @@
 # 魔女 (witch)
 class_name WitchCharacter
 
+const WitchComponent = preload("res://scripts/components/witch_component.gd")
+
 const PROJ_GRAVITY = preload("res://assets/45-20260705224120.png")
 const IMG_TORNADO = preload("res://assets/50-20260705225200.png")
 const IMG_VORTEX = preload("res://assets/47-20260705224456.png")
@@ -34,12 +36,20 @@ static func get_config() -> Dictionary:
 		},
 	}
 
+static func _can_use_skill2(owner: Fighter) -> bool:
+	var witch_comp: WitchComponent = owner.components.get_component("witch") if owner.components else null
+	return owner.grounded and not owner.attacking and (not witch_comp or not witch_comp.is_flying)
+
+static func _can_use_ult(owner: Fighter) -> bool:
+	var witch_comp: WitchComponent = owner.components.get_component("witch") if owner.components else null
+	return not owner.grounded and not owner.attacking and not owner.charging_attack and (not witch_comp or not witch_comp.is_casting_ult)
+
 static func create_skills() -> Array:
 	return [
 		Skill.new("attack", "重力球", 120, 3, func(owner: Fighter): return owner.attack_cooldown <= 0 and not owner.attacking, Callable(_attack)),
 		Skill.new("skill1", "风轨·绝啸", 900, 20, Callable(), Callable(_skill1)),
-		Skill.new("skill2", "黯渊·涡流", 720, 20, func(owner: Fighter): return owner.grounded and not owner.attacking, Callable(_skill2)),
-		Skill.new("ult", "陨星·寂灭", 0, 100, func(owner: Fighter): return not owner.grounded and not owner.attacking and not owner.charging_attack, Callable(_ult)),
+		Skill.new("skill2", "黯渊·涡流", 720, 20, Callable(_can_use_skill2), Callable(_skill2)),
+		Skill.new("ult", "陨星·寂灭", 0, 100, Callable(_can_use_ult), Callable(_ult)),
 	]
 
 static func _attack(owner: Fighter) -> Dictionary:
@@ -48,7 +58,8 @@ static func _attack(owner: Fighter) -> Dictionary:
 	var py = owner.pos_y + 30
 	var p_vx = 4.0 * dir
 	var p_vy = 0.0
-	if owner.is_flying:
+	var witch_comp: WitchComponent = owner.components.get_component("witch") if owner.components else null
+	if witch_comp and witch_comp.is_flying:
 		p_vx = 3.0 * dir
 		p_vy = 2.0
 	GameWorld.projectiles.append({"x":px-16,"y":py-12,"w":32,"h":24,"vx":p_vx,"vy":p_vy,"life":120,"damage":4,"owner":owner,"type":"gravity","color":Color(0.67,0.53,1.0),"reflected":false,"is_gravity":true,"img":PROJ_GRAVITY})
@@ -72,10 +83,15 @@ static func _skill2(owner: Fighter) -> Dictionary:
 static func _ult(owner: Fighter) -> Dictionary:
 	if owner.grounded:
 		return {"success": false}
+	var witch_comp: WitchComponent = owner.components.get_component("witch") if owner.components else null
+	if not witch_comp:
+		return {"success": false}
 	var target_x = owner.pos_x + owner.w / 2
 	var dir = owner.facing if owner.facing != 0 else 1
 	GameWorld.projectiles.append({"x":target_x-200,"y":-500,"w":600,"h":600,"vx":1.0*dir,"vy":1.0,"life":300,"damage":40,"owner":owner,"type":"meteor","exploded":false,"img":PROJ_METEOR})
-	owner.is_casting_ult = true
+	witch_comp.is_casting_ult = true
+	witch_comp.cast_ult_x = target_x
+	witch_comp.cast_ult_y = -500
 	owner.state = "ult"
 	owner.vx = 0
 	owner.vy = 0
@@ -84,30 +100,31 @@ static func _ult(owner: Fighter) -> Dictionary:
 ## 输入处理（替代 input_handler.gd 中的 _input_witch）
 static func handle_input(owner: Fighter, keys: Dictionary) -> int:
 	var mx = 0
-	if keys.up:
-		if owner.grounded and not owner.is_flying:
+	var witch_comp: WitchComponent = owner.components.get_component("witch") if owner.components else null
+	if keys.up and witch_comp:
+		if owner.grounded and not witch_comp.is_flying:
 			owner.vy = owner.jump_reduction * -10
 			owner.grounded = false
 			keys.up = false
-		elif not owner.grounded and not owner.is_flying and not owner.attacking:
+		elif not owner.grounded and not witch_comp.is_flying and not owner.attacking:
 			if owner.energy > 0:
-				owner.is_flying = true
+				witch_comp.is_flying = true
 				owner.vy = 0
 			keys.up = false
-		elif owner.is_flying:
-			owner.is_flying = false
+		elif witch_comp.is_flying:
+			witch_comp.is_flying = false
 			keys.up = false
-	if owner.is_flying:
-		owner.energy -= owner.fly_energy_drain
+	if witch_comp and witch_comp.is_flying:
+		owner.energy -= witch_comp.fly_energy_drain
 		if owner.energy <= 0:
 			owner.energy = 0
-			owner.is_flying = false
+			witch_comp.is_flying = false
 	if keys.left: mx = -1
 	if keys.right: mx = 1
 	if mx != 0:
 		owner.facing = 1 if mx > 0 else -1
 	if not owner.has_status("frozen") and not owner.dashing:
-		var sp = 1.8 if owner.is_flying else 2.0
+		var sp = 1.8 if (witch_comp and witch_comp.is_flying) else 2.0
 		owner.vx += mx * 0.25
 		if absf(owner.vx) > sp:
 			owner.vx = sp * signf(owner.vx)

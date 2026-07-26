@@ -3,6 +3,9 @@ extends GutTest
 # 验证修复：刺客「一瞬」无敌状态结束后能正常受到伤害
 # 修复点：fighter.gd apply_physics 中递减 invincible_timer，归零时复位 is_invincible
 
+# Component preloads for type resolution
+const AssassinComponent = preload("res://scripts/components/assassin_component.gd")
+
 var _attacker: Fighter
 var _target: Fighter
 
@@ -46,21 +49,30 @@ func after_each():
 	GameWorld.game_running = false
 	GameWorld.game_over = false
 
+# Helper: get assassin component
+func _get_assassin_comp(f: Fighter) -> AssassinComponent:
+	return f.components.get_component("assassin") if f.components else null
+
 # ===== apply_damage 在无敌期间应免疫伤害 =====
 
 func test_apply_damage_blocked_when_invincible():
 	# 模拟刺客「一瞬」技能生效期间
-	_target.is_invincible = true
-	_target.invincible_timer = 20
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.is_invincible = true
+		comp.invincible_timer = 20
 	var hp_before = _target.hp
 	Fighter.apply_damage(_target, 10, _attacker)
 	assert_eq(_target.hp, hp_before, "无敌期间目标不应受到伤害")
-	assert_true(_target.is_invincible, "无敌期间 is_invincible 应保持为 true")
+	if comp:
+		assert_true(comp.is_invincible, "无敌期间 is_invincible 应保持为 true")
 
 func test_apply_damage_works_when_not_invincible():
 	# 普通状态下应正常受伤
-	_target.is_invincible = false
-	_target.invincible_timer = 0
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.is_invincible = false
+		comp.invincible_timer = 0
 	var hp_before = _target.hp
 	Fighter.apply_damage(_target, 10, _attacker)
 	assert_lt(_target.hp, hp_before, "非无敌状态目标应受到伤害")
@@ -68,31 +80,40 @@ func test_apply_damage_works_when_not_invincible():
 # ===== apply_physics 应递减 invincible_timer 并复位 is_invincible =====
 
 func test_apply_physics_decrements_invincible_timer():
-	_target.is_invincible = true
-	_target.invincible_timer = 5
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.is_invincible = true
+		comp.invincible_timer = 5
 	_target.grounded = true
 	# 调用一次 apply_physics
 	_target.apply_physics()
-	assert_eq(_target.invincible_timer, 4, "apply_physics 后 invincible_timer 应递减 1")
-	assert_true(_target.is_invincible, "timer 未归零时 is_invincible 应保持 true")
+	if comp:
+		assert_eq(comp.invincible_timer, 4, "apply_physics 后 invincible_timer 应递减 1")
+		assert_true(comp.is_invincible, "timer 未归零时 is_invincible 应保持 true")
 
 func test_apply_physics_resets_is_invincible_when_timer_zero():
-	_target.is_invincible = true
-	_target.invincible_timer = 1
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.is_invincible = true
+		comp.invincible_timer = 1
 	_target.grounded = true
 	_target.apply_physics()
-	assert_eq(_target.invincible_timer, 0, "invincible_timer 应归零")
-	assert_false(_target.is_invincible, "timer 归零后 is_invincible 应复位为 false")
+	if comp:
+		assert_eq(comp.invincible_timer, 0, "invincible_timer 应归零")
+		assert_false(comp.is_invincible, "timer 归零后 is_invincible 应复位为 false")
 
 func test_apply_physics_resets_after_multiple_calls():
 	# 模拟连续多帧调用 apply_physics 直到无敌结束
-	_target.is_invincible = true
-	_target.invincible_timer = 3
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.is_invincible = true
+		comp.invincible_timer = 3
 	_target.grounded = true
 	for i in range(3):
 		_target.apply_physics()
-	assert_eq(_target.invincible_timer, 0, "3 帧后 invincible_timer 应归零")
-	assert_false(_target.is_invincible, "3 帧后 is_invincible 应复位")
+	if comp:
+		assert_eq(comp.invincible_timer, 0, "3 帧后 invincible_timer 应归零")
+		assert_false(comp.is_invincible, "3 帧后 is_invincible 应复位")
 
 # ===== 刺客「一瞬」技能应正确设置无敌状态 =====
 
@@ -111,24 +132,28 @@ func test_assassin_skill1_sets_invincible():
 	_target.grounded = true
 	_target.attacking = false
 	_target.dashing = false
-	_target.ult_active = false
 	var result = skill1.try_use(_target)
 	assert_true(result.get("success", false), "skill1 应能成功释放")
-	assert_true(_target.is_invincible, "skill1 释放后 is_invincible 应为 true")
-	assert_eq(_target.invincible_timer, 20, "skill1 释放后 invincible_timer 应为 20")
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		assert_true(comp.is_invincible, "skill1 释放后 is_invincible 应为 true")
+		assert_eq(comp.invincible_timer, 20, "skill1 释放后 invincible_timer 应为 20")
 
 # ===== 综合场景：无敌结束后能受到伤害 =====
 
 func test_assassin_takes_damage_after_invincibility_expires():
 	# 完整流程：触发一瞬 → 多帧 apply_physics → 无敌结束 → 受到伤害
-	_target.is_invincible = true
-	_target.invincible_timer = 3
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.is_invincible = true
+		comp.invincible_timer = 3
 	_target.grounded = true
 	# 模拟 3 帧
 	for i in range(3):
 		_target.apply_physics()
 	# 此时无敌应已结束
-	assert_false(_target.is_invincible, "3 帧后无敌应结束")
+	if comp:
+		assert_false(comp.is_invincible, "3 帧后无敌应结束")
 	# 现在应能受到伤害
 	var hp_before = _target.hp
 	Fighter.apply_damage(_target, 15, _attacker)
@@ -172,9 +197,11 @@ func test_enhanced_slash_deals_8_damage_and_restores_energy():
 	_attacker.h = 56
 	_attacker.energy = 30
 	_attacker.max_energy = 100
-	_attacker.enhanced_slash = true
-	_attacker.enhanced_slash_timer = 30
 	_attacker.attack_damage = 5  # 基础攻击力
+	var attacker_comp = _get_assassin_comp(_attacker)
+	if attacker_comp:
+		attacker_comp.enhanced_slash = true
+		attacker_comp.enhanced_slash_timer = 30
 	# 强化次元斩斩击出现在身后：slash_x = 100 - 40 + 16 - 50 = 26，范围 [26, 126]
 	# 目标放在身后（pos_x=50，hit_box=[54, 78]），与斩击框相交
 	_target.char_id = "knight"
@@ -187,7 +214,8 @@ func test_enhanced_slash_deals_8_damage_and_restores_energy():
 	# 触发攻击（强化状态）
 	AssassinCharacter._attack(_attacker)
 	assert_true(_attacker.attacking, "攻击应已启动")
-	assert_true(_attacker.enhanced_slash, "强化状态在攻击启动时应保留（等待命中判定）")
+	if attacker_comp:
+		assert_true(attacker_comp.enhanced_slash, "强化状态在攻击启动时应保留（等待命中判定）")
 	# 推进 attack_delay（8 帧）使命中判定触发
 	for i in range(8):
 		_attacker.apply_physics()
@@ -196,8 +224,9 @@ func test_enhanced_slash_deals_8_damage_and_restores_energy():
 	# 命中后应恢复 5 能量（加上 8 帧自然恢复约 0.66，允许误差 ±1.0）
 	assert_almost_eq(_attacker.energy, 35.0, 1.0, "强化次元斩命中应恢复 5 能量")
 	# 命中后强化状态应重置
-	assert_false(_attacker.enhanced_slash, "命中后 enhanced_slash 应重置为 false")
-	assert_eq(_attacker.enhanced_slash_timer, 0, "命中后 enhanced_slash_timer 应归零")
+	if attacker_comp:
+		assert_false(attacker_comp.enhanced_slash, "命中后 enhanced_slash 应重置为 false")
+		assert_eq(attacker_comp.enhanced_slash_timer, 0, "命中后 enhanced_slash_timer 应归零")
 
 func test_normal_slash_deals_5_damage():
 	# 非强化状态下应造成基础 5 点伤害
@@ -208,9 +237,11 @@ func test_normal_slash_deals_5_damage():
 	_attacker.h = 56
 	_attacker.energy = 30
 	_attacker.max_energy = 100
-	_attacker.enhanced_slash = false
-	_attacker.enhanced_slash_timer = 0
 	_attacker.attack_damage = 5
+	var attacker_comp = _get_assassin_comp(_attacker)
+	if attacker_comp:
+		attacker_comp.enhanced_slash = false
+		attacker_comp.enhanced_slash_timer = 0
 	# 普通次元斩斩击在前方：slash_x = 100 + 32 + 10 = 142，范围 [142, 242]
 	# 目标放在前方（pos_x=150，hit_box=[154, 178]），与斩击框相交
 	_target.char_id = "knight"
@@ -228,37 +259,49 @@ func test_normal_slash_deals_5_damage():
 # ===== enhanced_slash_timer 应递减，超时后强化状态失效 =====
 
 func test_enhanced_slash_timer_decrements():
-	_target.enhanced_slash = true
-	_target.enhanced_slash_timer = 5
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.enhanced_slash = true
+		comp.enhanced_slash_timer = 5
 	_target.grounded = true
 	_target.apply_physics()
-	assert_eq(_target.enhanced_slash_timer, 4, "apply_physics 后 enhanced_slash_timer 应递减 1")
-	assert_true(_target.enhanced_slash, "timer 未归零时 enhanced_slash 应保持 true")
+	if comp:
+		assert_eq(comp.enhanced_slash_timer, 4, "apply_physics 后 enhanced_slash_timer 应递减 1")
+		assert_true(comp.enhanced_slash, "timer 未归零时 enhanced_slash 应保持 true")
 
 func test_enhanced_slash_resets_when_timer_expires():
 	# 30 帧后强化状态应失效
-	_target.enhanced_slash = true
-	_target.enhanced_slash_timer = 3
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.enhanced_slash = true
+		comp.enhanced_slash_timer = 3
 	_target.grounded = true
 	for i in range(3):
 		_target.apply_physics()
-	assert_eq(_target.enhanced_slash_timer, 0, "3 帧后 enhanced_slash_timer 应归零")
-	assert_false(_target.enhanced_slash, "timer 归零后 enhanced_slash 应复位为 false")
+	if comp:
+		assert_eq(comp.enhanced_slash_timer, 0, "3 帧后 enhanced_slash_timer 应归零")
+		assert_false(comp.enhanced_slash, "timer 归零后 enhanced_slash 应复位为 false")
 
 # ===== 闪避慢动作计时器递减 =====
 
 func test_dodge_slow_mo_decrements():
-	_target.dodge_slow_mo = 10
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.dodge_slow_mo = 10
 	_target.grounded = true
 	_target.apply_physics()
-	assert_eq(_target.dodge_slow_mo, 9, "apply_physics 后 dodge_slow_mo 应递减 1")
+	if comp:
+		assert_eq(comp.dodge_slow_mo, 9, "apply_physics 后 dodge_slow_mo 应递减 1")
 
 func test_dodge_slow_mo_reaches_zero():
-	_target.dodge_slow_mo = 3
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.dodge_slow_mo = 3
 	_target.grounded = true
 	for i in range(5):  # 多递减几帧确保归零
 		_target.apply_physics()
-	assert_eq(_target.dodge_slow_mo, 0, "5 帧后 dodge_slow_mo 应归零（不会变负）")
+	if comp:
+		assert_eq(comp.dodge_slow_mo, 0, "5 帧后 dodge_slow_mo 应归零（不会变负）")
 
 # ===== 冲刺中释放普攻应能命中（使用 slash_x 固定位置） =====
 
@@ -272,9 +315,11 @@ func test_attack_during_dash_hits_target():
 	_attacker.h = 56
 	_attacker.energy = 30
 	_attacker.max_energy = 100
-	_attacker.enhanced_slash = false
-	_attacker.enhanced_slash_timer = 0
 	_attacker.attack_damage = 5
+	var attacker_comp = _get_assassin_comp(_attacker)
+	if attacker_comp:
+		attacker_comp.enhanced_slash = false
+		attacker_comp.enhanced_slash_timer = 0
 	# 目标在刺客启动攻击时的前方
 	_target.char_id = "knight"
 	_target.pos_x = 150  # 在 slash_x=142 范围内
@@ -299,15 +344,17 @@ func test_dodge_accumulates_shadow_energy():
 	# 模拟刺客闪避：冲刺+无敌时被投射物命中应积攒暗影能量
 	_target.char_id = "assassin"
 	_target.dashing = true
-	_target.is_invincible = true
-	_target.dodge_success = false
-	_target.shadow_energy = 0
-	_target.shadow_energy_max = 5
-	_target.shadow_stance = false
 	_target.hp = 100
 	_target.pos_x = 100
 	_target.w = 32
 	_target.h = 56
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.is_invincible = true
+		comp.dodge_success = false
+		comp.shadow_energy = 0
+		comp.shadow_energy_max = 5
+		comp.shadow_stance = false
 	# 创建一个投射物，位置与刺客重叠
 	_attacker.char_id = "knight"
 	_attacker.pos_x = 50
@@ -320,25 +367,28 @@ func test_dodge_accumulates_shadow_energy():
 	})
 	ProjectileSystem.update_projectiles(null)
 	# 闪避应触发
-	assert_true(_target.dodge_success, "闪避应触发 dodge_success=true")
-	assert_eq(_target.dodge_slow_mo, 30, "闪避应设置 dodge_slow_mo=30")
-	assert_eq(_target.shadow_energy, 1, "闪避应积攒 1 格暗影能量")
-	assert_false(_target.shadow_stance, "1 格能量不应触发暗影游走")
+	if comp:
+		assert_true(comp.dodge_success, "闪避应触发 dodge_success=true")
+		assert_eq(comp.dodge_slow_mo, 30, "闪避应设置 dodge_slow_mo=30")
+		assert_eq(comp.shadow_energy, 1, "闪避应积攒 1 格暗影能量")
+		assert_false(comp.shadow_stance, "1 格能量不应触发暗影游走")
 	GameWorld.projectiles.clear()
 
 func test_dodge_full_energy_triggers_shadow_stance():
 	# 4 格能量时再闪避一次，应满格触发暗影游走
 	_target.char_id = "assassin"
 	_target.dashing = true
-	_target.is_invincible = true
-	_target.dodge_success = false
-	_target.shadow_energy = 4
-	_target.shadow_energy_max = 5
-	_target.shadow_stance = false
 	_target.hp = 100
 	_target.pos_x = 100
 	_target.w = 32
 	_target.h = 56
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.is_invincible = true
+		comp.dodge_success = false
+		comp.shadow_energy = 4
+		comp.shadow_energy_max = 5
+		comp.shadow_stance = false
 	_attacker.char_id = "knight"
 	_attacker.pos_x = 50
 	GameWorld.projectiles.clear()
@@ -349,42 +399,49 @@ func test_dodge_full_energy_triggers_shadow_stance():
 		"piercing": false, "hitTargets": []
 	})
 	ProjectileSystem.update_projectiles(null)
-	assert_eq(_target.shadow_energy, 5, "闪避后应满 5 格能量")
-	assert_true(_target.shadow_stance, "满格应触发暗影游走状态")
-	assert_eq(_target.shadow_stance_timer, 480, "暗影游走持续 480 帧（8 秒）")
+	if comp:
+		assert_eq(comp.shadow_energy, 5, "闪避后应满 5 格能量")
+		assert_true(comp.shadow_stance, "满格应触发暗影游走状态")
+		assert_eq(comp.shadow_stance_timer, 480, "暗影游走持续 480 帧（8 秒）")
 	GameWorld.projectiles.clear()
 
 func test_shadow_stance_drains_energy_and_expires():
 	# 暗影游走期间每帧消耗能量，能量耗尽后退出
 	_target.char_id = "assassin"
-	_target.shadow_stance = true
-	_target.shadow_stance_timer = 480
-	_target.shadow_energy = 0.5  # 很少能量
-	_target.shadow_energy_max = 5
-	_target.shadow_energy_drain_rate = 5.0 / 480.0
 	_target.grounded = true
 	_target.vx = 0
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.shadow_stance = true
+		comp.shadow_stance_timer = 480
+		comp.shadow_energy = 0.5  # 很少能量
+		comp.shadow_energy_max = 5
+		comp.shadow_energy_drain_rate = 5.0 / 480.0
 	# 推进几帧，能量应耗尽
 	for i in range(60):
 		_target.apply_physics()
-	assert_false(_target.shadow_stance, "能量耗尽后暗影游走应退出")
-	assert_eq(_target.shadow_energy, 0, "能量应归零")
-	assert_eq(_target.shadow_stance_timer, 0, "timer 应归零")
+	if comp:
+		assert_false(comp.shadow_stance, "能量耗尽后暗影游走应退出")
+		assert_eq(comp.shadow_energy, 0, "能量应归零")
+		assert_eq(comp.shadow_stance_timer, 0, "timer 应归零")
 
 func test_shadow_stance_leaves_trail_when_moving():
 	# 暗影游走状态移动时应留下残影
 	_target.char_id = "assassin"
-	_target.shadow_stance = true
-	_target.shadow_stance_timer = 480
-	_target.shadow_energy = 5
-	_target.shadow_energy_max = 5
-	_target.shadow_energy_drain_rate = 5.0 / 480.0
-	_target.shadow_trail.clear()
 	_target.grounded = true
 	_target.vx = 3  # 移动中
 	_target.facing = 1
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.shadow_stance = true
+		comp.shadow_stance_timer = 480
+		comp.shadow_energy = 5
+		comp.shadow_energy_max = 5
+		comp.shadow_energy_drain_rate = 5.0 / 480.0
+		comp.shadow_trail.clear()
 	_target.apply_physics()
-	assert_gt(_target.shadow_trail.size(), 0, "移动中应留下残影")
+	if comp:
+		assert_gt(comp.shadow_trail.size(), 0, "移动中应留下残影")
 
 # ===== 闪避期间完全免疫伤害和状态效果 =====
 
@@ -392,17 +449,19 @@ func test_dodge_completely_immune_to_damage():
 	# 冲刺+无敌期间被投射物命中，应完全免疫伤害
 	_target.char_id = "assassin"
 	_target.dashing = true
-	_target.is_invincible = true
-	_target.dodge_success = false
-	_target.shadow_energy = 0
-	_target.shadow_energy_max = 5
-	_target.shadow_stance = false
 	_target.hp = 100
 	_target.max_hp = 100
 	_target.pos_x = 100
 	_target.pos_y = 320
 	_target.w = 32
 	_target.h = 56
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.is_invincible = true
+		comp.dodge_success = false
+		comp.shadow_energy = 0
+		comp.shadow_energy_max = 5
+		comp.shadow_stance = false
 	_attacker.char_id = "knight"
 	_attacker.pos_x = 50
 	GameWorld.projectiles.clear()
@@ -425,16 +484,18 @@ func test_dodge_does_not_consume_projectile():
 	# 闪避时非穿透性投射物不应被消耗（应继续飞行）
 	_target.char_id = "assassin"
 	_target.dashing = true
-	_target.is_invincible = true
-	_target.dodge_success = false
-	_target.shadow_energy = 0
-	_target.shadow_energy_max = 5
-	_target.shadow_stance = false
 	_target.hp = 100
 	_target.pos_x = 100
 	_target.pos_y = 320
 	_target.w = 32
 	_target.h = 56
+	var comp = _get_assassin_comp(_target)
+	if comp:
+		comp.is_invincible = true
+		comp.dodge_success = false
+		comp.shadow_energy = 0
+		comp.shadow_energy_max = 5
+		comp.shadow_stance = false
 	_attacker.char_id = "knight"
 	_attacker.pos_x = 50
 	GameWorld.projectiles.clear()

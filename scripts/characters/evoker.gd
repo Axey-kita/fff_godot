@@ -1,6 +1,8 @@
 # 唤魔者 (evoker)
 class_name EvokerCharacter
 
+const EvokerComponent = preload("res://scripts/components/evoker_component.gd")
+
 const PROJ_FIREBALL = preload("res://assets/fire.png")
 const EVOKER_ANI_DIR = "res://assets/char_ani/evoker/"
 
@@ -74,9 +76,11 @@ static func _can_attack(owner: Fighter) -> bool:
 static func _can_skill1(owner: Fighter) -> bool:
 	if owner.energy < 20:
 		return false
-	for i in 3:
-		if not owner.get("summon_dead" + str(i + 1)):
-			return true
+	var comp: EvokerComponent = owner.components.get_component("evoker") if owner.components else null
+	if not comp:
+		return true
+	if not comp.summon_dead1 or not comp.summon_dead2 or not comp.summon_dead3:
+		return true
 	return false
 
 static func _can_ult(owner: Fighter) -> bool:
@@ -203,16 +207,21 @@ static func _perform_heavy_attack(summon: Dictionary):
 
 # ===== 技能1：深渊召令 =====
 static func _skill1(owner: Fighter) -> Dictionary:
+	var comp: EvokerComponent = owner.components.get_component("evoker") if owner.components else null
+	
 	# Find available types (not dead)
 	var available = []
-	for i in 3:
-		if not owner.get("summon_dead" + str(i + 1)):
-			available.append(i)
+	if comp:
+		if not comp.summon_dead1: available.append(0)
+		if not comp.summon_dead2: available.append(1)
+		if not comp.summon_dead3: available.append(2)
+	else:
+		available = [0, 1, 2]
 	if available.is_empty():
 		return {"success": false}
 
 	# Exclude last summoned type if possible
-	var exclude = owner.last_summon_type
+	var exclude = comp.last_summon_type if comp else -1
 	var filtered = []
 	for t in available:
 		if t != exclude:
@@ -250,7 +259,8 @@ static func _skill1(owner: Fighter) -> Dictionary:
 		"dash_hit": false,
 	})
 
-	owner.last_summon_type = type_id
+	if comp:
+		comp.last_summon_type = type_id
 
 	var summon_colors = [
 		Color(0.541, 0.169, 0.886),
@@ -347,7 +357,12 @@ static func _ult(owner: Fighter) -> Dictionary:
 	owner.hp = minf(owner.hp, owner.max_hp)
 
 	# Mark summon type as dead
-	owner.set("summon_dead" + str(summon["type"] + 1), true)
+	var comp: EvokerComponent = owner.components.get_component("evoker") if owner.components else null
+	if comp:
+		match summon["type"]:
+			0: comp.summon_dead1 = true
+			1: comp.summon_dead2 = true
+			2: comp.summon_dead3 = true
 
 	# Create void rift at summon position
 	GameWorld.void_rifts.append({

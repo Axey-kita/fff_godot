@@ -1,6 +1,8 @@
 # 血色蔷薇 (rose)
 class_name RoseCharacter
 
+const RoseComponent = preload("res://scripts/components/rose_component.gd")
+
 const ROSE_SLASH_IMG = preload("res://assets/fx_rose_slash.png")
 const ROSE_SKILL1_IMG = preload("res://assets/fx_rose_skill1.png")
 const ROSE_SKILL2_IMG = preload("res://assets/fx_rose_skill2.png")
@@ -53,7 +55,9 @@ static func get_config() -> Dictionary:
 	}
 
 static func handle_input(p: Fighter, keys: Dictionary) -> int:
-	if p.rose_skill2_enhanced:
+	var comp: RoseComponent = p.components.get_component("rose") if p.components else null
+	var rose_skill2_enhanced = comp.rose_skill2_enhanced if comp else false
+	if rose_skill2_enhanced:
 		var jx = 0.0; var jy = 0.0
 		if keys.left: jx -= 1.0
 		if keys.right: jx += 1.0
@@ -89,6 +93,9 @@ static func handle_input(p: Fighter, keys: Dictionary) -> int:
 
 static func update_systems(f: Fighter):
 	if f.hp <= 0: return
+	var comp: RoseComponent = f.components.get_component("rose") if f.components else null
+	if not comp: return
+	
 	# Ult: overlay damage
 	var has_ult_overlay = false
 	for entry in GameWorld.active_overlays:
@@ -101,43 +108,43 @@ static func update_systems(f: Fighter):
 			Fighter.apply_damage(target, 4.0, f, false, Color(0.9, 0.15, 0.15))
 			Fighter.emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 12, Color(0.9, 0.15, 0.15), 5, 7, "star", 0.8)
 	# Skill2: bat swarm
-	if f.rose_skill2_active:
+	if comp.rose_skill2_active:
 		f.is_invincible = true
 		f.image_state = "skill2"
-		if f.rose_skill2_enhanced:
+		if comp.rose_skill2_enhanced:
 			f.vx = 0; f.vy = 0
 			var jd = GameWorld.rose_joystick_dir
 			var fly_speed = 3.5
 			f.pos_x = clampf(f.pos_x + jd.x * fly_speed, 10, 2390 - f.w)
 			f.pos_y = clampf(f.pos_y + jd.y * fly_speed, 40, 380 - f.h)
 			f.facing = 1 if jd.x >= 0 else (-1 if jd.x < 0 else f.facing)
-			f.rose_skill2_damage_tick += 1
+			comp.rose_skill2_damage_tick += 1
 			var enemy = GameWorld.get_opponent(f)
 			if enemy and enemy.hp > 0:
 				var dist = absf(enemy.pos_x + enemy.w/2 - f.pos_x - f.w/2)
 				if dist < 80:
-					if f.rose_skill2_damage_tick >= 12:
-						f.rose_skill2_damage_tick = 0
-						Fighter.apply_damage(enemy, f.rose_skill2_tick_damage, f, false, Color(0.6, 0.1, 0.6))
-			f.rose_skill2_fly_timer -= 1
-			if f.rose_skill2_fly_timer <= 0:
-				f.rose_skill2_active = false
-				f.rose_skill2_enhanced = false
+					if comp.rose_skill2_damage_tick >= 12:
+						comp.rose_skill2_damage_tick = 0
+						Fighter.apply_damage(enemy, comp.rose_skill2_tick_damage, f, false, Color(0.6, 0.1, 0.6))
+			comp.rose_skill2_fly_timer -= 1
+			if comp.rose_skill2_fly_timer <= 0:
+				comp.rose_skill2_active = false
+				comp.rose_skill2_enhanced = false
 				f.is_invincible = false
 				GameWorld.rose_joystick_dir = Vector2.ZERO
 		else:
-			f.rose_skill2_damage_tick += 1
+			comp.rose_skill2_damage_tick += 1
 			var enemy = GameWorld.get_opponent(f)
 			if enemy and enemy.hp > 0:
 				if f.get_hit_box().intersects(enemy.get_hit_box()):
 					enemy.pos_x = f.pos_x + f.w * f.facing + f.facing * 4
 					enemy.vy = 0
-					if f.rose_skill2_damage_tick >= 12:
-						f.rose_skill2_damage_tick = 0
-						Fighter.apply_damage(enemy, f.rose_skill2_tick_damage, f, true, Color(0.6, 0.1, 0.6))
+					if comp.rose_skill2_damage_tick >= 12:
+						comp.rose_skill2_damage_tick = 0
+						Fighter.apply_damage(enemy, comp.rose_skill2_tick_damage, f, true, Color(0.6, 0.1, 0.6))
 						enemy.vy = 0
 			if not f.dashing:
-				f.rose_skill2_active = false
+				comp.rose_skill2_active = false
 				f.is_invincible = false
 	# Skill1: grab
 	elif f.dashing:
@@ -146,23 +153,23 @@ static func update_systems(f: Fighter):
 		var enemy = GameWorld.get_opponent(f)
 		if enemy and enemy.hp > 0:
 			if f.get_hit_box().intersects(enemy.get_hit_box()):
-				enemy.pos_x = f.rose_grab_center_x - enemy.w / 2.0
+				enemy.pos_x = comp.rose_grab_center_x - enemy.w / 2.0
 				enemy.vx = 0
 				enemy.vy = 0
-	if f.rose_grab_center_x > -9998 and GameWorld.rose_slash_trails.size() > 0:
+	if comp.rose_grab_center_x > -9998 and GameWorld.rose_slash_trails.size() > 0:
 		var enemy = GameWorld.get_opponent(f)
 		if enemy and enemy.hp > 0:
-			enemy.pos_x = f.rose_grab_center_x - enemy.w / 2.0
+			enemy.pos_x = comp.rose_grab_center_x - enemy.w / 2.0
 			enemy.vx = 0
 			enemy.vy = 0
-	elif f.rose_grab_center_x > -9998 and GameWorld.rose_slash_trails.size() == 0:
-		f.rose_grab_center_x = -9999.0
+	elif comp.rose_grab_center_x > -9998 and GameWorld.rose_slash_trails.size() == 0:
+		comp.rose_grab_center_x = -9999.0
 	# Skill1 enhanced: 四连斩生成
-	if f.rose_skill1_enhanced_slashes.size() > 0:
-		f.rose_skill1_slash_spawn_timer += 1
-		if f.rose_skill1_slash_spawn_timer >= 25:  # 每 25 帧生成一道刀光
-			f.rose_skill1_slash_spawn_timer = 0
-			var slash_data: Dictionary = f.rose_skill1_enhanced_slashes.pop_front()
+	if comp.rose_skill1_enhanced_slashes.size() > 0:
+		comp.rose_skill1_slash_spawn_timer += 1
+		if comp.rose_skill1_slash_spawn_timer >= 25:  # 每 25 帧生成一道刀光
+			comp.rose_skill1_slash_spawn_timer = 0
+			var slash_data: Dictionary = comp.rose_skill1_enhanced_slashes.pop_front()
 			var slash_img: Texture2D = slash_data.get("img")
 			if slash_img:
 				var slash_anim = _single_frame_anim(slash_img, 80.0 / 60.0)  # timer 帧 → 秒
@@ -203,25 +210,39 @@ static func update_rose_trails():
 	for t in to_remove:
 		GameWorld.rose_slash_trails.erase(t)
 
+static func _can_use_skill1(owner: Fighter) -> bool:
+	var comp: RoseComponent = owner.components.get_component("rose") if owner.components else null
+	var blood_abyss = comp.blood_abyss if comp else 0.0
+	return (owner.energy >= 15 or blood_abyss >= 20.0) and not owner.dashing
+
+static func _can_use_skill2(owner: Fighter) -> bool:
+	var comp: RoseComponent = owner.components.get_component("rose") if owner.components else null
+	var blood_abyss = comp.blood_abyss if comp else 0.0
+	var rose_skill2_active = comp.rose_skill2_active if comp else false
+	return (owner.energy >= 20 or blood_abyss >= 20.0) and not owner.dashing and not rose_skill2_active
+
 static func create_skills() -> Array:
 	return [
-		Skill.new("skill1", "血之月华", 480, 0, func(owner: Fighter): return (owner.energy >= 15 or owner.blood_abyss >= 20.0) and not owner.dashing, Callable(_skill1)),
-		Skill.new("skill2", "夜翼瞬袭", 720, 0, func(owner: Fighter): return (owner.energy >= 20 or owner.blood_abyss >= 20.0) and not owner.dashing and not owner.rose_skill2_active, Callable(_skill2)),
+		Skill.new("skill1", "血之月华", 480, 0, Callable(_can_use_skill1), Callable(_skill1)),
+		Skill.new("skill2", "夜翼瞬袭", 720, 0, Callable(_can_use_skill2), Callable(_skill2)),
 		Skill.new("ult", "暗夜华尔兹", 600, 100, Callable(), Callable(_ult)),
 	]
 
 static func _is_blood_enhanced(owner: Fighter) -> bool:
-	return owner.blood_abyss >= 20.0
+	var comp: RoseComponent = owner.components.get_component("rose") if owner.components else null
+	return (comp.blood_abyss if comp else 0.0) >= 20.0
 
 static func _skill1(owner: Fighter) -> Dictionary:
 	var enhanced = _is_blood_enhanced(owner)
 	var skill = owner.get_skill("skill1")
+	var comp: RoseComponent = owner.components.get_component("rose") if owner.components else null
 	
 	if enhanced:
-		if owner.energy < 20 or owner.blood_abyss < 20.0:
+		if owner.energy < 20 or (not comp or comp.blood_abyss < 20.0):
 			return {"success": false}
 		owner.energy -= 20
-		owner.blood_abyss -= 20.0
+		if comp:
+			comp.blood_abyss -= 20.0
 	else:
 		if owner.energy < 15:
 			return {"success": false}
@@ -239,16 +260,16 @@ static func _skill1(owner: Fighter) -> Dictionary:
 	owner.dash_damage_dealt = true  # Skip default dash damage, use grab logic
 	owner.set_animation_state("skill1")
 	
-	if enhanced:
+	if enhanced and comp:
 		# Schedule 4 sequential slashes (spawned in character_systems after dash)
 		if skill: skill.cd = 900  # 15 second cooldown
-		owner.rose_skill1_enhanced_slashes = [
+		comp.rose_skill1_enhanced_slashes = [
 			{"img": ROSE_ENH_SLASH1, "timer": 80},
 			{"img": ROSE_ENH_SLASH2, "timer": 80},
 			{"img": ROSE_ENH_SLASH3, "timer": 80},
 			{"img": ROSE_ENH_SLASH4, "timer": 80},
 		]
-		owner.rose_skill1_slash_spawn_timer = 0
+		comp.rose_skill1_slash_spawn_timer = 0
 	else:
 		# Normal: create single slash trail behind the character
 		var slash = {
@@ -270,16 +291,17 @@ static func _skill1(owner: Fighter) -> Dictionary:
 static func _skill2(owner: Fighter) -> Dictionary:
 	var enhanced = _is_blood_enhanced(owner)
 	var skill = owner.get_skill("skill2")
+	var comp: RoseComponent = owner.components.get_component("rose") if owner.components else null
 	
-	if enhanced:
+	if enhanced and comp:
 		# Enhanced: bat swarm free flight (3s, 30 energy, 18s cd)
-		owner.blood_abyss -= 20.0
+		comp.blood_abyss -= 20.0
 		if skill: skill.cd = 1080  # 18 seconds
-		owner.rose_skill2_active = true
-		owner.rose_skill2_enhanced = true
-		owner.rose_skill2_fly_timer = 180  # 3 seconds
-		owner.rose_skill2_damage_tick = 0
-		owner.rose_skill2_tick_damage = 20.0 / 15.0
+		comp.rose_skill2_active = true
+		comp.rose_skill2_enhanced = true
+		comp.rose_skill2_fly_timer = 180  # 3 seconds
+		comp.rose_skill2_damage_tick = 0
+		comp.rose_skill2_tick_damage = 20.0 / 15.0
 		owner.is_invincible = true
 		owner.set_animation_state("skill2_enhanced")
 	else:
@@ -295,10 +317,11 @@ static func _skill2(owner: Fighter) -> Dictionary:
 		owner.dash_speed = 2.5
 		owner.dash_damage_dealt = true
 		owner.is_invincible = true
-		owner.rose_skill2_active = true
-		owner.rose_skill2_enhanced = false
-		owner.rose_skill2_damage_tick = 0
-		owner.rose_skill2_tick_damage = 2.5
+		if comp:
+			comp.rose_skill2_active = true
+			comp.rose_skill2_enhanced = false
+			comp.rose_skill2_damage_tick = 0
+			comp.rose_skill2_tick_damage = 2.5
 		owner.set_animation_state("skill2")
 	
 	Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h / 2.0, 25, Color(0.6, 0.1, 0.6), 4, 6, "star")
@@ -317,6 +340,8 @@ static func _ult(owner: Fighter) -> Dictionary:
 		return {"success": false}
 	anim.play()
 	
+	var comp: RoseComponent = owner.components.get_component("rose") if owner.components else null
+	
 	GameWorld.active_overlays.append({
 		"anim": anim,
 		"position": {"type": "fullscreen"},
@@ -324,16 +349,18 @@ static func _ult(owner: Fighter) -> Dictionary:
 		"overlay_id": "rose_ult",
 		"on_finish": func():
 			owner.is_invincible = false
-			owner.time_stop = false
-			owner.time_stop_timer = 0
+			if comp:
+				comp.time_stop = false
+				comp.time_stop_timer = 0
 			owner.state = "idle"
 	})
 	
 	owner.state = "ult"
 	owner.image_state = "ult"
 	owner.is_invincible = true
-	owner.time_stop = true
-	owner.time_stop_timer = int(anim.total_duration * 60)
+	if comp:
+		comp.time_stop = true
+		comp.time_stop_timer = int(anim.total_duration * 60)
 	
 	Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h / 2.0, 80, Color(0.9, 0.15, 0.15), 12, 16, "star", 2.0)
 	return {"success": true}

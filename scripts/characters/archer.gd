@@ -1,6 +1,8 @@
 # 弓箭手 (archer)
 class_name ArcherCharacter
 
+const ArcherComponent = preload("res://scripts/components/archer_component.gd")
+
 const PROJ_ARROW = preload("res://assets/fx_arrow.png")
 const PROJ_ARROW_FIRE = preload("res://assets/fx_arrow_fire.png")
 const PROJ_ARROW_ULT = preload("res://assets/fx_arrow_ult.png")
@@ -38,11 +40,13 @@ static func get_config() -> Dictionary:
 
 static func handle_input(p: Fighter, keys: Dictionary) -> int:
 	var mx = 0
+	var comp: ArcherComponent = p.components.get_component("archer") if p.components else null
+	var arrows = comp.arrows if comp else 10
 	if keys.left: mx = -1
 	if keys.right: mx = 1
 	if keys.up and p.grounded and not p.shield_active:
 		p.vy = -10; p.grounded = false
-	if keys.attack and not p.shield_active and p.arrows > 0 and not p.charging_attack:
+	if keys.attack and not p.shield_active and arrows > 0 and not p.charging_attack:
 		p.charging_attack = true; p.charge_start_time = Time.get_ticks_msec()
 		p.attacking = true; p.attack_timer = 9999; p.state = "attack"
 	if not keys.attack and p.charging_attack:
@@ -51,13 +55,14 @@ static func handle_input(p: Fighter, keys: Dictionary) -> int:
 		if ct < 1: dmg = 5; cost = 5
 		elif ct < 2: dmg = 8; cost = 10
 		else: dmg = 12; cost = 15
-		if p.energy >= cost:
-			p.energy -= cost; p.arrows -= 1
+		if p.energy >= cost and comp:
+			p.energy -= cost; comp.arrows -= 1
 			var d = p.facing; var px2 = p.pos_x + (p.w if d == 1 else 0); var py2 = p.pos_y + 30
 			var spd = minf(4 + ct * 2, 10)
-			var c = Color(1,0.53,0) if p.fire_arrow_buff else Color(0.67,0.67,0.67)
-			var arr_img = ArcherCharacter.PROJ_ARROW_FIRE if p.fire_arrow_buff else ArcherCharacter.PROJ_ARROW
-			GameWorld.projectiles.append({"x":px2-16,"y":py2-10,"w":32,"h":20,"vx":spd*d,"vy":0,"life":120,"damage":dmg,"owner":p,"type":"arrow","color":c,"reflected":false,"is_fire":p.fire_arrow_buff,"tracking":p.tracking_buff,"trackingTarget":GameWorld.get_opponent(p),"img":arr_img})
+			var c = Color(1,0.53,0) if comp.fire_arrow_buff else Color(0.67,0.67,0.67)
+			var arr_img = ArcherCharacter.PROJ_ARROW_FIRE if comp.fire_arrow_buff else ArcherCharacter.PROJ_ARROW
+			var tracking = comp.tracking_buff
+			GameWorld.projectiles.append({"x":px2-16,"y":py2-10,"w":32,"h":20,"vx":spd*d,"vy":0,"life":120,"damage":dmg,"owner":p,"type":"arrow","color":c,"reflected":false,"is_fire":comp.fire_arrow_buff,"tracking":tracking,"trackingTarget":GameWorld.get_opponent(p),"img":arr_img})
 		p.charging_attack = false; p.attacking = false; p.state = "idle"
 	if keys.skill1 and not p.shield_active and not p.charging_attack:
 		var s = p.get_skill("skill1"); if s: var r = s.try_use(p); if r.get("success"): keys.skill1 = false
@@ -70,31 +75,45 @@ static func handle_input(p: Fighter, keys: Dictionary) -> int:
 	Fighter.update_state(p, mx)
 	return mx
 
+static func _can_use_skill1(owner: Fighter) -> bool:
+	var comp: ArcherComponent = owner.components.get_component("archer") if owner.components else null
+	return not owner.attacking and (not comp or not comp.fire_arrow_buff)
+
+static func _can_use_skill2(owner: Fighter) -> bool:
+	var comp: ArcherComponent = owner.components.get_component("archer") if owner.components else null
+	return not owner.attacking and (not comp or not comp.tracking_buff)
+
 static func create_skills() -> Array:
 	return [
-		Skill.new("skill1", "火矢", 900, 20, func(owner: Fighter): return not owner.fire_arrow_buff, Callable(_skill1)),
-		Skill.new("skill2", "追踪", 900, 20, func(owner: Fighter): return not owner.tracking_buff, Callable(_skill2)),
+		Skill.new("skill1", "火矢", 900, 20, Callable(_can_use_skill1), Callable(_skill1)),
+		Skill.new("skill2", "追踪", 900, 20, Callable(_can_use_skill2), Callable(_skill2)),
 		Skill.new("ult", "箭雨", 480, 100, Callable(), Callable(_ult)),
 	]
 
 static func _skill1(owner: Fighter) -> Dictionary:
-	owner.fire_arrow_buff = true
-	owner.fire_arrow_timer = 600
+	var comp: ArcherComponent = owner.components.get_component("archer") if owner.components else null
+	if comp:
+		comp.fire_arrow_buff = true
+		comp.fire_arrow_timer = 600
 	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 30, Color(1.0,0.27,0.0), 4, 6, "star")
 	return {"success": true}
 
 static func _skill2(owner: Fighter) -> Dictionary:
-	owner.tracking_buff = true
-	owner.tracking_timer = 600
+	var comp: ArcherComponent = owner.components.get_component("archer") if owner.components else null
+	if comp:
+		comp.tracking_buff = true
+		comp.tracking_timer = 600
 	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 30, Color(0.27,0.87,1.0), 4, 6, "star")
 	return {"success": true}
 
 static func _ult(owner: Fighter) -> Dictionary:
+	var comp: ArcherComponent = owner.components.get_component("archer") if owner.components else null
+	var is_fire = comp.fire_arrow_buff if comp else false
 	for i in 20:
 		var angle = randf() * PI * 2
 		var dist = randf() * 150
 		var center_x = owner.pos_x + owner.w/2
 		var tx = center_x + cos(angle) * dist
-		var ult_img = PROJ_ARROW_ULT_FIRE if owner.fire_arrow_buff else PROJ_ARROW_ULT
-		GameWorld.projectiles.append({"x":tx-16,"y":-30-randf()*50,"w":32,"h":20,"vx":(randf()-0.5)*0.5,"vy":3+randf()*2,"life":120,"damage":5,"owner":owner,"type":"arrow_ult","color":Color(0.8,0.53,0.0),"reflected":false,"img":ult_img,"is_fire":owner.fire_arrow_buff})
+		var ult_img = PROJ_ARROW_ULT_FIRE if is_fire else PROJ_ARROW_ULT
+		GameWorld.projectiles.append({"x":tx-16,"y":-30-randf()*50,"w":32,"h":20,"vx":(randf()-0.5)*0.5,"vy":3+randf()*2,"life":120,"damage":5,"owner":owner,"type":"arrow_ult","color":Color(0.8,0.53,0.0),"reflected":false,"img":ult_img,"is_fire":is_fire})
 	return {"success": true}

@@ -1,6 +1,8 @@
 # 圣骑士 (paladin)
 class_name PaladinCharacter
 
+const PaladinComponent = preload("res://scripts/components/paladin_component.gd")
+
 const PALADIN_ANI_DIR = "res://assets/char_ani/paladin/"
 
 static func get_config() -> Dictionary:
@@ -31,11 +33,19 @@ static func get_config() -> Dictionary:
 		},
 	}
 
+static func _can_use_skill2(owner: Fighter) -> bool:
+	var comp: PaladinComponent = owner.components.get_component("paladin") if owner.components else null
+	return not owner.attacking and (not comp or not comp.divine_shield_active)
+
+static func _can_use_ult(owner: Fighter) -> bool:
+	var comp: PaladinComponent = owner.components.get_component("paladin") if owner.components else null
+	return owner.energy >= owner.max_energy and not owner.attacking and (not comp or not comp.holy_empower_active)
+
 static func create_skills() -> Array:
 	return [
 		Skill.new("skill1", "正义冲锋", 600, 0, func(owner: Fighter): return owner.grounded and not owner.charging_skill1 and not owner.dashing, Callable(_skill1)),
-		Skill.new("skill2", "神圣壁垒", 720, 0, func(owner: Fighter): return not owner.divine_shield_active, Callable(_skill2)),
-		Skill.new("ult", "圣佑", 0, 0, func(owner: Fighter): return owner.energy >= owner.max_energy and not owner.holy_empower_active, Callable(_ult)),
+		Skill.new("skill2", "神圣壁垒", 720, 0, Callable(_can_use_skill2), Callable(_skill2)),
+		Skill.new("ult", "圣佑", 0, 0, Callable(_can_use_ult), Callable(_ult)),
 	]
 
 static func _skill1(owner: Fighter) -> Dictionary:
@@ -46,15 +56,19 @@ static func _skill1(owner: Fighter) -> Dictionary:
 	return {"success": true, "needs_charge": true}
 
 static func _skill2(owner: Fighter) -> Dictionary:
-	owner.divine_shield_active = true
-	owner.divine_shield_timer = 240
-	owner.divine_shield_absorb = 0
+	var comp: PaladinComponent = owner.components.get_component("paladin") if owner.components else null
+	if comp:
+		comp.divine_shield_active = true
+		comp.divine_shield_timer = 240
+		comp.divine_shield_absorb = 0
 	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 40, Color(1.0,0.84,0.0), 6, 8, "star")
 	return {"success": true}
 
 static func _ult(owner: Fighter) -> Dictionary:
-	owner.holy_empower_active = true
-	owner.holy_empower_timer = 0
+	var comp: PaladinComponent = owner.components.get_component("paladin") if owner.components else null
+	if comp:
+		comp.holy_empower_active = true
+		comp.holy_empower_timer = 0
 	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 120, Color(1.0,0.84,0.0), 14, 18, "star")
 	return {"success": true}
 

@@ -1,5 +1,9 @@
 class_name ProjectileSystem
 
+# Component preloads for type resolution
+const AssassinComponent = preload("res://scripts/components/assassin_component.gd")
+const WitchComponent = preload("res://scripts/components/witch_component.gd")
+
 # ===== Projectile System =====
 static func update_projectiles(game_node: Node):
 	for i in range(GameWorld.projectiles.size() - 1, -1, -1):
@@ -75,19 +79,18 @@ static func update_projectiles(game_node: Node):
 			if target.get_hit_box().intersects(proj_rect):
 				# 刺客「一瞬」闪避检测：冲刺+无敌期间穿过敌方攻击触发闪避，完全免疫伤害和状态效果
 				if target.char_id == "assassin":
-					print("[DODGE-DEBUG] assassin hit by proj: dashing=", target.dashing, " is_invincible=", target.is_invincible, " invincible_timer=", target.invincible_timer, " dodge_success=", target.dodge_success)
-					if target.dashing and target.is_invincible:
-						if not target.dodge_success:
-							target.dodge_success = true
-							target.dodge_slow_mo = 30  # 0.5 秒慢动作
-							# 积攒 1 格暗影能量，满格触发暗影游走
-							target.shadow_energy = minf(target.shadow_energy_max, target.shadow_energy + 1)
-							if target.shadow_energy >= target.shadow_energy_max and not target.shadow_stance:
-								target.shadow_stance = true
-								target.shadow_stance_timer = 480  # 8 秒
+					var assassin_comp: AssassinComponent = target.components.get_component("assassin") if target.components else null
+					print("[DODGE-DEBUG] assassin hit by proj: dashing=", target.dashing, " is_invincible=", assassin_comp.is_invincible if assassin_comp else false, " invincible_timer=", assassin_comp.invincible_timer if assassin_comp else 0, " dodge_success=", assassin_comp.dodge_success if assassin_comp else false)
+					if assassin_comp and target.dashing and assassin_comp.is_invincible:
+						if not assassin_comp.dodge_success:
+							assassin_comp.dodge_success = true
+							assassin_comp.dodge_slow_mo = 30
+							assassin_comp.shadow_energy = minf(assassin_comp.shadow_energy_max, assassin_comp.shadow_energy + 1)
+							if assassin_comp.shadow_energy >= assassin_comp.shadow_energy_max and not assassin_comp.shadow_stance:
+								assassin_comp.shadow_stance = true
+								assassin_comp.shadow_stance_timer = 480
 							Fighter.emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 15, Color(0.667, 0.533, 1.0), 3, 5, "star", 0.8)
-							print("[DODGE-DEBUG] ★ 闪避触发！shadow_energy=", target.shadow_energy, " dodge_slow_mo=", target.dodge_slow_mo, " shadow_stance=", target.shadow_stance)
-						# 闪避期间免疫一切：跳过伤害、状态效果、投射物移除
+							print("[DODGE-DEBUG] ★ 闪避触发！shadow_energy=", assassin_comp.shadow_energy, " dodge_slow_mo=", assassin_comp.dodge_slow_mo, " shadow_stance=", assassin_comp.shadow_stance)
 						continue
 					else:
 						print("[DODGE-DEBUG] ✗ 未触发闪避（条件不满足）")
@@ -145,7 +148,9 @@ static func _reset_casting(p: Dictionary):
 	if p.get("type") == "meteor":
 		var owner: Fighter = p.get("owner")
 		if owner:
-			owner.is_casting_ult = false
+			var witch_comp: WitchComponent = owner.components.get_component("witch") if owner.components else null
+			if witch_comp:
+				witch_comp.is_casting_ult = false
 
 static func _reflect_projectile(p: Dictionary) -> bool:
 	var defender = GameWorld.get_opponent(p["owner"])

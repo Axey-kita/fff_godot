@@ -1,6 +1,16 @@
 class_name Fighter
 extends Node2D
 
+# Component preloads for type resolution
+const ComponentManager = preload("res://scripts/components/component_manager.gd")
+const AssassinComponent = preload("res://scripts/components/assassin_component.gd")
+const WitchComponent = preload("res://scripts/components/witch_component.gd")
+const ShadowwarriorComponent = preload("res://scripts/components/shadowwarrior_component.gd")
+const PaladinComponent = preload("res://scripts/components/paladin_component.gd")
+const ArcherComponent = preload("res://scripts/components/archer_component.gd")
+const EvokerComponent = preload("res://scripts/components/evoker_component.gd")
+const RoseComponent = preload("res://scripts/components/rose_component.gd")
+
 # Component system
 var components: ComponentManager = null
 
@@ -78,106 +88,22 @@ var charging_skill1: bool = false
 var ai_think_delay: int = 0
 var ai_action_timer: int = 0
 
-# Archer fields
-var arrows: int = 10
-var max_arrows: int = 10
-var arrow_regen_timer: int = 0
-var arrow_regen_rate: int = 480
-var fire_arrow_buff: bool = false
-var fire_arrow_timer: int = 0
-var tracking_buff: bool = false
-var tracking_timer: int = 0
-
-# Paladin
-var divine_shield_active: bool = false
-var divine_shield_timer: int = 0
-var divine_shield_absorb: float = 0
-var holy_empower_active: bool = false
-var holy_empower_timer: int = 0
-
-# Witch
-var is_flying: bool = false
-var fly_energy_drain: float = 8.0 / 60.0
-var gravity_debuff: bool = false
-var jump_reduction: float = 1.0
-var is_casting_ult: bool = false
-var cast_ult_x: float = 0
-var cast_ult_y: float = 0
-
-# Assassin
-var shadow_energy: float = 0
-var shadow_energy_max: float = 5
-var shadow_stance: bool = false
-var shadow_stance_timer: int = 0
-var shadow_energy_drain_rate: float = 5.0 / 480.0
-var is_invincible: bool = false
-var invincible_timer: int = 0
-var enhanced_slash: bool = false
-var enhanced_slash_timer: int = 0
-var slash_active: bool = false
-var slash_timer: int = 0
-var slash_x: float = 0
-var slash_y: float = 0
-var slash_facing: int = 1
-var slash_damage_dealt: bool = false
-var skill2_active: bool = false
-var skill2_timer: int = 0
-var skill2_x: float = 0
-var skill2_y: float = 0
-var skill2_facing: int = 1
-var skill2_damage_dealt: bool = false
-var ult_active: bool = false
-var ult_timer: int = 0
-var ult_damage_timer: int = 0
-var time_stop: bool = false
-var time_stop_timer: int = 0
-var dodge_success: bool = false
-var dodge_slow_mo: int = 0
-var shadow_trail: Array = []
-var max_shadow_trail: int = 12
-
-# Shadowwarrior
-var stealth_active: bool = false
-var stealth_timer: int = 0
-var last_skill_time: int = -999
-var retreat_timer: int = 0
-var retreat_dir: int = 1
-var break_strike_timer: int = 0
-var pending_trap: bool = false
-var shadow_trap_active: bool = false
-var shadow_trap: Dictionary = {}
-var pending_clones: bool = false
-var clone_reveal_timer: int = 0
-var iaido_active: bool = false
-var iaido_timer: int = 0
-var iaido_frozen: bool = false
-var iaido_dir: int = 1
-var iaido_slash: Dictionary = {}
-
-# Evoker
-var last_summon_type: int = -1
-var summon_dead1: bool = false
-var summon_dead2: bool = false
-var summon_dead3: bool = false
+# Status effect timers (shared)
 var slow_timer: int = 0
 var slow_percent: float = 0.0
 var burn_timer: int = 0
+
+# Invincibility (shared across all characters)
+var is_invincible: bool = false
+var invincible_timer: int = 0
+
+# Status effects (shared)
+var gravity_debuff: bool = false
+var jump_reduction: float = 1.0
+
+
 var bleed_timer: int = 0
 var blind_timer: int = 0
-var evoker_gazed: bool = false
-
-# Rose: blood_abyss
-var blood_abyss: float = 0.0
-var blood_heal_timer: int = 0
-var rose_skill2_active: bool = false
-var rose_skill2_damage_tick: int = 0
-var rose_skill2_tick_damage: float = 3.0
-var rose_skill2_enhanced: bool = false
-var rose_skill2_fly_timer: int = 0
-var rose_grab_center_x: float = -9999.0
-var rose_skill1_enhanced_slashes: Array = []  # pending slashes for enhanced skill1
-var rose_skill1_slash_spawn_timer: int = 0
-var rose_blood_abyss_suppressed: bool = false
 
 # Dragon Knight
 var dragon_scales_active: bool = false
@@ -292,7 +218,7 @@ func apply_physics():
 		components.update()
 	
 	# Witch flying state
-	var witch_comp: WitchComponent = components.get("witch") if components else null
+	var witch_comp: WitchComponent = components.get_component("witch") if components else null
 	if witch_comp and witch_comp.is_casting_ult:
 		vx = 0
 		vy = 0
@@ -344,18 +270,19 @@ func apply_physics():
 			if GameWorld.game_running and not GameWorld.game_over and target and target.hp > 0:
 				# 刺客次元斩：使用 slash_x（启动时固定）作为攻击框，避免冲刺中 pos_x 偏移导致命中失败
 				var box: Rect2
-				if char_id == "assassin" and slash_active:
-					box = Rect2(slash_x, slash_y, 100, 40)
+				var assassin_comp: AssassinComponent = components.get_component("assassin") if components else null
+				if assassin_comp and char_id == "assassin" and assassin_comp.slash_active:
+					box = Rect2(assassin_comp.slash_x, assassin_comp.slash_y, 100, 40)
 				else:
 					box = get_attack_box()
 				if box.intersects(target.get_hit_box()):
 					# 刺客强化次元斩：伤害提升至 8 点，命中恢复 5 能量
 					var dmg: float = attack_damage
-					if char_id == "assassin" and enhanced_slash and enhanced_slash_timer > 0:
+					if assassin_comp and char_id == "assassin" and assassin_comp.enhanced_slash and assassin_comp.enhanced_slash_timer > 0:
 						dmg = 8
 						energy = minf(max_energy, energy + 5)
-						enhanced_slash = false
-						enhanced_slash_timer = 0
+						assassin_comp.enhanced_slash = false
+						assassin_comp.enhanced_slash_timer = 0
 					Fighter.apply_damage(target, dmg, self)
 	if attack_cooldown > 0:
 		attack_cooldown -= 1
@@ -423,9 +350,9 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 		return
 	
 	# Get character components
-	var assassin_comp: AssassinComponent = target.components.get("assassin") if target.components else null
-	var paladin_comp: PaladinComponent = target.components.get("paladin") if target.components else null
-	var rose_comp: RoseComponent = target.components.get("rose") if target.components else null
+	var assassin_comp: AssassinComponent = target.components.get_component("assassin") if target.components else null
+	var paladin_comp: PaladinComponent = target.components.get_component("paladin") if target.components else null
+	var rose_comp: RoseComponent = target.components.get_component("rose") if target.components else null
 	
 	# 调试日志：追踪伤害来源
 	if assassin_comp:
@@ -475,7 +402,7 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	var base_dmg: float = dmg
 	if attacker:
 		base_dmg += attacker.attack_boost
-		var attacker_paladin: PaladinComponent = attacker.components.get("paladin") if attacker.components else null
+		var attacker_paladin: PaladinComponent = attacker.components.get_component("paladin") if attacker.components else null
 		if attacker_paladin and attacker_paladin.holy_empower_active:
 			base_dmg += 5
 		if attacker.dragon_form_active:
@@ -492,7 +419,7 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 
 	# 刺客暗影游走暴击判定（50%概率，1.5倍）
 	var is_critical: bool = false
-	var attacker_assassin: AssassinComponent = attacker.components.get("assassin") if attacker and attacker.components else null
+	var attacker_assassin: AssassinComponent = attacker.components.get_component("assassin") if attacker and attacker.components else null
 	if attacker_assassin and attacker_assassin.shadow_stance:
 		if randf() < 0.5:
 			is_critical = true
@@ -527,7 +454,7 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	target.hit_cooldown = 15
 	# Blood Abyss: attacker gains blood_abyss equal to damage dealt
 	if attacker:
-		var attacker_rose: RoseComponent = attacker.components.get("rose") if attacker.components else null
+		var attacker_rose: RoseComponent = attacker.components.get_component("rose") if attacker.components else null
 		if attacker_rose:
 			if not attacker_rose.rose_blood_abyss_suppressed:
 				attacker_rose.blood_abyss = minf(40.0, attacker_rose.blood_abyss + final_dmg)

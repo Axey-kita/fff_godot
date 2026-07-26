@@ -1,5 +1,12 @@
 class_name Network
 
+# Component preloads for type resolution
+const PaladinComponent = preload("res://scripts/components/paladin_component.gd")
+const WitchComponent = preload("res://scripts/components/witch_component.gd")
+const ShadowwarriorComponent = preload("res://scripts/components/shadowwarrior_component.gd")
+const AssassinComponent = preload("res://scripts/components/assassin_component.gd")
+const RoseComponent = preload("res://scripts/components/rose_component.gd")
+
 # Message protocol constants
 const MSG_INPUT = "input"
 const MSG_READY = "ready"
@@ -22,11 +29,14 @@ static func fighter_state(f) -> Dictionary:
 		"blocking": f.blocking, "shield_active": f.shield_active,
 		"dashing": f.dashing, "dash_dir": f.dash_dir,
 		"charging": f.charging, "charging_skill1": f.charging_skill1,
-		"divine_shield_active": f.divine_shield_active,
-		"holy_empower_active": f.holy_empower_active,
-		"is_flying": f.is_flying, "is_casting_ult": f.is_casting_ult,
-		"stealth_active": f.stealth_active, "shadow_stance": f.shadow_stance,
-		"time_stop": f.time_stop,
+		# Character-specific fields via components
+		"time_stop": (f.components.is_time_stopped() if f.components else false),
+		"divine_shield_active": (f.components.get_component("paladin").divine_shield_active if f.components and f.components.has_component("paladin") else false),
+		"holy_empower_active": (f.components.get_component("paladin").holy_empower_active if f.components and f.components.has_component("paladin") else false),
+		"is_flying": (f.components.get_component("witch").is_flying if f.components and f.components.has_component("witch") else false),
+		"is_casting_ult": (f.components.get_component("witch").is_casting_ult if f.components and f.components.has_component("witch") else false),
+		"stealth_active": (f.components.get_component("shadowwarrior").stealth_active if f.components and f.components.has_component("shadowwarrior") else false),
+		"shadow_stance": (f.components.get_component("assassin").shadow_stance if f.components and f.components.has_component("assassin") else false),
 		# Status effects simplified
 		"frozen": f.has_status("frozen"),
 		"status_count": f.statuses.size(),
@@ -88,13 +98,26 @@ static func _apply_fighter_snapshot(f: Fighter, data: Dictionary):
 	f.dash_dir = data.get("dash_dir", f.dash_dir)
 	f.charging = data.get("charging", f.charging)
 	f.charging_skill1 = data.get("charging_skill1", f.charging_skill1)
-	f.divine_shield_active = data.get("divine_shield_active", f.divine_shield_active)
-	f.holy_empower_active = data.get("holy_empower_active", f.holy_empower_active)
-	f.is_flying = data.get("is_flying", f.is_flying)
-	f.is_casting_ult = data.get("is_casting_ult", f.is_casting_ult)
-	f.stealth_active = data.get("stealth_active", f.stealth_active)
-	f.shadow_stance = data.get("shadow_stance", f.shadow_stance)
-	f.time_stop = data.get("time_stop", f.time_stop)
+	# Character-specific fields via components
+	if f.components:
+		var p_comp: PaladinComponent = f.components.get_component("paladin")
+		if p_comp:
+			p_comp.divine_shield_active = data.get("divine_shield_active", p_comp.divine_shield_active)
+			p_comp.holy_empower_active = data.get("holy_empower_active", p_comp.holy_empower_active)
+		var w_comp: WitchComponent = f.components.get_component("witch")
+		if w_comp:
+			w_comp.is_flying = data.get("is_flying", w_comp.is_flying)
+			w_comp.is_casting_ult = data.get("is_casting_ult", w_comp.is_casting_ult)
+		var sw_comp: ShadowwarriorComponent = f.components.get_component("shadowwarrior")
+		if sw_comp:
+			sw_comp.stealth_active = data.get("stealth_active", sw_comp.stealth_active)
+		var a_comp: AssassinComponent = f.components.get_component("assassin")
+		if a_comp:
+			a_comp.shadow_stance = data.get("shadow_stance", a_comp.shadow_stance)
+			a_comp.time_stop = data.get("time_stop", a_comp.time_stop)
+		var r_comp: RoseComponent = f.components.get_component("rose")
+		if r_comp:
+			r_comp.time_stop = data.get("time_stop", r_comp.time_stop)
 
 # Placeholder: Send PvP input to remote peer
 static func send_pvp_input(input_data: Dictionary):
