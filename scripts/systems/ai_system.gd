@@ -64,13 +64,15 @@ static func update_ai(ai_think_delay: int) -> int:
 	
 	if dist > 150 and dist < 350 and can_use_s1 and randf() < diff["skill_rate"] * 1.5:
 		skill1.try_use(f)
-		if GameWorld.difficulty == "hard":
+		# hard/hell：延长 skill1 冷却以平衡高 skill_rate
+		if Constants.difficulty_at_least(GameWorld.difficulty, "hard"):
 			skill1.cd = maxi(skill1.cd, 300)
 		return new_delay
-	
+
 	if dist < 200 and can_use_ult and randf() < diff["skill_rate"] * 0.8:
 		ult.try_use(f)
-		if GameWorld.difficulty == "hard":
+		# hard/hell：延长 ult 冷却以平衡高 skill_rate
+		if Constants.difficulty_at_least(GameWorld.difficulty, "hard"):
 			ult.cd = maxi(ult.cd, 300)
 		return new_delay
 	

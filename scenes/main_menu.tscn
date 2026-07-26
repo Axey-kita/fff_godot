@@ -233,6 +233,12 @@ custom_minimum_size = Vector2(120, 120)
 expand_mode = 1
 stretch_mode = 4
 
+[node name="HellBtn" type="TextureButton" parent="DiffSelect/DiffPanel/DiffButtonRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 120)
+expand_mode = 1
+stretch_mode = 4
+
 [node name="DiffBackBtn" type="Button" parent="DiffSelect/DiffPanel"]
 layout_mode = 2
 custom_minimum_size = Vector2(180, 46)

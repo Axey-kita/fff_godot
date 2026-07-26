@@ -128,6 +128,17 @@ func _process(_delta: float):
 	queue_redraw()
 
 func _update():
+	# 影武者居合：定格阶段（>120）和停留阶段（0<t<=90）全局时间停止
+	# 仅递减 iaido_timer；平移阶段（90<t<=120）和爆炸阶段（t<=0）正常运行
+	var iaido_freeze = false
+	for f in GameWorld.entities:
+		if f.char_id == "shadowwarrior" and f.iaido_active:
+			if f.iaido_timer > 120 or (0 < f.iaido_timer and f.iaido_timer <= 90):
+				f.iaido_timer -= 1
+				iaido_freeze = true
+	if iaido_freeze:
+		GameWorld.frame += 1
+		return
 	if GameWorld.hit_stop > 0:
 		GameWorld.hit_stop -= 1
 		return
@@ -147,11 +158,18 @@ func _update():
 	# 作弊：无限蓝
 	if GameWorld.infinite_energy and GameWorld.player:
 		GameWorld.player.energy = GameWorld.player.max_energy
+	# 闪避慢动作：刺客 dodge_slow_mo 期间，跳过敌方实体和投射物更新
+	var dodge_slow_active = false
+	for f in GameWorld.entities:
+		if f.dodge_slow_mo > 0:
+			dodge_slow_active = true
+			break
 	# Systems
 	DashSystem.update_dash()
-	TornadoSystem.update_tornadoes()
-	ProjectileSystem.update_projectiles(self)
-	FlameZoneSystem.update_flame_zones()
+	if not dodge_slow_active:
+		TornadoSystem.update_tornadoes()
+		ProjectileSystem.update_projectiles(self)
+		FlameZoneSystem.update_flame_zones()
 	SlowSystem.update_slow()
 	PickupSystem.update_pickups_and_end()
 	CharacterSystems.update_characters()
@@ -350,6 +368,23 @@ func _draw():
 				else:
 					draw_texture_rect(ASSASSIN_SLASH_IMG, Rect2(sx, f.slash_y, 100, 40), false, Color(1, 1, 1, 0.9))
 
+	# 11.7 Assassin shadow trail (暗影游走残影)
+	for f in GameWorld.entities:
+		if f.char_id == "assassin" and f.shadow_stance and f.shadow_trail.size() > 0:
+			for trail in f.shadow_trail:
+				var tx = trail["x"] - cam_x
+				if tx > -60 and tx < Constants.W + 60:
+					var alpha = trail["life"] / 12.0
+					if trail["facing"] < 0:
+						draw_set_transform(Vector2(tx + f.w, trail["y"]), 0.0, Vector2(-1, 1))
+					else:
+						draw_set_transform(Vector2(tx, trail["y"]), 0.0, Vector2.ONE)
+					# 使用刺客当前动画帧绘制残影
+					var anim = f.current_anim
+					if anim and anim.current_texture:
+						draw_texture_rect(anim.current_texture, Rect2(0, 0, f.w, f.h), false, Color(0.4, 0.27, 0.6, alpha * 0.5))
+					draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
 	# 12. Time slow filter
 	if GameWorld.slow_mo_timer > 0:
 		draw_rect(Rect2(0, 0, Constants.W, Constants.H), Color(0.471, 0.314, 0.784, 0.12))
@@ -485,7 +520,7 @@ func _draw_fighter(f: Fighter, is_local: bool = false):
 	draw_string(ThemeDB.fallback_font, Vector2(px, f.pos_y - 12), lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lbl_color)
 
 func _draw_charge_bar(owner: Fighter, cam_x: float):
-	if not owner:
+	if not is_instance_valid(owner):
 		return
 	if not owner.charging and not owner.charging_skill1 and not owner.charging_attack:
 		return
@@ -590,6 +625,20 @@ func _draw_hud(font: Font):
 	var e_eng_pct = minf(1.0, e.energy / maxf(e.max_energy, 1.0))
 	draw_rect(Rect2(e_bar_x + bar_w * (1.0 - e_eng_pct), 20, bar_w * e_eng_pct, energy_bar_h), Color(0.8, 0.267, 0.0))
 	draw_string(font, Vector2(e_bar_x + bar_w - 4, 20), str(int(e.energy)), HORIZONTAL_ALIGNMENT_RIGHT, -1, 8, Color(1.0, 0.667, 0.4))
+
+	# Difficulty badge (top-center, hell mode 高亮)
+	var diff_label = GameWorld.difficulty.to_upper()
+	var diff_color = Color(0.667, 0.667, 0.667)
+	if GameWorld.difficulty == "hell":
+		diff_color = Color(1.0, 0.2, 0.2)
+	elif GameWorld.difficulty == "hard":
+		diff_color = Color(1.0, 0.533, 0.0)
+	elif GameWorld.difficulty == "medium":
+		diff_color = Color(1.0, 0.843, 0.0)
+	elif GameWorld.difficulty == "easy":
+		diff_color = Color(0.4, 1.0, 0.4)
+	var diff_text = "【" + diff_label + "】"
+	draw_string(font, Vector2(Constants.W / 2.0, 6), diff_text, HORIZONTAL_ALIGNMENT_CENTER, -1, 12, diff_color)
 
 	# === Skill cooldowns at bottom ===
 	var skill_labels: Dictionary
@@ -731,25 +780,31 @@ func _draw_shadowwarrior_overlays(cam_x: float):
 					var bh = (cap.h + 20 if (cap and cap is Fighter) else trap["h"] + 20)
 					_sw_draw_tex(SW_GRAB_BURST, bx, by, bw, bh, cam_x, 1, 1.0)
 
-		# 居合刀光 + 定格姿态（替代角色贴图，等比缩放底部对齐）
+		# 居合刀光 + 定格姿态（替代角色贴图，姿态沿刀光平移）
 		if f.iaido_active and not f.iaido_slash.is_empty():
 			var slash = f.iaido_slash
 			_sw_draw_tex(SW_IAIDO_SLASH, slash["x"], slash["y"], slash["w"], slash["h"], cam_x, slash.get("dir", 1), 0.85)
-			# 定格姿态：等比缩放到角色框内，底部贴地
+			# 定格姿态平移时序（总 150 帧 = 2.5 秒）：
+			#   0~30 帧（0.5 秒）：定格在起点（progress=0）
+			#   30~60 帧（0.5 秒）：从起点平移到终点（progress 0→1）
+			#   60~150 帧（1.5 秒）：停留在终点（progress=1）
+			var t = f.iaido_timer
+			var progress: float
+			if t > 120:  # 150→120，前 30 帧（0.5 秒定格）
+				progress = 0.0
+			elif t > 90:  # 120→90，中间 30 帧（0.5 秒平移）
+				progress = (120 - t) / 30.0
+			else:  # 90→0，最后 90 帧（1.5 秒停留）
+				progress = 1.0
+			var start_x: float = slash.get("start_x", f.pos_x)
+			var end_x: float = start_x + slash["dir"] * slash["w"]
+			var pose_x: float = start_x + (end_x - start_x) * progress
+			# 等比缩放到角色框内，底部贴地
 			var img_w: float = SW_ULT_IMG.get_width()
 			var img_h: float = SW_ULT_IMG.get_height()
-			var s = minf(f.w / img_w , f.h   / img_h ) 
+			var s = minf(f.w / img_w, f.h / img_h)
 			var dw = img_w * s; var dh = img_h * s
-			_sw_draw_tex(SW_ULT_IMG, f.pos_x + (f.w - dw) / 2.0, f.pos_y + f.h - dh*1.5, dw, dh*1.5, cam_x, f.facing, 1.0)
-
-		# 后撤贴图
-		if f.retreat_timer > 0:
-			var alpha = 0.5 if (f == GameWorld.player and f.stealth_active) else 1.0
-			_sw_draw_tex(SW_RETREAT, f.pos_x, f.pos_y, f.w, f.h, cam_x, f.facing, alpha)
-
-		# 幻影·舞遮挡贴图（与角色同尺寸）
-		if f.clone_reveal_timer > 0:
-			_sw_draw_tex(SW_CLONE_REVEAL, f.pos_x, f.pos_y + f.h * 0.5, f.w, f.h * 0.6, cam_x, f.facing, 1.0)
+			_sw_draw_tex(SW_ULT_IMG, pose_x + (f.w - dw) / 2.0, f.pos_y + f.h - dh * 1.5, dw, dh * 1.5, cam_x, f.facing, 1.0)
 
 
 func _draw_phantoms(cam_x: float):

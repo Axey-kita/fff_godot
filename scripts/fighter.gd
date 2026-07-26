@@ -174,6 +174,13 @@ var rose_skill2_fly_timer: int = 0
 var rose_grab_center_x: float = -9999.0
 var rose_skill1_enhanced_slashes: Array = []  # pending slashes for enhanced skill1
 var rose_skill1_slash_spawn_timer: int = 0
+var rose_blood_abyss_suppressed: bool = false
+
+# Dragon Knight
+var dragon_scales_active: bool = false
+var dragon_scales_timer: int = 0
+var dragon_form_active: bool = false
+var dragon_form_timer: int = 0
 
 # Forced skill timer
 var forced_skill_timer: int = 0
@@ -184,13 +191,6 @@ func setup(p_x: float, p_y: float, p_is_player: bool, p_char_id: String, p_skill
 	is_player = p_is_player
 	display_name = "玩家" if is_player else "AI"
 	char_id = p_char_id
-	# evoker-specific field initialization
-	if char_id == "evoker":
-		slow_timer = 0
-		slow_percent = 0.0
-		burn_timer = 0
-		bleed_timer = 0
-		blind_timer = 0
 	skills = p_skills
 	skill_map.clear()
 	for s in skills:
@@ -268,6 +268,12 @@ func is_movement_locked() -> bool:
 	return has_status("frozen") or shield_active or dashing
 
 func get_hit_box() -> Rect2:
+	# 刺客冲刺中扩大受击体积（沿冲刺方向延伸 25 像素），更容易触发闪避
+	if char_id == "assassin" and dashing:
+		if dash_dir > 0:
+			return Rect2(pos_x + 4, pos_y + 4, w - 8 + 25, h - 8)
+		else:
+			return Rect2(pos_x + 4 - 25, pos_y + 4, w - 8 + 25, h - 8)
 	return Rect2(pos_x + 4, pos_y + 4, w - 8, h - 8)
 
 func get_attack_box() -> Rect2:
@@ -324,15 +330,85 @@ func apply_physics():
 			attack_hit_dealt = true
 			var target = GameWorld.get_opponent(self)
 			if GameWorld.game_running and not GameWorld.game_over and target and target.hp > 0:
-				var box = get_attack_box()
+				# 刺客次元斩：使用 slash_x（启动时固定）作为攻击框，避免冲刺中 pos_x 偏移导致命中失败
+				var box: Rect2
+				if char_id == "assassin" and slash_active:
+					box = Rect2(slash_x, slash_y, 100, 40)
+				else:
+					box = get_attack_box()
 				if box.intersects(target.get_hit_box()):
-					Fighter.apply_damage(target, attack_damage, self)
+					# 刺客强化次元斩：伤害提升至 8 点，命中恢复 5 能量
+					var dmg: float = attack_damage
+					if char_id == "assassin" and enhanced_slash and enhanced_slash_timer > 0:
+						dmg = 8
+						energy = minf(max_energy, energy + 5)
+						enhanced_slash = false
+						enhanced_slash_timer = 0
+					Fighter.apply_damage(target, dmg, self)
 	if attack_cooldown > 0:
 		attack_cooldown -= 1
 	if hit_cooldown > 0:
 		hit_cooldown -= 1
 	if damage_flash > 0:
 		damage_flash -= 1
+	# 通用无敌计时器递减（刺客一瞬 / 影武者后撤等共用）
+	if is_invincible and invincible_timer > 0:
+		invincible_timer -= 1
+		if invincible_timer <= 0:
+			is_invincible = false
+	# 影武者居合状态计时器递减（由 update_systems 处理到期爆炸和重置）
+	if iaido_active and iaido_timer > 0:
+		iaido_timer -= 1
+	# 影武者隐身计时器递减（6 秒后自动解除隐身）
+	if stealth_active and stealth_timer > 0:
+		stealth_timer -= 1
+		if stealth_timer <= 0:
+			stealth_active = false
+			stealth_timer = 0
+	# 影武者后撤计时器递减
+	if retreat_timer > 0:
+		retreat_timer -= 1
+	# 影武者破影一击计时器递减
+	if break_strike_timer > 0:
+		break_strike_timer -= 1
+	# 刺客强化次元斩计时器递减（0.5 秒内未打出次元斩则失效）
+	if enhanced_slash_timer > 0:
+		enhanced_slash_timer -= 1
+		if enhanced_slash_timer <= 0:
+			enhanced_slash = false
+	# 刺客次元斩贴图计时器递减（0.5 秒后贴图自动消失）
+	if slash_active and slash_timer > 0:
+		slash_timer -= 1
+		if slash_timer <= 0:
+			slash_active = false
+	# 刺客闪避慢动作计时器递减
+	if dodge_slow_mo > 0:
+		dodge_slow_mo -= 1
+	# 刺客暗影游走状态：消耗暗影能量，耗尽后退出；移动时留下残影
+	if shadow_stance:
+		shadow_energy -= shadow_energy_drain_rate
+		if shadow_energy <= 0:
+			shadow_energy = 0
+			shadow_stance = false
+			shadow_stance_timer = 0
+			shadow_trail.clear()
+		else:
+			shadow_stance_timer -= 1
+			if shadow_stance_timer <= 0:
+				shadow_stance = false
+				shadow_stance_timer = 0
+				shadow_trail.clear()
+			else:
+				# 移动时记录残影
+				if absf(vx) > 0.5 or dashing:
+					shadow_trail.append({"x": pos_x, "y": pos_y, "facing": facing, "life": 12})
+					if shadow_trail.size() > max_shadow_trail:
+						shadow_trail.pop_front()
+				# 残影生命递减
+				for i in range(shadow_trail.size() - 1, -1, -1):
+					shadow_trail[i]["life"] -= 1
+					if shadow_trail[i]["life"] <= 0:
+						shadow_trail.remove_at(i)
 	if blocking:
 		block_timer -= 1
 		if block_timer <= 0:
@@ -352,6 +428,19 @@ func apply_physics():
 			energy = maxf(0, energy - 10)
 			if energy <= 0:
 				holy_empower_active = false
+	# Dragon Knight: 龙鳞护体计时
+	if dragon_scales_active:
+		dragon_scales_timer -= 1
+		if dragon_scales_timer <= 0:
+			dragon_scales_active = false
+	# Dragon Knight: 龙化形态计时与能量消耗
+	if dragon_form_active:
+		dragon_form_timer += 1
+		if dragon_form_timer >= 60:
+			dragon_form_timer = 0
+			energy = maxf(0, energy - 10)
+			if energy <= 0:
+				dragon_form_active = false
 	update_statuses()
 	for s in skills:
 		s.update()
@@ -374,7 +463,9 @@ func apply_physics():
 	if attacking and attack_timer <= 0 and not charging_attack:
 		attacking = false
 		state = "idle"
-	if dashing or charging_skill1 or charging:
+	if image_state.begins_with("skill") and not attacking:
+		pass  # Keep skill-specific animation state (set by character logic)
+	elif dashing or charging_skill1 or charging:
 		set_animation_state("charge")
 	elif attacking:
 		set_animation_state("attack")
@@ -393,9 +484,28 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 		return
 	if attacker == target:
 		return
+	# 调试日志：追踪伤害来源
+	if target.char_id == "assassin":
+		print("[DAMAGE-DEBUG]刺客受伤: dmg=", dmg, " attacker=", attacker.char_id if attacker else "null", " dashing=", target.dashing, " is_invincible=", target.is_invincible, " invincible_timer=", target.invincible_timer, " hp=", target.hp)
 
-	# 刺客「一瞬」无敌期间免疫伤害
+	# 刺客「一瞬」闪避：冲刺+无敌期间对所有伤害类型触发闪避，完全免疫
+	if target.char_id == "assassin" and target.dashing and target.is_invincible:
+		if not target.dodge_success:
+			target.dodge_success = true
+			target.dodge_slow_mo = 30  # 0.5 秒慢动作
+			# 积攒 1 格暗影能量，满格触发暗影游走
+			target.shadow_energy = minf(target.shadow_energy_max, target.shadow_energy + 1)
+			if target.shadow_energy >= target.shadow_energy_max and not target.shadow_stance:
+				target.shadow_stance = true
+				target.shadow_stance_timer = 480  # 8 秒
+			emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 15, Color(0.667, 0.533, 1.0), 3, 5, "star", 0.8)
+			print("[DODGE-DEBUG] ★ 闪避触发（apply_damage）！shadow_energy=", target.shadow_energy, " dodge_slow_mo=", target.dodge_slow_mo, " shadow_stance=", target.shadow_stance)
+		# 闪避期间免疫一切伤害
+		return
+
+	# 刺客「一瞬」无敌期间免疫伤害（非冲刺状态下的纯无敌）
 	if target.is_invincible:
+		print("[DAMAGE-DEBUG] ✓ 无敌免疫成功，伤害被拦截")
 		emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 12, Color(0.667, 0.533, 1.0), 3, 5, "star", 0.6)
 		return
 
@@ -425,6 +535,8 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 		base_dmg += attacker.attack_boost
 		if attacker.holy_empower_active:
 			base_dmg += 5
+		if attacker.dragon_form_active:
+			base_dmg += 8
 
 	# 神圣壁垒：吸收伤害并转化为能量（1:3）
 	if target.divine_shield_active:
@@ -449,6 +561,15 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 		final_dmg = maxf(1.0, floorf(base_dmg * 0.5))
 		knockback = false
 
+	# 龙鳞护体：减免40%伤害
+	if target.dragon_scales_active:
+		final_dmg = maxf(1.0, floorf(final_dmg * 0.6))
+
+	# 龙化形态：减免30%伤害，免疫击退
+	if target.dragon_form_active:
+		final_dmg = maxf(1.0, floorf(final_dmg * 0.7))
+		knockback = false
+
 	# 暴击伤害倍率
 	if is_critical:
 		final_dmg = floorf(final_dmg * 1.5)
@@ -462,8 +583,10 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	target.damage_flash = 10
 	target.hit_cooldown = 15
 	# Blood Abyss: attacker gains blood_abyss equal to damage dealt
-	if attacker and attacker.char_id == "rose":
+	if attacker and attacker.char_id == "rose" and not attacker.rose_blood_abyss_suppressed:
 		attacker.blood_abyss = minf(40.0, attacker.blood_abyss + final_dmg)
+	if attacker and attacker.rose_blood_abyss_suppressed:
+		attacker.rose_blood_abyss_suppressed = false
 	if knockback and attacker and attacker != target:
 		target.vy = -4
 		target.vx = (attacker.facing if attacker.facing != 0 else (1 if target.is_player else -1)) * 5
@@ -552,15 +675,16 @@ static func reflect_projectile(proj: Dictionary, defender: Fighter) -> bool:
 	AudioManager.play_sound("parry")
 	return true
 
+# ===== Movement helpers (used by character input strategies) =====
 static func apply_movement(f: Fighter, mx: int, max_spd: float):
 	if not f.has_status("frozen") and not f.dashing:
 		f.vx += mx * 0.25
 		if absf(f.vx) > max_spd: f.vx = max_spd * signf(f.vx)
 
-static func update_state(f: Fighter, mx: int):
-	if f.grounded and mx == 0 and not f.attacking and not f.dashing:
-		f.state = "idle"
-	elif f.grounded and mx != 0 and not f.attacking and not f.dashing:
-		f.state = "walk"
-	if f.attacking and f.attack_timer <= 0:
-		f.attacking = false; f.state = "idle"
+static func update_state(p: Fighter, mx: int):
+	if p.grounded and mx == 0 and not p.attacking and not p.dashing:
+		p.state = "idle"
+	elif p.grounded and mx != 0 and not p.attacking and not p.dashing:
+		p.state = "walk"
+	if p.attacking and p.attack_timer <= 0:
+		p.attacking = false; p.state = "idle"

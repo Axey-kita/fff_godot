@@ -47,6 +47,24 @@ static func update_projectiles(game_node: Node):
 			GameWorld.projectiles.remove_at(i)
 			continue
 
+		# 5.5 Phantom collision: 影武者分身可被敌方投射物命中
+		var ph_hit = false
+		for ph in GameWorld.phantoms:
+			if ph.hp <= 0: continue
+			var ph_owner = ph.get("owner")
+			if ph_owner == p["owner"]: continue  # 自己的分身不碰自己的投射物
+			var ph_rect = Rect2(ph["x"], ph["y"], ph["w"], ph["h"])
+			if ph_rect.intersects(Rect2(p["x"], p["y"], p["w"], p["h"])):
+				ph["hp"] -= p["damage"]
+				Fighter.emit_particles(ph["x"] + ph["w"] / 2.0, ph["y"] + ph["h"] / 2.0, 15, Color(0.53, 0.27, 0.8), 4, 6, "star", 0.8)
+				if not p.get("piercing"):
+					ph_hit = true
+					break
+		if ph_hit:
+			_reset_casting(p)
+			GameWorld.projectiles.remove_at(i)
+			continue
+
 		# 6. Blocking / reflect
 		if target.blocking and target != p["owner"]:
 			if _reflect_projectile(p):
@@ -55,6 +73,24 @@ static func update_projectiles(game_node: Node):
 		if target.hp > 0:
 			var proj_rect = Rect2(p["x"], p["y"], p["w"], p["h"])
 			if target.get_hit_box().intersects(proj_rect):
+				# 刺客「一瞬」闪避检测：冲刺+无敌期间穿过敌方攻击触发闪避，完全免疫伤害和状态效果
+				if target.char_id == "assassin":
+					print("[DODGE-DEBUG] assassin hit by proj: dashing=", target.dashing, " is_invincible=", target.is_invincible, " invincible_timer=", target.invincible_timer, " dodge_success=", target.dodge_success)
+					if target.dashing and target.is_invincible:
+						if not target.dodge_success:
+							target.dodge_success = true
+							target.dodge_slow_mo = 30  # 0.5 秒慢动作
+							# 积攒 1 格暗影能量，满格触发暗影游走
+							target.shadow_energy = minf(target.shadow_energy_max, target.shadow_energy + 1)
+							if target.shadow_energy >= target.shadow_energy_max and not target.shadow_stance:
+								target.shadow_stance = true
+								target.shadow_stance_timer = 480  # 8 秒
+							Fighter.emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 15, Color(0.667, 0.533, 1.0), 3, 5, "star", 0.8)
+							print("[DODGE-DEBUG] ★ 闪避触发！shadow_energy=", target.shadow_energy, " dodge_slow_mo=", target.dodge_slow_mo, " shadow_stance=", target.shadow_stance)
+						# 闪避期间免疫一切：跳过伤害、状态效果、投射物移除
+						continue
+					else:
+						print("[DODGE-DEBUG] ✗ 未触发闪避（条件不满足）")
 				# Piercing: skip if already hit this target
 				if p.get("piercing") and p.has("hitTargets") and p["hitTargets"].has(target):
 					pass  # Already hit, don't deal damage again
@@ -96,7 +132,7 @@ static func update_projectiles(game_node: Node):
 					# Hit particles
 					Fighter.emit_particles(p["x"] + p["w"] / 2.0, p["y"] + p["h"] / 2.0, 30, Color(1.0, 0.67, 0.0), 6, 8, "star", 1.2)
 
-					# Piercing support
+				# Piercing support
 				if p.get("piercing"):
 					if not p.has("hitTargets"): p["hitTargets"] = []
 					p["hitTargets"].append(target)

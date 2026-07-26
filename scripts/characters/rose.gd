@@ -95,7 +95,7 @@ static func update_systems(f: Fighter):
 		if entry.get("overlay_id") == "rose_ult":
 			has_ult_overlay = true
 			break
-	if has_ult_overlay and GameWorld.frame % 15 == 0:
+	if has_ult_overlay and GameWorld.frame % 21 == 0:
 		var target = GameWorld.get_opponent(f)
 		if target and target.hp > 0:
 			Fighter.apply_damage(target, 4.0, f, false, Color(0.9, 0.15, 0.15))
@@ -103,8 +103,7 @@ static func update_systems(f: Fighter):
 	# Skill2: bat swarm
 	if f.rose_skill2_active:
 		f.is_invincible = true
-		if f.image_state != "skill2" and f.image_state != "skill2_enhanced":
-			f.set_animation_state("skill2")
+		f.image_state = "skill2"
 		if f.rose_skill2_enhanced:
 			f.vx = 0; f.vy = 0
 			var jd = GameWorld.rose_joystick_dir
@@ -125,7 +124,6 @@ static func update_systems(f: Fighter):
 				f.rose_skill2_active = false
 				f.rose_skill2_enhanced = false
 				f.is_invincible = false
-				f.image_state = "idle"
 				GameWorld.rose_joystick_dir = Vector2.ZERO
 		else:
 			f.rose_skill2_damage_tick += 1
@@ -141,36 +139,24 @@ static func update_systems(f: Fighter):
 			if not f.dashing:
 				f.rose_skill2_active = false
 				f.is_invincible = false
-				f.image_state = "idle"
 	# Skill1: grab
 	elif f.dashing:
 		if f.image_state != "skill1":
-			f.set_animation_state("skill1")
+			f.image_state = "skill1"
 		var enemy = GameWorld.get_opponent(f)
-		if enemy and enemy.hp > 0 and f.rose_grab_center_x > -9998:
-			# 仅在冲刺路径附近小范围抓取
-			var dx = absf(enemy.pos_x + enemy.w / 2.0 - f.pos_x - f.w / 2.0)
-			if dx < 60:
+		if enemy and enemy.hp > 0:
+			if f.get_hit_box().intersects(enemy.get_hit_box()):
 				enemy.pos_x = f.rose_grab_center_x - enemy.w / 2.0
 				enemy.vx = 0
 				enemy.vy = 0
 	if f.rose_grab_center_x > -9998 and GameWorld.rose_slash_trails.size() > 0:
 		var enemy = GameWorld.get_opponent(f)
 		if enemy and enemy.hp > 0:
-			# 只在抓取中心附近锁定敌人（防全图抓取）
-			var dx = absf(enemy.pos_x + enemy.w / 2.0 - f.rose_grab_center_x)
-			if dx < 80:
-				enemy.pos_x = f.rose_grab_center_x - enemy.w / 2.0
-				enemy.vx = 0
-				enemy.vy = 0
+			enemy.pos_x = f.rose_grab_center_x - enemy.w / 2.0
+			enemy.vx = 0
+			enemy.vy = 0
 	elif f.rose_grab_center_x > -9998 and GameWorld.rose_slash_trails.size() == 0:
 		f.rose_grab_center_x = -9999.0
-	# Skill1 dash 结束后清理残留贴图和状态
-	if not f.dashing and f.image_state == "skill1" and f.rose_grab_center_x > -9998:
-		f.image_state = "idle"
-		GameWorld.rose_slash_trails.clear()
-		f.rose_grab_center_x = -9999.0
-		f.rose_skill1_enhanced_slashes.clear()
 	# Skill1 enhanced: 四连斩生成
 	if f.rose_skill1_enhanced_slashes.size() > 0:
 		f.rose_skill1_slash_spawn_timer += 1
@@ -245,9 +231,6 @@ static func _skill1(owner: Fighter) -> Dictionary:
 	var slash_w = 220 if enhanced else 180
 	var slash_damage = 15 if enhanced else 10
 	
-	# 记录抓取中心（冲刺路径中点，敌人将被锁定到此位置）
-	owner.rose_grab_center_x = owner.pos_x + owner.w / 2.0 + dir * 60
-	
 	# Start dash with grab (prevent default dash damage, handle in character_systems)
 	owner.dashing = true
 	owner.dash_remaining = 120
@@ -275,10 +258,9 @@ static func _skill1(owner: Fighter) -> Dictionary:
 			"h": owner.h + 8,
 			"dir": dir,
 			"hit_dealt": false,
-			"timer": 60,  # 刀光持续 1 秒
+			"timer": 60,  # 1 second
 			"damage": slash_damage,
-			"owner": owner,
-			"img": ROSE_SLASH_IMG,
+			"owner": owner,  # Track who created this slash
 		}
 		GameWorld.rose_slash_trails.append(slash)
 	
@@ -292,9 +274,6 @@ static func _skill2(owner: Fighter) -> Dictionary:
 	if enhanced:
 		# Enhanced: bat swarm free flight (3s, 30 energy, 18s cd)
 		owner.blood_abyss -= 20.0
-		if owner.energy < 20:
-			return {"success": false}
-		owner.energy -= 20
 		if skill: skill.cd = 1080  # 18 seconds
 		owner.rose_skill2_active = true
 		owner.rose_skill2_enhanced = true

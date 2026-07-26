@@ -61,10 +61,10 @@ static func _attack(owner: Fighter) -> Dictionary:
 	owner.slash_facing = owner.facing
 	owner.slash_damage_dealt = false
 	if owner.enhanced_slash and owner.enhanced_slash_timer > 0:
+		# 强化次元斩：斩击出现在身后，伤害提升至 8 点（由 fighter.gd apply_physics 命中时处理）
+		# 命中后恢复 5 能量并重置强化状态
 		owner.slash_x = owner.pos_x - (owner.facing * 40) + owner.w/2 - 50
 		owner.slash_y = owner.pos_y + 10
-		owner.enhanced_slash = false
-		owner.enhanced_slash_timer = 0
 	else:
 		owner.slash_x = owner.pos_x + (owner.w if owner.facing>0 else -60) + 10
 		owner.slash_y = owner.pos_y + 10
@@ -82,6 +82,7 @@ static func _skill1(owner: Fighter) -> Dictionary:
 	owner.attack_cooldown = 0
 	owner.enhanced_slash = true
 	owner.enhanced_slash_timer = 30
+	print("[DODGE-DEBUG] 一瞬释放: dashing=", owner.dashing, " is_invincible=", owner.is_invincible, " invincible_timer=", owner.invincible_timer, " dash_remaining=", owner.dash_remaining)
 	Fighter.emit_particles(owner.pos_x+owner.w/2, owner.pos_y+owner.h/2, 20, Color(0.67,0.53,1.0), 4, 6, "star")
 	return {"success": true}
 
@@ -89,6 +90,7 @@ static func _skill2(owner: Fighter) -> Dictionary:
 	var dir = owner.facing
 	var start_x = owner.pos_x + (owner.w if dir==1 else 0)
 	var start_y = owner.pos_y + 20
+	# 裂空斩为飞行物：life=240（4 秒）持续飞行，穿透性攻击
 	GameWorld.projectiles.append({"x":start_x,"y":start_y,"w":60,"h":30,"vx":8*dir,"vy":0,"life":240,"damage":15,"owner":owner,"type":"assassin_skill2","color":Color(0.53,0.27,0.8),"reflected":false,"piercing":true,"hit_targets":[],"img":PROJ_SLASH2})
 	return {"success": true}
 

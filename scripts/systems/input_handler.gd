@@ -1,6 +1,6 @@
 class_name InputHandler
 
-const PROJ_LIGHT_IMG = preload("res://assets/10-20260702202815.png")
+const PROJ_LIGHT_IMG = preload("res://assets/fx_lightning_projectile.png")
 
 # ===== Player Input =====
 static func update_player_input(world, keys: Dictionary):
@@ -10,15 +10,15 @@ static func update_player_input(world, keys: Dictionary):
 
 static func _handle_char_input(p: Fighter, keys: Dictionary):
 	match p.char_id:
-		"shadowwarrior": CharacterFactory.handle_input(p.char_id, p, keys)
-		"rose": CharacterFactory.handle_input(p.char_id, p, keys)
 		"knight": _input_knight(p, keys)
 		"mage": _input_mage(p, keys)
 		"archer": _input_archer(p, keys)
 		"paladin": _input_paladin(p, keys)
 		"witch": _input_witch(p, keys)
 		"assassin": _input_assassin(p, keys)
+		"shadowwarrior": _input_shadowwarrior(p, keys)
 		"evoker": _input_evoker(p, keys)
+		"rose": _input_rose(p, keys)
 
 static func _input_knight(p: Fighter, keys: Dictionary):
 	var mx = 0
@@ -196,6 +196,40 @@ static func _input_assassin(p: Fighter, keys: Dictionary):
 		p.vx = 0
 	_update_state(p, mx)
 
+static func _input_shadowwarrior(p: Fighter, keys: Dictionary):
+	if p.iaido_active and p.iaido_frozen:
+		p.vx = 0; return
+	var mx = 0
+	if not p.dashing:
+		if keys.left: mx = -1
+		if keys.right: mx = 1
+		if keys.up and p.grounded: p.vy = -10; p.grounded = false
+	if keys.attack and not p.attacking:
+		if p.stealth_active:
+			p.dashing = true; p.dash_remaining = 60; p.dash_dir = p.facing
+			p.dash_speed = 4; p.dash_damage_dealt = false; p.break_strike_timer = 60
+			p.stealth_active = false; keys.attack = false
+		elif GameWorld.frame - p.last_skill_time <= 60:
+			p.stealth_active = true; p.stealth_timer = 360; p.retreat_timer = 15
+			p.retreat_dir = p.facing; p.is_invincible = true; p.invincible_timer = 60
+			p.dashing = true; p.dash_remaining = 80; p.dash_dir = -p.facing
+			p.dash_speed = 2.52; p.dash_damage_dealt = true; p.last_skill_time = -999
+			keys.attack = false
+		else:
+			var s = p.get_skill("attack"); if s: var r = s.try_use(p); if r.get("success"): keys.attack = false
+	if keys.skill1:
+		var s = p.get_skill("skill1"); if s: var r = s.try_use(p); if r.get("success"): p.stealth_active = false; keys.skill1 = false
+	if keys.skill2:
+		var s = p.get_skill("skill2"); if s: var r = s.try_use(p); if r.get("success"): p.stealth_active = false; keys.skill2 = false
+	if keys.ult:
+		var s = p.get_skill("ult"); if s: var r = s.try_use(p); if r.get("success"): p.stealth_active = false; keys.ult = false
+	if not p.has_status("frozen") and not p.dashing:
+		var has_ph = GameWorld.phantoms.size() > 0
+		var boost = 1.1 if has_ph else 1.0
+		p.vx += mx * 0.25 * boost
+		if absf(p.vx) > 2.25 * boost: p.vx = 2.25 * boost * signf(p.vx)
+	_update_state(p, mx)
+
 static func _input_evoker(p: Fighter, keys: Dictionary):
 	var mx = 0
 	if keys.left: mx = -1
@@ -284,7 +318,14 @@ static func _input_rose(p: Fighter, keys: Dictionary):
 	_update_state(p, mx)
 
 static func _apply_movement(p: Fighter, mx: int, max_spd: float):
-	Fighter.apply_movement(p, mx, max_spd)
+	if not p.has_status("frozen") and not p.dashing:
+		p.vx += mx * 0.25
+		if absf(p.vx) > max_spd: p.vx = max_spd * signf(p.vx)
 
 static func _update_state(p: Fighter, mx: int):
-	Fighter.update_state(p, mx)
+	if p.grounded and mx == 0 and not p.attacking and not p.dashing:
+		p.state = "idle"
+	elif p.grounded and mx != 0 and not p.attacking and not p.dashing:
+		p.state = "walk"
+	if p.attacking and p.attack_timer <= 0:
+		p.attacking = false; p.state = "idle"

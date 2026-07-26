@@ -8,7 +8,6 @@ var game_mode := "pve" # "pve" or "pvp"
 var difficulty := "medium"
 var frame := 0
 var hit_stop := 0
-var infinite_energy := false  # 作弊：无限蓝
 
 # Slow motion
 var slow_mo_timer := 0
@@ -44,12 +43,17 @@ var platforms: Array = []
 
 # Camera
 var camera := {"x": 0.0}
+var screen_shake_intensity: float = 0.0
+var screen_shake_duration: int = 0
 
 # Pickup timer
 var pickup_timer := 0.0
 
 # Selected character
 var selected_char_id := "knight"
+
+# Cheats
+var infinite_energy := false
 
 func _ready():
 	init_platforms()

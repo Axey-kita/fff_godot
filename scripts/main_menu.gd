@@ -28,6 +28,7 @@ extends Control
 @onready var easy_btn = $DiffSelect/DiffPanel/DiffButtonRow/EasyBtn
 @onready var medium_btn = $DiffSelect/DiffPanel/DiffButtonRow/MediumBtn
 @onready var hard_btn = $DiffSelect/DiffPanel/DiffButtonRow/HardBtn
+@onready var hell_btn = $DiffSelect/DiffPanel/DiffButtonRow/HellBtn
 @onready var diff_back_btn = $DiffSelect/DiffPanel/DiffBackBtn
 @onready var diff_title = $DiffSelect/DiffPanel/DiffTitle
 
@@ -44,6 +45,7 @@ const IMG_BG = preload("res://assets/无标题102_20260722154610.png")
 const IMG_DIFF_EASY = preload("res://assets/36-20260705005735.png")
 const IMG_DIFF_MEDIUM = preload("res://assets/38-20260705005805.png")
 const IMG_DIFF_HARD = preload("res://assets/39-20260705005825.png")
+const IMG_DIFF_HELL = preload("res://assets/ui_diff_hell.png")
 
 
 func _ready():
@@ -69,6 +71,7 @@ func _ready():
 	easy_btn.pressed.connect(_on_easy_pressed)
 	medium_btn.pressed.connect(_on_medium_pressed)
 	hard_btn.pressed.connect(_on_hard_pressed)
+	hell_btn.pressed.connect(_on_hell_pressed)
 	diff_back_btn.pressed.connect(_on_diff_back_pressed)
 	start_button.pressed.connect(_on_start_pressed)
 	back_button.pressed.connect(_on_back_pressed)
@@ -233,6 +236,8 @@ func _style_diff_buttons():
 	medium_btn.texture_pressed = IMG_DIFF_MEDIUM
 	hard_btn.texture_normal = IMG_DIFF_HARD
 	hard_btn.texture_pressed = IMG_DIFF_HARD
+	hell_btn.texture_normal = IMG_DIFF_HELL
+	hell_btn.texture_pressed = IMG_DIFF_HELL
 	diff_title.add_theme_color_override("font_color", Color(1.0, 0.843, 0.0))
 	_style_action_button(diff_back_btn, Color(0.6, 0.6, 0.6), "← 返回")
 
@@ -392,6 +397,9 @@ func _on_medium_pressed():
 
 func _on_hard_pressed():
 	GameWorld.difficulty = "hard"; _show_char_select()
+
+func _on_hell_pressed():
+	GameWorld.difficulty = "hell"; _show_char_select()
 
 func _on_diff_back_pressed():
 	diff_select.visible = false

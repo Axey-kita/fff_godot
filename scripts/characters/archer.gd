@@ -1,10 +1,10 @@
 # 弓箭手 (archer)
 class_name ArcherCharacter
 
-const PROJ_ARROW = preload("res://assets/16-20260703142620.png")
-const PROJ_ARROW_FIRE = preload("res://assets/18-20260703142934.png")
-const PROJ_ARROW_ULT = preload("res://assets/IMG-20260703-143031.png")
-const PROJ_ARROW_ULT_FIRE = preload("res://assets/IMG-20260703-143038.png")
+const PROJ_ARROW = preload("res://assets/fx_arrow.png")
+const PROJ_ARROW_FIRE = preload("res://assets/fx_arrow_fire.png")
+const PROJ_ARROW_ULT = preload("res://assets/fx_arrow_ult.png")
+const PROJ_ARROW_ULT_FIRE = preload("res://assets/fx_arrow_ult_fire.png")
 const ARCHER_ANI_DIR = "res://assets/char_ani/archer/"
 
 static func get_config() -> Dictionary:
@@ -12,6 +12,7 @@ static func get_config() -> Dictionary:
 		"id": "archer", "name": "弓箭手", "hp": 80, "max_energy": 100, "energy_regen": 0.07,
 		"speed": 2.0, "attack_range": 0, "attack_damage": 0,
 		"attack_cooldown": 0, "attack_delay": 0, "attack_duration": 0,
+		"can_skill_while_attacking": true,
 		"fields": {"arrows":10,"max_arrows":10,"arrow_regen_timer":0,"arrow_regen_rate":480,"fire_arrow_buff":false,"fire_arrow_timer":0,"tracking_buff":false,"tracking_timer":0,"charging_attack":false,"charge_start_time":0},
 		"world_arrays": [],
 		"animations": {
@@ -34,6 +35,40 @@ static func get_config() -> Dictionary:
 			]
 		},
 	}
+
+static func handle_input(p: Fighter, keys: Dictionary) -> int:
+	var mx = 0
+	if keys.left: mx = -1
+	if keys.right: mx = 1
+	if keys.up and p.grounded and not p.shield_active:
+		p.vy = -10; p.grounded = false
+	if keys.attack and not p.shield_active and p.arrows > 0 and not p.charging_attack:
+		p.charging_attack = true; p.charge_start_time = Time.get_ticks_msec()
+		p.attacking = true; p.attack_timer = 9999; p.state = "attack"
+	if not keys.attack and p.charging_attack:
+		var ct = (Time.get_ticks_msec() - p.charge_start_time) / 1000.0
+		var dmg: float; var cost: float
+		if ct < 1: dmg = 5; cost = 5
+		elif ct < 2: dmg = 8; cost = 10
+		else: dmg = 12; cost = 15
+		if p.energy >= cost:
+			p.energy -= cost; p.arrows -= 1
+			var d = p.facing; var px2 = p.pos_x + (p.w if d == 1 else 0); var py2 = p.pos_y + 30
+			var spd = minf(4 + ct * 2, 10)
+			var c = Color(1,0.53,0) if p.fire_arrow_buff else Color(0.67,0.67,0.67)
+			var arr_img = ArcherCharacter.PROJ_ARROW_FIRE if p.fire_arrow_buff else ArcherCharacter.PROJ_ARROW
+			GameWorld.projectiles.append({"x":px2-16,"y":py2-10,"w":32,"h":20,"vx":spd*d,"vy":0,"life":120,"damage":dmg,"owner":p,"type":"arrow","color":c,"reflected":false,"is_fire":p.fire_arrow_buff,"tracking":p.tracking_buff,"trackingTarget":GameWorld.get_opponent(p),"img":arr_img})
+		p.charging_attack = false; p.attacking = false; p.state = "idle"
+	if keys.skill1 and not p.shield_active and not p.charging_attack:
+		var s = p.get_skill("skill1"); if s: var r = s.try_use(p); if r.get("success"): keys.skill1 = false
+	if keys.skill2 and not p.shield_active and not p.charging_attack:
+		var s = p.get_skill("skill2"); if s: var r = s.try_use(p); if r.get("success"): keys.skill2 = false
+	if keys.ult and not p.shield_active and not p.charging_attack:
+		var s = p.get_skill("ult"); if s: var r = s.try_use(p); if r.get("success"): keys.ult = false
+	var spd2 = 1.25 if p.charging_attack else 2.25
+	Fighter.apply_movement(p, mx, spd2)
+	Fighter.update_state(p, mx)
+	return mx
 
 static func create_skills() -> Array:
 	return [
@@ -63,29 +98,3 @@ static func _ult(owner: Fighter) -> Dictionary:
 		var ult_img = PROJ_ARROW_ULT_FIRE if owner.fire_arrow_buff else PROJ_ARROW_ULT
 		GameWorld.projectiles.append({"x":tx-16,"y":-30-randf()*50,"w":32,"h":20,"vx":(randf()-0.5)*0.5,"vy":3+randf()*2,"life":120,"damage":5,"owner":owner,"type":"arrow_ult","color":Color(0.8,0.53,0.0),"reflected":false,"img":ult_img,"is_fire":owner.fire_arrow_buff})
 	return {"success": true}
-
-# ══════════════════════════════════════════════════════════════════
-#  update_systems — 每帧逻辑（CharacterSystems 调度）
-# ══════════════════════════════════════════════════════════════════
-static func update_systems(f: Fighter):
-	if f.char_id != "archer" or f.hp <= 0:
-		return
-
-	# ── 箭矢自动回复 ──
-	if f.arrows < f.max_arrows:
-		f.arrow_regen_timer += 1
-		if f.arrow_regen_timer >= f.arrow_regen_rate:
-			f.arrow_regen_timer = 0
-			f.arrows += 1
-
-	# ── 火矢 buff 计时 ──
-	if f.fire_arrow_buff:
-		f.fire_arrow_timer -= 1
-		if f.fire_arrow_timer <= 0:
-			f.fire_arrow_buff = false
-
-	# ── 追踪 buff 计时 ──
-	if f.tracking_buff:
-		f.tracking_timer -= 1
-		if f.tracking_timer <= 0:
-			f.tracking_buff = false

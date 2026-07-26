@@ -13,8 +13,8 @@ static func update_pickups_and_end():
 			if d < 35:
 				item.apply_effect(t); item.active = false
 				GameWorld.pickups.remove_at(i); break
-	# Pickup spawn timer (difficulty-based: hard=720 frames, else=420 frames)
-	var interval = 720 if GameWorld.difficulty == "hard" else 420
+	# Pickup spawn timer (difficulty-based)
+	var interval = _pickup_interval()
 	if GameWorld.pickup_timer <= 0:
 		_spawn_pickup()
 		GameWorld.pickup_timer = interval
@@ -37,22 +37,42 @@ static func update_pickups_and_end():
 		GameWorld.game_over = true
 		GameWorld.game_result = "win"
 
+static func _pickup_interval() -> int:
+	# hard=720 帧（12 秒），hell=900 帧（15 秒），其余=420 帧（7 秒）
+	if Constants.difficulty_at_least(GameWorld.difficulty, "hell"):
+		return 900
+	if Constants.difficulty_at_least(GameWorld.difficulty, "hard"):
+		return 720
+	return 420
+
+static func _initial_pickup_count() -> int:
+	# hard/hell 初始 4 个，其余 6 个
+	if Constants.difficulty_at_least(GameWorld.difficulty, "hard"):
+		return 4
+	return 6
+
+static func _max_pickups() -> int:
+	# hard/hell 上限 6 个，其余 10 个
+	if Constants.difficulty_at_least(GameWorld.difficulty, "hard"):
+		return 6
+	return 10
+
 static func init_pickups():
 	GameWorld.pickups.clear()
-	var count = 4 if GameWorld.difficulty == "hard" else 6
+	var count = _initial_pickup_count()
 	for i in count:
 		_spawn_pickup()
 
 static func _spawn_pickup():
-	var max_pickups = 6 if GameWorld.difficulty == "hard" else 10
+	var max_pickups = _max_pickups()
 	if GameWorld.pickups.size() >= max_pickups:
 		return
 	var px = 100 + randf() * 2200
 	var py = 380 - 30 - randf() * 120
-	# Weight-based type selection (matches JS PICKUP_DEFS)
+	# Weight-based type selection — hell 沿用 hard_weight（更少 attack/cooldown）
 	var keys = Pickup.PICKUP_DEFS.keys()
 	var total: float = 0.0
-	var weight_key = "hard_weight" if GameWorld.difficulty == "hard" else "weight"
+	var weight_key = "hard_weight" if Constants.difficulty_at_least(GameWorld.difficulty, "hard") else "weight"
 	for k in keys:
 		total += Pickup.PICKUP_DEFS[k][weight_key]
 	var r = randf() * total
