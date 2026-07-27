@@ -21,7 +21,7 @@ static func get_config() -> Dictionary:
 			"idle": FrameAnimation.load_from_frames(ARCHER_ANI_DIR + "idle/", "archer_idle_f_", [{"index": 1, "duration": 999.0}], true),
 			"walk": FrameAnimation.load_from_frames(ARCHER_ANI_DIR + "walk/", "archer_walk_f_", [{"index": 1, "duration": 999.0}], true),
 			"jump": FrameAnimation.load_from_frames(ARCHER_ANI_DIR + "jump/", "archer_jump_f_", [{"index": 1, "duration": 999.0}], true),
-			"attack": FrameAnimation.load_from_frames(ARCHER_ANI_DIR + "attack/", "archer_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"attack": FrameAnimation.load_from_frames(ARCHER_ANI_DIR + "attack/", "archer_attack_f_", [{"index": 1, "duration": 0.5}], false),
 			"ult": FrameAnimation.load_from_frames(ARCHER_ANI_DIR + "ult/", "archer_ult_f_", [{"index": 1, "duration": 3.0}], false),
 			"charge": FrameAnimation.load_from_frames(ARCHER_ANI_DIR + "charge/", "archer_charge_f_", [{"index": 1, "duration": 999.0}], true),
 		},
@@ -117,3 +117,27 @@ static func _ult(owner: Fighter) -> Dictionary:
 		var ult_img = PROJ_ARROW_ULT_FIRE if is_fire else PROJ_ARROW_ULT
 		GameWorld.projectiles.append({"x":tx-16,"y":-30-randf()*50,"w":32,"h":20,"vx":(randf()-0.5)*0.5,"vy":3+randf()*2,"life":120,"damage":5,"owner":owner,"type":"arrow_ult","color":Color(0.8,0.53,0.0),"reflected":false,"img":ult_img,"is_fire":is_fire})
 	return {"success": true}
+
+## AI 弓箭手射箭：直接创建箭矢投射物，绕过 handle_input 的按键模拟
+static func ai_fire_arrow(owner: Fighter, charge_time: float):
+	var comp: ArcherComponent = owner.components.get_component("archer") if owner.components else null
+	if not comp or comp.arrows <= 0:
+		owner.charging_attack = false; owner.attacking = false; owner.state = "idle"
+		return
+	var dmg: float; var cost: float
+	if charge_time < 1.0: dmg = 5; cost = 5
+	elif charge_time < 2.0: dmg = 8; cost = 10
+	else: dmg = 12; cost = 15
+	if owner.energy < cost:
+		owner.charging_attack = false; owner.attacking = false; owner.state = "idle"
+		return
+	owner.energy -= cost; comp.arrows -= 1
+	var d = owner.facing
+	var px2 = owner.pos_x + (owner.w if d == 1 else 0)
+	var py2 = owner.pos_y + 30
+	var spd = minf(4 + charge_time * 2, 10)
+	var c = Color(1,0.53,0) if comp.fire_arrow_buff else Color(0.67,0.67,0.67)
+	var arr_img = PROJ_ARROW_FIRE if comp.fire_arrow_buff else PROJ_ARROW
+	var tracking = comp.tracking_buff
+	GameWorld.projectiles.append({"x":px2-16,"y":py2-10,"w":32,"h":20,"vx":spd*d,"vy":0,"life":120,"damage":dmg,"owner":owner,"type":"arrow","color":c,"reflected":false,"is_fire":comp.fire_arrow_buff,"tracking":tracking,"trackingTarget":GameWorld.get_opponent(owner),"img":arr_img})
+	owner.charging_attack = false; owner.attacking = false; owner.state = "idle"

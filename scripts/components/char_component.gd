@@ -1,8 +1,8 @@
 class_name CharComponent
 
-var owner: Fighter = null
+var owner = null # Fighter (deferred type resolution for cold cache)
 
-func init(owner: Fighter):
+func init(owner):
 	self.owner = owner
 
 func update():

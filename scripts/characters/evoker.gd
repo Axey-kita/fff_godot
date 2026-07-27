@@ -10,14 +10,14 @@ static func get_config() -> Dictionary:
 	return {
 		"id": "evoker", "name": "唤魔者", "hp": 60, "max_energy": 140, "energy_regen": 0.083,
 		"speed": 2.25, "attack_range": 44, "attack_damage": 4,
-		"attack_cooldown": 0, "attack_delay": 8, "attack_duration": 68,
+		"attack_cooldown": 0, "attack_delay": 8, "attack_duration": 30,
 		"fields": {"last_summon_type":-1,"summon_dead1":false,"summon_dead2":false,"summon_dead3":false},
 		"world_arrays": ["evoker_summons","void_rifts","evoker_fire_seas","gravity_balls","phantoms"],
 		"animations": {
 			"idle": FrameAnimation.load_from_frames(EVOKER_ANI_DIR + "idle/", "evoker_idle_f_", [{"index": 1, "duration": 999.0}], true),
 			"walk": FrameAnimation.load_from_frames(EVOKER_ANI_DIR + "walk/", "evoker_walk_f_", [{"index": 1, "duration": 999.0}], true),
 			"jump": FrameAnimation.load_from_frames(EVOKER_ANI_DIR + "jump/", "evoker_jump_f_", [{"index": 1, "duration": 999.0}], true),
-			"attack": FrameAnimation.load_from_frames(EVOKER_ANI_DIR + "attack/", "evoker_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"attack": FrameAnimation.load_from_frames(EVOKER_ANI_DIR + "attack/", "evoker_attack_f_", [{"index": 1, "duration": 0.5}], false),
 			"ult": FrameAnimation.load_from_frames(EVOKER_ANI_DIR + "ult/", "evoker_ult_f_", [{"index": 1, "duration": 3.0}], false),
 		},
 		"dex": {

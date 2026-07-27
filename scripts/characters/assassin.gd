@@ -92,7 +92,7 @@ static func _skill1(owner: Fighter) -> Dictionary:
 	var comp: AssassinComponent = owner.components.get_component("assassin") if owner.components else null
 	if comp:
 		comp.is_invincible = true
-		comp.invincible_timer = 20
+		comp.invincible_timer = 40
 		comp.dodge_success = false
 		comp.enhanced_slash = true
 		comp.enhanced_slash_timer = 30
@@ -110,6 +110,10 @@ static func _skill2(owner: Fighter) -> Dictionary:
 	var dir = owner.facing
 	var start_x = owner.pos_x + (owner.w if dir==1 else 0)
 	var start_y = owner.pos_y + 20
+	#FIXED BUG: 裂空斩(技能二)需要屏幕抖动效果,使用GameWorld.set()绕过Godot4 autoload静态赋值限制
+	GameWorld.set("screen_shake_intensity", 10.0)
+	GameWorld.set("screen_shake_duration", 14)
+	#FIX END
 	# 裂空斩为飞行物：life=240（4 秒）持续飞行，穿透性攻击
 	GameWorld.projectiles.append({"x":start_x,"y":start_y,"w":60,"h":30,"vx":8*dir,"vy":0,"life":240,"damage":15,"owner":owner,"type":"assassin_skill2","color":Color(0.53,0.27,0.8),"reflected":false,"piercing":true,"hit_targets":[],"img":PROJ_SLASH2})
 	return {"success": true}
@@ -201,3 +205,16 @@ static func handle_input(owner: Fighter, keys: Dictionary) -> int:
 		owner.vx = 0
 	Fighter.update_state(owner, mx)
 	return mx
+
+## 系统更新：大招持续伤害
+static func update_systems(f: Fighter):
+	var comp: AssassinComponent = f.components.get_component("assassin") if f.components else null
+	if not comp or not comp.ult_active:
+		return
+	# 每 15 帧（0.25s）造成 3 点伤害，全程约 2.8s → ~ 33.6 点
+	comp.ult_damage_timer += 1
+	if comp.ult_damage_timer >= 15:
+		comp.ult_damage_timer = 0
+		var target = GameWorld.get_opponent(f)
+		if target and target.hp > 0:
+			Fighter.apply_damage(target, 3, f, false, Color(0.53, 0.27, 0.8))

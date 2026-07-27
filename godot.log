@@ -1,0 +1,411 @@
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+
+---  GUT  ---
+[INFO]:  using [C:/Users/ela/AppData/Roaming/Godot/app_userdata/焰刃流光] for temporary output.
+Godot version:  4.6.0
+GUT version:  9.6.1
+SCRIPT ERROR: Parse Error: Identifier "Directory" not declared in the current scope. Did you mean to use "DirAccess"?
+   at: GDScript::reload (res://tests/test_component_access.gd:67)
+   GDScript backtrace (most recent call first):
+       [0] load_script_using_custom_warnings (res://addons/gut/warnings_manager.gd:173)
+       [1] _parse_script (res://addons/gut/test_collector.gd:76)
+       [2] add_script (res://addons/gut/test_collector.gd:128)
+       [3] add_script (res://addons/gut/gut.gd:1070)
+       [4] add_directory (res://addons/gut/gut.gd:1093)
+       [5] _apply_options (res://addons/gut/gut_config.gd:136)
+       [6] apply_options (res://addons/gut/gut_config.gd:207)
+       [7] run_tests (res://addons/gut/gui/GutRunner.gd:192)
+       [8] _run_tests (res://addons/gut/cli/gut_cli.gd:239)
+       [9] main (res://addons/gut/cli/gut_cli.gd:297)
+       [10] _init (res://addons/gut/gut_cmdln.gd:39)
+SCRIPT ERROR: Parse Error: Identifier "File" not declared in the current scope.
+   at: GDScript::reload (res://tests/test_component_access.gd:83)
+   GDScript backtrace (most recent call first):
+       [0] load_script_using_custom_warnings (res://addons/gut/warnings_manager.gd:173)
+       [1] _parse_script (res://addons/gut/test_collector.gd:76)
+       [2] add_script (res://addons/gut/test_collector.gd:128)
+       [3] add_script (res://addons/gut/gut.gd:1070)
+       [4] add_directory (res://addons/gut/gut.gd:1093)
+       [5] _apply_options (res://addons/gut/gut_config.gd:136)
+       [6] apply_options (res://addons/gut/gut_config.gd:207)
+       [7] run_tests (res://addons/gut/gui/GutRunner.gd:192)
+       [8] _run_tests (res://addons/gut/cli/gut_cli.gd:239)
+       [9] main (res://addons/gut/cli/gut_cli.gd:297)
+       [10] _init (res://addons/gut/gut_cmdln.gd:39)
+SCRIPT ERROR: Parse Error: Identifier "File" not declared in the current scope.
+   at: GDScript::reload (res://tests/test_component_access.gd:84)
+   GDScript backtrace (most recent call first):
+       [0] load_script_using_custom_warnings (res://addons/gut/warnings_manager.gd:173)
+       [1] _parse_script (res://addons/gut/test_collector.gd:76)
+       [2] add_script (res://addons/gut/test_collector.gd:128)
+       [3] add_script (res://addons/gut/gut.gd:1070)
+       [4] add_directory (res://addons/gut/gut.gd:1093)
+       [5] _apply_options (res://addons/gut/gut_config.gd:136)
+       [6] apply_options (res://addons/gut/gut_config.gd:207)
+       [7] run_tests (res://addons/gut/gui/GutRunner.gd:192)
+       [8] _run_tests (res://addons/gut/cli/gut_cli.gd:239)
+       [9] main (res://addons/gut/cli/gut_cli.gd:297)
+       [10] _init (res://addons/gut/gut_cmdln.gd:39)
+SCRIPT ERROR: Parse Error: Identifier "File" not declared in the current scope.
+   at: GDScript::reload (res://tests/test_component_access.gd:151)
+   GDScript backtrace (most recent call first):
+       [0] load_script_using_custom_warnings (res://addons/gut/warnings_manager.gd:173)
+       [1] _parse_script (res://addons/gut/test_collector.gd:76)
+       [2] add_script (res://addons/gut/test_collector.gd:128)
+       [3] add_script (res://addons/gut/gut.gd:1070)
+       [4] add_directory (res://addons/gut/gut.gd:1093)
+       [5] _apply_options (res://addons/gut/gut_config.gd:136)
+       [6] apply_options (res://addons/gut/gut_config.gd:207)
+       [7] run_tests (res://addons/gut/gui/GutRunner.gd:192)
+       [8] _run_tests (res://addons/gut/cli/gut_cli.gd:239)
+       [9] main (res://addons/gut/cli/gut_cli.gd:297)
+       [10] _init (res://addons/gut/gut_cmdln.gd:39)
+SCRIPT ERROR: Parse Error: Identifier "File" not declared in the current scope.
+   at: GDScript::reload (res://tests/test_component_access.gd:152)
+   GDScript backtrace (most recent call first):
+       [0] load_script_using_custom_warnings (res://addons/gut/warnings_manager.gd:173)
+       [1] _parse_script (res://addons/gut/test_collector.gd:76)
+       [2] add_script (res://addons/gut/test_collector.gd:128)
+       [3] add_script (res://addons/gut/gut.gd:1070)
+       [4] add_directory (res://addons/gut/gut.gd:1093)
+       [5] _apply_options (res://addons/gut/gut_config.gd:136)
+       [6] apply_options (res://addons/gut/gut_config.gd:207)
+       [7] run_tests (res://addons/gut/gui/GutRunner.gd:192)
+       [8] _run_tests (res://addons/gut/cli/gut_cli.gd:239)
+       [9] main (res://addons/gut/cli/gut_cli.gd:297)
+       [10] _init (res://addons/gut/gut_cmdln.gd:39)
+ERROR: Failed to load script "res://tests/test_component_access.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript.cpp:2907)
+   GDScript backtrace (most recent call first):
+       [0] load_script_using_custom_warnings (res://addons/gut/warnings_manager.gd:173)
+       [1] _parse_script (res://addons/gut/test_collector.gd:76)
+       [2] add_script (res://addons/gut/test_collector.gd:128)
+       [3] add_script (res://addons/gut/gut.gd:1070)
+       [4] add_directory (res://addons/gut/gut.gd:1093)
+       [5] _apply_options (res://addons/gut/gut_config.gd:136)
+       [6] apply_options (res://addons/gut/gut_config.gd:207)
+       [7] run_tests (res://addons/gut/gui/GutRunner.gd:192)
+       [8] _run_tests (res://addons/gut/cli/gut_cli.gd:239)
+       [9] main (res://addons/gut/cli/gut_cli.gd:297)
+       [10] _init (res://addons/gut/gut_cmdln.gd:39)
+[WARNING]:  Ignoring script res://tests/test_component_access.gd because it does not extend GutTest
+SCRIPT ERROR: Parse Error: Native class "CanvasItem" cannot be constructed as it is abstract.
+   at: GDScript::reload (res://tests/test_rose_bugs.gd:77)
+   GDScript backtrace (most recent call first):
+       [0] load_script_using_custom_warnings (res://addons/gut/warnings_manager.gd:173)
+       [1] _parse_script (res://addons/gut/test_collector.gd:76)
+       [2] add_script (res://addons/gut/test_collector.gd:128)
+       [3] add_script (res://addons/gut/gut.gd:1070)
+       [4] add_directory (res://addons/gut/gut.gd:1093)
+       [5] _apply_options (res://addons/gut/gut_config.gd:136)
+       [6] apply_options (res://addons/gut/gut_config.gd:207)
+       [7] run_tests (res://addons/gut/gui/GutRunner.gd:192)
+       [8] _run_tests (res://addons/gut/cli/gut_cli.gd:239)
+       [9] main (res://addons/gut/cli/gut_cli.gd:297)
+       [10] _init (res://addons/gut/gut_cmdln.gd:39)
+SCRIPT ERROR: Parse Error: Name "new" is a Callable. You can call it with "new.call()" instead.
+   at: GDScript::reload (res://tests/test_rose_bugs.gd:77)
+   GDScript backtrace (most recent call first):
+       [0] load_script_using_custom_warnings (res://addons/gut/warnings_manager.gd:173)
+       [1] _parse_script (res://addons/gut/test_collector.gd:76)
+       [2] add_script (res://addons/gut/test_collector.gd:128)
+       [3] add_script (res://addons/gut/gut.gd:1070)
+       [4] add_directory (res://addons/gut/gut.gd:1093)
+       [5] _apply_options (res://addons/gut/gut_config.gd:136)
+       [6] apply_options (res://addons/gut/gut_config.gd:207)
+       [7] run_tests (res://addons/gut/gui/GutRunner.gd:192)
+       [8] _run_tests (res://addons/gut/cli/gut_cli.gd:239)
+       [9] main (res://addons/gut/cli/gut_cli.gd:297)
+       [10] _init (res://addons/gut/gut_cmdln.gd:39)
+SCRIPT ERROR: Parse Error: Function "assert_pass()" not found in base self.
+   at: GDScript::reload (res://tests/test_rose_bugs.gd:81)
+   GDScript backtrace (most recent call first):
+       [0] load_script_using_custom_warnings (res://addons/gut/warnings_manager.gd:173)
+       [1] _parse_script (res://addons/gut/test_collector.gd:76)
+       [2] add_script (res://addons/gut/test_collector.gd:128)
+       [3] add_script (res://addons/gut/gut.gd:1070)
+       [4] add_directory (res://addons/gut/gut.gd:1093)
+       [5] _apply_options (res://addons/gut/gut_config.gd:136)
+       [6] apply_options (res://addons/gut/gut_config.gd:207)
+       [7] run_tests (res://addons/gut/gui/GutRunner.gd:192)
+       [8] _run_tests (res://addons/gut/cli/gut_cli.gd:239)
+       [9] main (res://addons/gut/cli/gut_cli.gd:297)
+       [10] _init (res://addons/gut/gut_cmdln.gd:39)
+SCRIPT ERROR: Parse Error: Cannot call non-static function "get()" on the class "RoseCharacter" directly. Make an instance instead.
+   at: GDScript::reload (res://tests/test_rose_bugs.gd:114)
+   GDScript backtrace (most recent call first):
+       [0] load_script_using_custom_warnings (res://addons/gut/warnings_manager.gd:173)
+       [1] _parse_script (res://addons/gut/test_collector.gd:76)
+       [2] add_script (res://addons/gut/test_collector.gd:128)
+       [3] add_script (res://addons/gut/gut.gd:1070)
+       [4] add_directory (res://addons/gut/gut.gd:1093)
+       [5] _apply_options (res://addons/gut/gut_config.gd:136)
+       [6] apply_options (res://addons/gut/gut_config.gd:207)
+       [7] run_tests (res://addons/gut/gui/GutRunner.gd:192)
+       [8] _run_tests (res://addons/gut/cli/gut_cli.gd:239)
+       [9] main (res://addons/gut/cli/gut_cli.gd:297)
+       [10] _init (res://addons/gut/gut_cmdln.gd:39)
+SCRIPT ERROR: Parse Error: Function "assert_pass()" not found in base self.
+   at: GDScript::reload (res://tests/test_rose_bugs.gd:116)
+   GDScript backtrace (most recent call first):
+       [0] load_script_using_custom_warnings (res://addons/gut/warnings_manager.gd:173)
+       [1] _parse_script (res://addons/gut/test_collector.gd:76)
+       [2] add_script (res://addons/gut/test_collector.gd:128)
+       [3] add_script (res://addons/gut/gut.gd:1070)
+       [4] add_directory (res://addons/gut/gut.gd:1093)
+       [5] _apply_options (res://addons/gut/gut_config.gd:136)
+       [6] apply_options (res://addons/gut/gut_config.gd:207)
+       [7] run_tests (res://addons/gut/gui/GutRunner.gd:192)
+       [8] _run_tests (res://addons/gut/cli/gut_cli.gd:239)
+       [9] main (res://addons/gut/cli/gut_cli.gd:297)
+       [10] _init (res://addons/gut/gut_cmdln.gd:39)
+ERROR: Failed to load script "res://tests/test_rose_bugs.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript.cpp:2907)
+   GDScript backtrace (most recent call first):
+       [0] load_script_using_custom_warnings (res://addons/gut/warnings_manager.gd:173)
+       [1] _parse_script (res://addons/gut/test_collector.gd:76)
+       [2] add_script (res://addons/gut/test_collector.gd:128)
+       [3] add_script (res://addons/gut/gut.gd:1070)
+       [4] add_directory (res://addons/gut/gut.gd:1093)
+       [5] _apply_options (res://addons/gut/gut_config.gd:136)
+       [6] apply_options (res://addons/gut/gut_config.gd:207)
+       [7] run_tests (res://addons/gut/gui/GutRunner.gd:192)
+       [8] _run_tests (res://addons/gut/cli/gut_cli.gd:239)
+       [9] main (res://addons/gut/cli/gut_cli.gd:297)
+       [10] _init (res://addons/gut/gut_cmdln.gd:39)
+[WARNING]:  Ignoring script res://tests/test_rose_bugs.gd because it does not extend GutTest
+
+
+res://tests/test_ai_bugs.gd
+* test_ai_system_has_hell_tactics
+* test_hell_tactics_reaction_dodge
+    [WARNING]:  Warn:  Float/Int comparison.  Got FLOAT but expected INT
+* test_hell_preset_used
+* test_ai_evoker_has_special_handling
+* test_ai_evoker_uses_fireball_at_range
+    [Risky]:  test_ai_evoker_uses_fireball_at_range did not assert
+4/5 passed.
+
+
+res://tests/test_ai_platform.gd
+* test_reachable_same_platform
+    [WARNING]:  Warn:  Float/Int comparison.  Got FLOAT but expected INT
+    [WARNING]:  Warn:  Float/Int comparison.  Got FLOAT but expected INT
+* test_reachable_horizontal
+* test_reachable_vertical_up
+* test_reachable_vertical_down
+* test_reachable_too_high
+* test_reachable_too_far
+* test_reachable_is_on_platform
+* test_reachable_get_interval
+8/8 passed.
+
+
+res://tests/test_archer_ai.gd
+* test_archer_has_ai_fire_arrow
+* test_ai_fire_arrow_creates_projectile
+* test_ai_fire_arrow_needs_energy
+* test_ai_fire_arrow_damage_scales
+* test_ai_archer_charges_when_far
+5/5 passed.
+
+
+res://tests/test_assassin_bugs.gd
+* test_assassin_skill2_triggers_screen_shake
+1/1 passed.
+
+
+res://tests/test_assassin_damage.gd
+* test_apply_damage_blocked_when_invincible
+[Audio] 💥 敌人受伤音效
+    [Failed]:  [80.0] expected to equal [90.0]:  无敌期间目标不应受到伤害
+      at line 66
+* test_apply_damage_works_when_not_invincible
+[Audio] 💥 敌人受伤音效
+* test_apply_physics_decrements_invincible_timer
+    [Risky]:  test_apply_physics_decrements_invincible_timer did not assert
+* test_apply_physics_resets_is_invincible_when_timer_zero
+    [Risky]:  test_apply_physics_resets_is_invincible_when_timer_zero did not assert
+* test_apply_physics_resets_after_multiple_calls
+    [Risky]:  test_apply_physics_resets_after_multiple_calls did not assert
+* test_assassin_skill1_sets_invincible
+[DODGE-DEBUG] 一瞬释放: dashing=true is_invincible=false invincible_timer=0 dash_remaining=80.0
+* test_assassin_takes_damage_after_invincibility_expires
+[Audio] 💥 敌人受伤音效
+* test_assassin_skill2_life_is_240
+SCRIPT ERROR: Invalid assignment of property or key 'ult_active' with value of type 'bool' on a base object of type 'Node2D (Fighter)'.
+   at: test_assassin_skill2_life_is_240 (res://tests/test_assassin_damage.gd:172)
+   GDScript backtrace (most recent call first):
+       [0] test_assassin_skill2_life_is_240 (res://tests/test_assassin_damage.gd:172)
+       [1] _run_test (res://addons/gut/gut.gd:622)
+       [2] _test_the_scripts (res://addons/gut/gut.gd:835)
+       [3] test_scripts (res://addons/gut/gut.gd:1047)
+       [4] run_tests (res://addons/gut/gui/GutRunner.gd:198)
+       [5] _run_tests (res://addons/gut/cli/gut_cli.gd:239)
+       [6] main (res://addons/gut/cli/gut_cli.gd:297)
+       [7] _init (res://addons/gut/gut_cmdln.gd:39)
+    [Failed]:  Unexpected Errors:
+    [1] <engine-2>Invalid assignment of property or key 'ult_active' with value of type 'bool' on a base object of type 'Node2D (Fighter)'.
+      at line -1
+* test_enhanced_slash_deals_8_damage_and_restores_energy
+    [Failed]:  [100.00000000000000000000] expected to equal [92.0] +/- [0.01]:  强化次元斩应造成 8 点伤害（100-8=92）
+      at line 223
+    [Failed]:  [30.66399999999998700000] expected to equal [35.0] +/- [1.0]:  强化次元斩命中应恢复 5 能量
+      at line 225
+* test_normal_slash_deals_5_damage
+[Audio] 💥 敌人受伤音效
+* test_enhanced_slash_timer_decrements
+    [Risky]:  test_enhanced_slash_timer_decrements did not assert
+* test_enhanced_slash_resets_when_timer_expires
+    [Risky]:  test_enhanced_slash_resets_when_timer_expires did not assert
+* test_dodge_slow_mo_decrements
+    [Risky]:  test_dodge_slow_mo_decrements did not assert
+* test_dodge_slow_mo_reaches_zero
+    [Risky]:  test_dodge_slow_mo_reaches_zero did not assert
+* test_attack_during_dash_hits_target
+[Audio] 💥 敌人受伤音效
+* test_dodge_accumulates_shadow_energy
+[DODGE-DEBUG] assassin hit by proj: dashing=true is_invincible=false invincible_timer=0 dodge_success=false
+[DODGE-DEBUG] ✗ 未触发闪避（条件不满足）
+[Audio] 💥 敌人受伤音效
+    [Risky]:  test_dodge_accumulates_shadow_energy did not assert
+* test_dodge_full_energy_triggers_shadow_stance
+[DODGE-DEBUG] assassin hit by proj: dashing=true is_invincible=false invincible_timer=0 dodge_success=false
+[DODGE-DEBUG] ✗ 未触发闪避（条件不满足）
+[Audio] 💥 敌人受伤音效
+    [Risky]:  test_dodge_full_energy_triggers_shadow_stance did not assert
+* test_shadow_stance_drains_energy_and_expires
+    [Risky]:  test_shadow_stance_drains_energy_and_expires did not assert
+* test_shadow_stance_leaves_trail_when_moving
+    [Risky]:  test_shadow_stance_leaves_trail_when_moving did not assert
+* test_dodge_completely_immune_to_damage
+[DODGE-DEBUG] assassin hit by proj: dashing=true is_invincible=false invincible_timer=0 dodge_success=false
+[DODGE-DEBUG] ✗ 未触发闪避（条件不满足）
+[Audio] 💥 敌人受伤音效
+    [WARNING]:  Warn:  Float/Int comparison.  Got FLOAT but expected INT
+    [Failed]:  [50.0] expected to equal [100]:  闪避期间应完全免疫伤害，HP 不变
+      at line 477
+    [Failed]:  闪避期间应免疫 burn 状态
+      at line 479
+    [Failed]:  闪避期间应免疫 slow 状态
+      at line 480
+* test_dodge_does_not_consume_projectile
+[DODGE-DEBUG] assassin hit by proj: dashing=true is_invincible=false invincible_timer=0 dodge_success=false
+[DODGE-DEBUG] ✗ 未触发闪避（条件不满足）
+[Audio] 💥 敌人受伤音效
+    [Failed]:  [0] expected to equal [1]:  闪避不应消耗投射物，应继续飞行
+      at line 510
+5/21 passed.
+
+
+res://tests/test_hell_mode.gd
+* test_ai_presets_contains_hell
+* test_hell_preset_values
+* test_hell_is_hardest_preset
+* test_difficulty_levels_order
+* test_difficulty_at_least_basic
+* test_difficulty_at_least_hard
+* test_difficulty_at_least_lower
+* test_difficulty_at_least_invalid
+* test_pickup_interval_hell
+* test_pickup_interval_hard
+* test_pickup_interval_medium
+* test_pickup_interval_easy
+* test_initial_pickup_count_hell
+* test_max_pickups_hell
+* test_max_pickups_easy
+15/15 passed.
+
+
+res://tests/test_paladin_bugs.gd
+* test_paladin_has_update_systems
+* test_paladin_image_state_reset_after_charge
+* test_paladin_image_state_kept_during_charge
+* test_paladin_image_state_kept_if_not_charge
+4/4 passed.
+
+
+res://tests/test_shadowwarrior_bugs.gd
+* test_shadowwarrior_break_strike_skips_fighter_draw
+* test_shadowwarrior_iaido_skips_fighter_draw
+* test_melee_attacks_damage_phantoms
+* test_melee_does_not_hit_own_phantoms
+4/4 passed.
+
+
+
+
+==============================================
+= Run Summary
+==============================================
+- test_ai_evoker_uses_fireball_at_range
+    [Risky]:  Did not assert
+
+res://tests/test_assassin_damage.gd
+- test_apply_damage_blocked_when_invincible
+    [Failed]:  [80.0] expected to equal [90.0]:  无敌期间目标不应受到伤害
+          at line 66
+- test_apply_physics_decrements_invincible_timer
+    [Risky]:  Did not assert
+- test_apply_physics_resets_is_invincible_when_timer_zero
+    [Risky]:  Did not assert
+- test_apply_physics_resets_after_multiple_calls
+    [Risky]:  Did not assert
+- test_assassin_skill2_life_is_240
+    [Failed]:  Unexpected Errors:
+    [1] <engine-2>Invalid assignment of property or key 'ult_active' with value of type 'bool' on a base object of type 'Node2D (Fighter)'.
+          at line -1
+- test_enhanced_slash_deals_8_damage_and_restores_energy
+    [Failed]:  [100.00000000000000000000] expected to equal [92.0] +/- [0.01]:  强化次元斩应造成 8 点伤害（100-8=92）
+          at line 223
+    [Failed]:  [30.66399999999998700000] expected to equal [35.0] +/- [1.0]:  强化次元斩命中应恢复 5 能量
+          at line 225
+- test_enhanced_slash_timer_decrements
+    [Risky]:  Did not assert
+- test_enhanced_slash_resets_when_timer_expires
+    [Risky]:  Did not assert
+- test_dodge_slow_mo_decrements
+    [Risky]:  Did not assert
+- test_dodge_slow_mo_reaches_zero
+    [Risky]:  Did not assert
+- test_dodge_accumulates_shadow_energy
+    [Risky]:  Did not assert
+- test_dodge_full_energy_triggers_shadow_stance
+    [Risky]:  Did not assert
+- test_shadow_stance_drains_energy_and_expires
+    [Risky]:  Did not assert
+- test_shadow_stance_leaves_trail_when_moving
+    [Risky]:  Did not assert
+- test_dodge_completely_immune_to_damage
+    [Failed]:  [50.0] expected to equal [100]:  闪避期间应完全免疫伤害，HP 不变
+          at line 477
+    [Failed]:  闪避期间应免疫 burn 状态
+          at line 479
+    [Failed]:  闪避期间应免疫 slow 状态
+          at line 480
+- test_dodge_does_not_consume_projectile
+    [Failed]:  [0] expected to equal [1]:  闪避不应消耗投射物，应继续飞行
+          at line 510
+
+Totals
+------
+Warnings              6
+
+Scripts               8
+Tests                63
+Passing Tests        46
+Failing Tests         5
+Risky/Pending        12
+Asserts           90/98
+Orphans              59
+Time              0.444s
+
+
+---- 5 failing tests ----
+
+WARNING: 59 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2692)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2641)
+ERROR: 8 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:810)

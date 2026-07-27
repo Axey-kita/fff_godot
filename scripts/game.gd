@@ -52,6 +52,8 @@ const SW_IDLE_IMG      = preload("res://assets/char_ani/shadowwarrior/idle/shado
 const SW_WALK_IMG      = preload("res://assets/char_ani/shadowwarrior/walk/shadowwarrior_walk_f_1.png")
 const SW_ATTACK_IMG    = preload("res://assets/char_ani/shadowwarrior/attack/shadowwarrior_attack_f_1.png")
 const SW_ULT_IMG       = preload("res://assets/char_ani/shadowwarrior/ult/shadowwarrior_ult_f_1.png")
+const SW_BREAK_SHADOW  = preload("res://assets/char_ani/shadowwarrior/break_shadow.png")
+const SW_FADE_IN_SHADOW = preload("res://assets/char_ani/shadowwarrior/fade_in_shadow.png")
 
 # Input state
 var keys := {
@@ -249,13 +251,12 @@ func _update():
 	# 仅递减 iaido_timer；平移阶段（90<t<=120）和爆炸阶段（t<=0）正常运行
 	var iaido_freeze = false
 	for f in GameWorld.entities:
-		if f.state_flags.get("iaido_active", false):
-			var iaido_timer = f.state_flags.get("iaido_timer", 0)
+		var sw_comp: ShadowwarriorComponent = f.components.get_component("shadowwarrior") if f.components else null
+		if sw_comp and sw_comp.iaido_active:
+			# 直接从组件读取 timer（state_flags 在冻结期间不会更新）
+			var iaido_timer = sw_comp.iaido_timer
 			if iaido_timer > 120 or (0 < iaido_timer and iaido_timer <= 90):
-				# 通过组件递减 timer（需要写回黑板）
-				var sw_comp: ShadowwarriorComponent = f.components.get_component("shadowwarrior") if f.components else null
-				if sw_comp:
-					sw_comp.iaido_timer -= 1
+				sw_comp.iaido_timer -= 1
 				iaido_freeze = true
 	if iaido_freeze:
 		GameWorld.frame += 1
@@ -275,8 +276,8 @@ func _update():
 			sk.update()
 	# Input & AI (must happen BEFORE physics, so vx/vy from input take effect same frame)
 	InputHandler.update_player_input(GameWorld, keys)
-	ai_think_delay = TrackSystem.update_track(ai_think_delay)
-	# ai_think_delay = AISystem.update_ai(ai_think_delay)  # 旧 AI（含技能/攻击/闪避）已注释
+	ai_think_delay = AISystem.update_ai(ai_think_delay)
+	# ai_think_delay = TrackSystem.update_track(ai_think_delay)  # 旧 TrackSystem 已替换为 AISystem
 	# Apply physics (after input, matching JS order)
 	_apply_physics_all()
 	if GameWorld.player and GameWorld.player.dashing and GameWorld.player.image_state == "skill1":
@@ -336,9 +337,9 @@ func _draw():
 			has_fullscreen_overlay = true
 			break
 	if not has_fullscreen_overlay:
-		if GameWorld.player:
+		if is_instance_valid(GameWorld.player):
 			_draw_fighter(GameWorld.player, true)
-		if GameWorld.enemy:
+		if is_instance_valid(GameWorld.enemy):
 			_draw_fighter(GameWorld.enemy, GameWorld.game_mode == "pvp")
 
 	# 3. drawProjectiles()
@@ -394,8 +395,9 @@ func _draw():
 		p.draw(self, cam_x)
 
 	# 8. drawChargeBar()
-	_draw_charge_bar(GameWorld.player, cam_x)
-	if GameWorld.game_mode == "pvp":
+	if is_instance_valid(GameWorld.player):
+		_draw_charge_bar(GameWorld.player, cam_x)
+	if GameWorld.game_mode == "pvp" and is_instance_valid(GameWorld.enemy):
 		_draw_charge_bar(GameWorld.enemy, cam_x)
 
 	# 9. drawParticles()
@@ -520,8 +522,13 @@ func _draw():
 							draw_texture_rect(anim.current_texture, Rect2(0, 0, f.w, f.h), false, Color(0.4, 0.27, 0.6, alpha * 0.5))
 						draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	# 12. Time slow filter
-	if GameWorld.slow_mo_timer > 0:
+	# 12. Time slow filter (全局减速)
+	var dodge_slow = false
+	for f in GameWorld.entities:
+		if f.state_flags.get("dodge_slow", 0) > 0:
+			dodge_slow = true
+			break
+	if dodge_slow or GameWorld.slow_mo_timer > 0:
 		draw_rect(Rect2(0, 0, Constants.W, Constants.H), Color(0.471, 0.314, 0.784, 0.12))
 
 	# 13. HUD
@@ -579,10 +586,12 @@ func _draw_fighter(f: Fighter, is_local: bool = false):
 	if not f:
 		return
 	# 影武者居合期间：角色贴图由 _draw_shadowwarrior_overlays 绘制
+	# 破影一击（break_strike_timer）是普通冲刺，正常绘制贴图
 	var sw_comp: ShadowwarriorComponent = null
 	if f.char_id == "shadowwarrior":
 		sw_comp = f.components.get_component("shadowwarrior") if f.components else null
-		if sw_comp and (sw_comp.iaido_active or sw_comp.break_strike_timer > 0):
+		if sw_comp and sw_comp.iaido_active:
+			# iaido: 角色贴图由 _draw_shadowwarrior_overlays 绘制
 			return
 	var px = f.pos_x - GameWorld.camera.x
 	if px < -80 or px > 880:
@@ -606,6 +615,12 @@ func _draw_fighter(f: Fighter, is_local: bool = false):
 		var imgs = f.config.get("images", {})
 		var tex_key = f.image_state if imgs.has(f.image_state) else "idle"
 		tex = imgs.get(tex_key)
+	# Shadowwarrior texture override
+	if sw_comp:
+		if sw_comp.stealth_active and f.dashing:
+			tex = SW_FADE_IN_SHADOW  # 隐身冲刺（后撤阶段）
+		elif sw_comp.break_strike_timer > 0:
+			tex = SW_BREAK_SHADOW    # 破影一击
 	if not tex:
 		push_warning("FrameAnimation: No texture for " + f.char_id + " image_state=" + f.image_state)
 	if tex is Texture2D:
@@ -695,8 +710,8 @@ func _draw_hud(font: Font):
 		return
 	var p = GameWorld.player
 	var e = GameWorld.enemy
-	var bar_x = 10
-	var bar_w = 180.0
+	var bar_x = 16
+	var bar_w = 170.0
 	var bar_h = 14.0
 
 	# === Player (left side) ===

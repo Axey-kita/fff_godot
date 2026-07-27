@@ -1,6 +1,6 @@
 class_name TrackSystem
 
-# ===== Pure Tracking AI — 仅移动追踪，无技能/攻击/闪避 =====
+# ===== Pure Tracking AI — 纯导航接口（无技能/攻击/闪避） =====
 
 # ── 物理常量 ──
 const GRAVITY := 0.22
@@ -17,71 +17,54 @@ static var _jump_commit: bool = false
 # ── 路径状态 ──
 static var _path: Array = []         # 当前完整路径 [plat0, plat1, ...]
 static var _path_move_speed := 0.0   # 当前移动速度
-static var _path_dir_to_target := 0  # 朝向 P1 的方向
-static var _need_think: bool = true  # 需要重新规划路径
-static var _last_target_plat = null  # 上一帧 P1 的平台
-static var _last_ai_plat = null      # 上一帧 AI 的平台
+static var _path_dir_to_target := 0  # 朝向目标的方向
+static var _target_x := 0.0          # 目标 x 位置（同平台 desire 距离保持用）
+static var _target_plat = null       # 目标平台
+static var _desire_min := 0.0        # 同平台后的最小 desire 距离
+static var _desire_max := 999999.0   # 同平台后的最大 desire 距离
+static var _rush := false            # 是否使用 rush 模式（更快起跳）
 
-# ===== 主入口（每帧执行） =====
-static func update_track(_unused: int) -> int:
-	if GameWorld.game_mode == "pvp" or GameWorld.enemy.hp <= 0:
-		return 0
-	var f = GameWorld.enemy
-	if f.has_status("frozen") or f.hit_cooldown > 0:
-		return 0
+# ── 辅助：维持速度（已内联到执行路径） ──
+static var _last_vx := 0.0
+static var _last_dir := 0
 
-	var target = GameWorld.player
+# ===== 新接口 =====
+
+## 设置导航目标（由 AISystem 走位策略决定）
+## navigate() 只设置内部状态，不直接操作 fighter 的 vx/vy
+## from_plat/to_plat 为 null 时视为"无路径目标"
+static func navigate(f, from_plat, to_plat, desire_min: float, desire_max: float, rush: bool = false):
+	_desire_min = desire_min
+	_desire_max = desire_max
+	_rush = rush
+	_target_plat = to_plat
+	_target_x = _get_target_x(f, to_plat)
+	
+	# 设置移动速度
 	var diff = Constants.AI_PRESETS.get(GameWorld.difficulty, Constants.AI_PRESETS["medium"])
-	var move_speed = diff["move_speed"]
-	var dx = target.pos_x - f.pos_x
-	var dir_to_target = 1 if dx > 0 else -1
-
-	# ── 平台识别 ──
-	var target_x = target.pos_x
-	var target_y = target.pos_y
-	var ai_cx = f.pos_x + f.w / 2.0
-	var ai_feet_y = f.pos_y + f.h
-	var target_feet_x = target_x
-	var target_feet_y = target_y + target.h
-
-	var ai_plat = null
-	var target_plat = null
-	for p in GameWorld.platforms:
-		if p.get("terrain_type", -1) == 3: continue
-		if _is_on_platform(ai_cx, ai_feet_y, p):
-			ai_plat = p
-		if _is_on_platform(target_feet_x, target_feet_y, p):
-			target_plat = p
-
-	# ── 检测平台变化，设置重规划标志 ──
-	if target_plat != _last_target_plat or ai_plat != _last_ai_plat:
-		_need_think = true
-		_last_target_plat = target_plat
-		_last_ai_plat = ai_plat
-
-	# ── 需要重规划时执行 ──
-	if _need_think:
-		_path = _plan_path(ai_plat, target_plat)
-		_path_move_speed = move_speed
-		_path_dir_to_target = dir_to_target
+	_path_move_speed = diff["move_speed"]
+	
+	# 设置路径
+	if from_plat == null or to_plat == null:
+		_path = []
 		_jump_commit = false
-		_need_think = false
+		return
+	
+	# 方向（朝目标）
+	var dx = _target_x - f.pos_x
+	_path_dir_to_target = 1 if dx > 0 else -1
+	
+	if from_plat == to_plat:
+		_path = [from_plat]  # 同平台，单元素路径
+		_jump_commit = false
+		return
+	
+	_path = _find_path(from_plat, to_plat)
+	_need_think = false
+	_jump_commit = false
 
-	# ── 执行路径（每帧） ──
-	_execute_path(f, ai_plat, target_plat, ai_cx)
-	return 0
-
-# ── 规划路径（换平台时才调用） ──
-static func _plan_path(ai_plat, target_plat) -> Array:
-	if ai_plat == null or target_plat == null:
-		return []
-	if ai_plat == target_plat:
-		return [ai_plat]  # 同平台，单元素路径
-	var path = _find_path(ai_plat, target_plat)
-	return path
-
-# ── 执行路径（每帧调用，含边缘检测 + 起跳） ──
-static func _execute_path(f, ai_plat, target_plat, ai_cx: float):
+## 每帧执行路径（同平台走向目标/不同平台图路径+边缘跳跃）
+static func follow_path(f, ai_cx: float) -> void:
 	var move_speed = _path_move_speed
 	var dir_to_target = _path_dir_to_target
 
@@ -103,20 +86,41 @@ static func _execute_path(f, ai_plat, target_plat, ai_cx: float):
 		_update_state(f, dir_to_target)
 		return
 
-	# 同平台 → 走向目标
-	if ai_plat != null and target_plat != null and ai_plat == target_plat:
-		f.vx = dir_to_target * move_speed
-		_last_vx = f.vx; _last_dir = dir_to_target
-		_update_state(f, dir_to_target)
+	# 识别 AI 当前所在平台
+	var ai_feet_y = f.pos_y + f.h
+	var ai_plat = null
+	for p in GameWorld.platforms:
+		if p.get("terrain_type", -1) == 3: continue
+		if _is_on_platform(ai_cx, ai_feet_y, p):
+			ai_plat = p
+			break
+
+	# 同平台 → desire 距离保持
+	if ai_plat != null and _target_plat != null and ai_plat == _target_plat:
+		var dx_target = _target_x - f.pos_x
+		var dist = absf(dx_target)
+		var dir_to_target_local = 1 if dx_target > 0 else -1
+		
+		if dist < _desire_min:
+			# 太近 → 后退
+			f.vx = -dir_to_target_local * move_speed
+		elif dist > _desire_max:
+			# 太远 → 前进
+			f.vx = dir_to_target_local * move_speed
+		else:
+			# desire 范围内 → 停止
+			f.vx = 0
+		_last_vx = f.vx; _last_dir = dir_to_target_local
+		_update_state(f, sign(f.vx))
 		return
 
 	# 不同平台 + 有路径 → 沿路径走
-	if ai_plat != null and target_plat != null and f.grounded and _path.size() >= 2:
+	if ai_plat != null and _target_plat != null and f.grounded and _path.size() >= 2:
 		var next_plat = _path[1]
 		_follow_path_step(f, ai_plat, next_plat, move_speed, dir_to_target, ai_cx)
 		return
 
-	# 无可达路径 → 朝玩家方向走，到边缘起跳尝试
+	# 无可达路径 → 朝目标方向走，到边缘起跳尝试
 	if ai_plat != null and f.grounded:
 		var dir_to_plat := 0
 		var ai_cx_check = f.pos_x + f.w / 2
@@ -137,10 +141,17 @@ static func _execute_path(f, ai_plat, target_plat, ai_cx: float):
 		_update_state(f, dir_to_plat)
 		return
 
-	# P1 在空中 → 静止
+	# 无有效路径 → 静止
 	f.vx = 0
 	_last_vx = 0; _last_dir = 0
 	_update_state(f, 0)
+
+
+# ===== 旧接口保留 =====
+# 注：update_track() 已删除，改为 navigate() + follow_path()
+
+# ── 需要重新规划路径标志 ──
+static var _need_think: bool = true
 
 # ── 沿路径走一步（边缘检测 + 起跳） ──
 static func _follow_path_step(f, ai_plat, next_plat, move_speed: float, dir_to_target: int, ai_cx: float):
@@ -176,23 +187,29 @@ static func _follow_path_step(f, ai_plat, next_plat, move_speed: float, dir_to_t
 			return
 		dir = dir_to_target
 
-	f.vx = dir * move_speed * 1.5
+	# 速度：rush 模式 1.5x，否则 1.0x
+	var speed_mult = 1.5 if _rush else 1.0
+	f.vx = dir * move_speed * speed_mult
 
 	# 起跳检测（到边缘起跳）
-	var at_edge = absf(f.pos_x - (ai_plat["x"] + ai_plat["w"] if dir > 0 else ai_plat["x"])) < 60
+	var edge_threshold = 40 if _rush else 60
+	var at_edge = absf(f.pos_x - (ai_plat["x"] + ai_plat["w"] if dir > 0 else ai_plat["x"])) < edge_threshold
 	if is_above and at_edge and f.grounded:
 		var target_cx = (next_l + next_r) / 2.0
 		var jump_dir = 1 if target_cx > f.pos_x else -1
-		f.vx = jump_dir * move_speed * 1.5
+		f.vx = jump_dir * move_speed * speed_mult
 		f.vy = -JUMP_VY
 		_jump_commit = true
 
 	_last_vx = f.vx; _last_dir = dir
 	_update_state(f, dir)
 
-# ── 辅助：维持速度（已内联到 _execute_path） ──
-static var _last_vx := 0.0
-static var _last_dir := 0
+# ── 辅助：获取目标 x 位置 ──
+static func _get_target_x(f, target_plat) -> float:
+	if target_plat != null:
+		return target_plat["x"] + target_plat["w"] / 2.0
+	return GameWorld.player.pos_x + GameWorld.player.w / 2.0
+
 
 # ===== 状态更新 =====
 static func _update_state(p, mx: int):
@@ -203,7 +220,7 @@ static func _update_state(p, mx: int):
 	if p.attacking and p.attack_timer <= 0:
 		p.attacking = false; p.state = "idle"
 
-# ===== 平台辅助函数（同 AISystem） =====
+# ===== 平台辅助函数 =====
 static func _is_on_platform(x: float, y: float, p: Dictionary) -> bool:
 	if p.get("terrain_type", -1) == 3: return false
 	return x >= p["x"] and x <= p["x"] + p["w"] and absf(y - p["y"]) < 20

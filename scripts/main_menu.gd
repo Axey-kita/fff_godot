@@ -31,6 +31,10 @@ extends Control
 @onready var hell_btn = $DiffSelect/DiffPanel/DiffButtonRow/HellBtn
 @onready var diff_back_btn = $DiffSelect/DiffPanel/DiffBackBtn
 @onready var diff_title = $DiffSelect/DiffPanel/DiffTitle
+@onready var map_pool_btn = $MapPoolBtn
+@onready var map_pool_overlay = $MapPoolOverlay
+@onready var map_pool_container = $MapPoolOverlay/MapPoolPanel/MapPoolScroll/MapPoolGrid
+@onready var map_pool_close = $MapPoolOverlay/MapPoolPanel/MapPoolHeader/MapPoolCloseBtn
 
 var selected_char := "knight"
 var chars_initialized := false
@@ -83,9 +87,12 @@ func _ready():
 	_style_dex_overlay()
 	_style_diff_buttons()
 	_style_char_select_buttons()
+	_style_map_pool_ui()
 	
+	MapManager.ensure_init()
 	_populate_characters()
 	_populate_dex_grid()
+	_populate_map_pool()
 
 # ===== Pokedex =====
 
@@ -460,3 +467,72 @@ func _on_exit_pressed():
 
 func _on_start_pressed():
 	get_tree().change_scene_to_file("res://scenes/game.tscn")
+
+# ===== 地图池管理 =====
+
+func _style_map_pool_ui():
+	map_pool_btn.pressed.connect(_on_map_pool_pressed)
+	map_pool_close.pressed.connect(_on_map_pool_close)
+	# 样式：匹配 pokedex 按钮风格
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.416, 0.298, 0.612, 0.15)
+	style.set_corner_radius_all(8)
+	style.border_width_left = 2; style.border_width_right = 2
+	style.border_width_top = 2; style.border_width_bottom = 2
+	style.border_color = Color(0.416, 0.298, 0.612, 0.4)
+	map_pool_btn.add_theme_stylebox_override("normal", style)
+	var hover = style.duplicate()
+	hover.bg_color = Color(0.416, 0.298, 0.612, 0.25)
+	hover.border_color = Color(0.416, 0.298, 0.612, 0.6)
+	map_pool_btn.add_theme_stylebox_override("hover", hover)
+	map_pool_btn.add_theme_color_override("font_color", Color(0.67, 0.53, 1.0))
+	map_pool_btn.add_theme_color_override("font_hover_color", Color(0.8, 0.67, 1.0))
+	
+	var title = $MapPoolOverlay/MapPoolPanel/MapPoolHeader/MapPoolTitle
+	title.add_theme_color_override("font_color", Color(1.0, 0.843, 0.0))
+	map_pool_close.add_theme_color_override("font_color", Color(0.914, 0.271, 0.157))
+	map_pool_close.add_theme_font_size_override("font_size", 20)
+
+func _populate_map_pool():
+	for child in map_pool_container.get_children():
+		child.queue_free()
+	
+	var all_maps = MapManager.get_all_maps()
+	for map_path in all_maps:
+		var name_str = MapManager.get_display_name(map_path)
+		var is_enabled = MapManager.is_in_pool(map_path)
+		
+		var hbox = HBoxContainer.new()
+		hbox.add_theme_constant_override("separation", 8)
+		
+		var check = CheckBox.new()
+		check.button_pressed = is_enabled
+		check.toggled.connect(_on_map_toggle.bind(map_path))
+		check.add_theme_color_override("font_color", Color(0.8, 0.73, 0.9))
+		hbox.add_child(check)
+		
+		var lbl = Label.new()
+		lbl.text = name_str
+		lbl.add_theme_color_override("font_color", Color(0.7, 0.6, 0.8))
+		lbl.add_theme_font_size_override("font_size", 14)
+		hbox.add_child(lbl)
+		
+		map_pool_container.add_child(hbox)
+
+func _on_map_toggle(pressed: bool, map_path: String):
+	MapManager.toggle_map(map_path)
+	print("[MapPool] 切换: ", MapManager.get_display_name(map_path), " 池中=", MapManager.is_in_pool(map_path))
+
+func _on_map_pool_pressed():
+	map_pool_overlay.visible = true
+	menu_main.visible = false
+	pokedex_btn.visible = false
+	exit_btn.visible = false
+	map_pool_btn.visible = false
+
+func _on_map_pool_close():
+	map_pool_overlay.visible = false
+	menu_main.visible = true
+	pokedex_btn.visible = true
+	exit_btn.visible = true
+	map_pool_btn.visible = true

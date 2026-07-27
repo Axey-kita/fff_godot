@@ -10,15 +10,15 @@ static func get_config() -> Dictionary:
 	return {
 		"id": "mage", "name": "法师", "hp": 70, "max_energy": 120, "energy_regen": 0.07,
 		"speed": 1.9, "attack_range": 30, "attack_damage": 0,
-		"attack_cooldown": 120, "attack_delay": 0, "attack_duration": 120,
+		"attack_cooldown": 120, "attack_delay": 0, "attack_duration": 30,
 		"fields": {}, "world_arrays": [],
 		"animations": {
 			"idle": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "idle/", "mage_idle_f_", [{"index": 1, "duration": 999.0}], true),
 			"walk": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "walk/", "mage_walk_f_", [{"index": 1, "duration": 999.0}], true),
 			"jump": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "jump/", "mage_jump_f_", [{"index": 1, "duration": 999.0}], true),
-			"attack": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "attack/", "mage_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"attack": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "attack/", "mage_attack_f_", [{"index": 1, "duration": 0.5}], false),
 			"ult": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "ult/", "mage_ult_f_", [{"index": 1, "duration": 3.0}], false),
-			"charge": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "attack/", "mage_attack_f_", [{"index": 1, "duration": 2.0}], true),
+			"charge": FrameAnimation.load_from_frames(MAGE_ANI_DIR + "attack/", "mage_attack_f_", [{"index": 1, "duration": 0.5}], true),
 		},
 		"dex": {
 			"icon": "🔮",
@@ -70,7 +70,7 @@ static func handle_input(owner: Fighter, keys: Dictionary) -> int:
 			if owner.energy >= 10:
 				owner.energy -= 10
 				owner.attacking = true
-				owner.attack_timer = 120
+				owner.attack_timer = 30
 				owner.attack_delay = 0
 				owner.attack_hit_dealt = true
 				owner.attack_cooldown = 120

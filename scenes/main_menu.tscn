@@ -81,6 +81,15 @@ offset_bottom = 46.0
 text = "❌ 退出"
 flat = true
 
+[node name="MapPoolBtn" type="Button" parent="."]
+layout_mode = 0
+offset_left = 120.0
+offset_top = 12.0
+offset_right = 220.0
+offset_bottom = 46.0
+text = "🗺 地图池"
+flat = true
+
 [node name="PokedexOverlay" type="ColorRect" parent="."]
 visible = false
 layout_mode = 1
@@ -299,3 +308,53 @@ text = "← 返回"
 layout_mode = 2
 custom_minimum_size = Vector2(180, 46)
 text = "⚔️ 开始战斗"
+
+[node name="MapPoolOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.8)
+
+[node name="MapPoolPanel" type="VBoxContainer" parent="MapPoolOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -180.0
+offset_right = 200.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="MapPoolHeader" type="HBoxContainer" parent="MapPoolOverlay/MapPoolPanel"]
+layout_mode = 2
+alignment = 2
+
+[node name="MapPoolTitle" type="Label" parent="MapPoolOverlay/MapPoolPanel/MapPoolHeader"]
+layout_mode = 2
+text = "🗺 地图池管理"
+horizontal_alignment = 1
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+
+[node name="MapPoolCloseBtn" type="Button" parent="MapPoolOverlay/MapPoolPanel/MapPoolHeader"]
+layout_mode = 2
+custom_minimum_size = Vector2(44, 36)
+text = "✕"
+flat = true
+
+[node name="MapPoolScroll" type="ScrollContainer" parent="MapPoolOverlay/MapPoolPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 280)
+
+[node name="MapPoolGrid" type="VBoxContainer" parent="MapPoolOverlay/MapPoolPanel/MapPoolScroll"]
+layout_mode = 2
+theme_override_constants/separation = 6

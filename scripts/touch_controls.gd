@@ -31,29 +31,30 @@ func _create_panels():
 	var left_panel := ColorRect.new()
 	left_panel.color = PANEL_COLOR
 	left_panel.position = Vector2(4, 276)
-	left_panel.size = Vector2(236, 170)
+	left_panel.size = Vector2(260, 170)
 	add_child(left_panel)
 
 	# Right panel ─ action buttons area
 	var right_panel := ColorRect.new()
 	right_panel.color = PANEL_COLOR
 	right_panel.position = Vector2(540, 272)
-	right_panel.size = Vector2(256, 174)
+	right_panel.size = Vector2(270, 174)
 	add_child(right_panel)
 
 # ── buttons ─────────────────────────────────────────────────────
 
 func _create_buttons():
-	# Left side ─ D-pad (no down button)
+	# Left side ─ D-pad (horizontal only)
 	_create_btn("←", "left",  Vector2(12,  350), BTN_SIZE)
 	_create_btn("→", "right", Vector2(164, 350), BTN_SIZE)
-	_create_btn("↑", "up",    Vector2(88,  284), BTN_SIZE)
 
-	# Right side ─ action buttons
-	_create_btn("技1",  "skill1", Vector2(552, 284), BTN_SIZE_SMALL)
-	_create_btn("技2",  "skill2", Vector2(640, 284), BTN_SIZE_SMALL)
-	_create_btn("攻击", "attack", Vector2(560, 352), BTN_SIZE)
-	_create_btn("大招", "ult",    Vector2(680, 352), BTN_SIZE)
+	# Right side ─ vertical + action buttons
+	_create_btn("↑",   "up",      Vector2(710, 284), BTN_SIZE_SMALL)
+	_create_btn("↓",   "down",    Vector2(710, 352), BTN_SIZE_SMALL)
+	_create_btn("技1", "skill1",  Vector2(546, 284), BTN_SIZE_SMALL)
+	_create_btn("技2", "skill2",  Vector2(628, 284), BTN_SIZE_SMALL)
+	_create_btn("攻击", "attack", Vector2(548, 352), BTN_SIZE)
+	_create_btn("大招", "ult",    Vector2(630, 352), BTN_SIZE)
 
 func _create_btn(text: String, key_name: String, pos: Vector2, size: Vector2):
 	var btn := Button.new()

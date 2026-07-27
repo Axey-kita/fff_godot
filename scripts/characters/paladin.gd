@@ -9,14 +9,14 @@ static func get_config() -> Dictionary:
 	return {
 		"id": "paladin", "name": "圣骑士", "hp": 120, "max_energy": 100, "energy_regen": 0,
 		"speed": 2.1, "attack_range": 44, "attack_damage": 5,
-		"attack_cooldown": 60, "attack_delay": 8, "attack_duration": 68,
+		"attack_cooldown": 60, "attack_delay": 8, "attack_duration": 30,
 		"fields": {"divine_shield_active":false,"divine_shield_timer":0,"divine_shield_absorb":0.0,"holy_empower_active":false,"holy_empower_timer":0,"charging_skill1":false,"skill1_charge_time":0},
 		"world_arrays": [],
 		"animations": {
 			"idle": FrameAnimation.load_from_frames(PALADIN_ANI_DIR + "idle/", "paladin_idle_f_", [{"index": 1, "duration": 999.0}], true),
 			"walk": FrameAnimation.load_from_frames(PALADIN_ANI_DIR + "walk/", "paladin_walk_f_", [{"index": 1, "duration": 999.0}], true),
 			"jump": FrameAnimation.load_from_frames(PALADIN_ANI_DIR + "jump/", "paladin_jump_f_", [{"index": 1, "duration": 999.0}], true),
-			"attack": FrameAnimation.load_from_frames(PALADIN_ANI_DIR + "attack/", "paladin_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"attack": FrameAnimation.load_from_frames(PALADIN_ANI_DIR + "attack/", "paladin_attack_f_", [{"index": 1, "duration": 0.5}], false),
 			"charge": FrameAnimation.load_from_frames(PALADIN_ANI_DIR + "charge/", "paladin_charge_f_", [{"index": 1, "duration": 999.0}], true),
 			"ult": FrameAnimation.load_from_frames(PALADIN_ANI_DIR + "ult/", "paladin_ult_f_", [{"index": 1, "duration": 3.0}], false),
 		},
@@ -83,7 +83,7 @@ static func handle_input(owner: Fighter, keys: Dictionary) -> int:
 			owner.grounded = false
 		if keys.attack and not owner.charging_skill1 and owner.attack_cooldown <= 0 and not owner.attacking:
 			owner.attacking = true
-			owner.attack_timer = 68
+			owner.attack_timer = 30
 			owner.attack_delay = 8
 			owner.attack_hit_dealt = false
 			owner.attack_cooldown = 60
@@ -132,3 +132,16 @@ static func _release_paladin_charge(owner: Fighter):
 	var s1 = owner.get_skill("skill1")
 	if s1:
 		s1.cd = s1.cooldown
+
+#FIXED BUG: 圣骑士一技能正义冲锋结束后charge贴图不重置,因为之前完全没有update_systems
+#修复:冲刺+蓄力都结束后清空image_state,下一帧apply_physics自动恢复idle/walk
+static func update_systems(f: Fighter):
+	if f.hp <= 0: return
+	# AI 自动释放蓄力：最大蓄力 2 秒后自动冲锋
+	if f.charging_skill1:
+		var ct = (Time.get_ticks_msec() - f.charge_start_time) / 1000.0
+		if ct >= 2.0:
+			_release_paladin_charge(f)
+	if not f.dashing and not f.charging_skill1 and f.image_state == "charge":
+		f.image_state = ""
+#FIX END

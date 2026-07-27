@@ -9,14 +9,14 @@ static func get_config() -> Dictionary:
 	return {
 		"id": "shadowwarrior", "name": "影武者", "hp": 90, "max_energy": 100, "energy_regen": 0.05,
 		"speed": 2.1, "attack_range": 44, "attack_damage": 5,
-		"attack_cooldown": 60, "attack_delay": 8, "attack_duration": 68,
+		"attack_cooldown": 60, "attack_delay": 8, "attack_duration": 30,
 		"fields": {"stealth_active":false,"stealth_timer":0,"last_skill_time":-999,"retreat_timer":0,"retreat_dir":1,"break_strike_timer":0,"pending_trap":false,"shadow_trap_active":false,"shadow_trap":{},"pending_clones":false,"clone_reveal_timer":0,"iaido_active":false,"iaido_timer":0,"iaido_frozen":false,"iaido_dir":1,"iaido_slash":{}},
 		"world_arrays": ["phantoms"],
 		"animations": {
 			"idle": FrameAnimation.load_from_frames(SHADOWWARRIOR_ANI_DIR + "idle/", "shadowwarrior_idle_f_", [{"index": 1, "duration": 999.0}], true),
 			"walk": FrameAnimation.load_from_frames(SHADOWWARRIOR_ANI_DIR + "walk/", "shadowwarrior_walk_f_", [{"index": 1, "duration": 999.0}], true),
 			"jump": FrameAnimation.load_from_frames(SHADOWWARRIOR_ANI_DIR + "jump/", "shadowwarrior_jump_f_", [{"index": 1, "duration": 999.0}], true),
-			"attack": FrameAnimation.load_from_frames(SHADOWWARRIOR_ANI_DIR + "attack/", "shadowwarrior_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"attack": FrameAnimation.load_from_frames(SHADOWWARRIOR_ANI_DIR + "attack/", "shadowwarrior_attack_f_", [{"index": 1, "duration": 0.5}], false),
 			"ult": FrameAnimation.load_from_frames(SHADOWWARRIOR_ANI_DIR + "ult/", "shadowwarrior_ult_f_", [{"index": 1, "duration": 3.0}], false),
 		},
 		"dex": {
@@ -51,7 +51,7 @@ static func create_skills() -> Array:
 
 static func _attack(owner: Fighter) -> Dictionary:
 	owner.attacking = true
-	owner.attack_timer = 68
+	owner.attack_timer = 30
 	owner.attack_delay = 8
 	owner.attack_hit_dealt = false
 	owner.attack_cooldown = 60
@@ -120,6 +120,8 @@ static func update_systems(f: Fighter):
 			"timer": 300,  # 5 秒存在时间
 			"anim": 0,
 			"captured": null,
+			"vy": f.vy,
+			"grounded": f.grounded,
 		}
 
 	# === 技能2：幻影·舞 - 创建分身 ===
@@ -143,7 +145,7 @@ static func update_systems(f: Fighter):
 				"attack_hit_dealt": false,
 				"attacking": false,
 				"owner": f,
-				"vy": 0.0,
+				"vy": f.vy,
 				"grounded": f.grounded,
 			}
 			GameWorld.phantoms.append(ph)
@@ -151,7 +153,6 @@ static func update_systems(f: Fighter):
 	# === 技能1：陷阱逻辑更新 ===
 	if comp.shadow_trap_active and not comp.shadow_trap.is_empty():
 		_update_shadow_trap(f, comp)
-
 	# === 技能2：分身逻辑更新 ===
 	_update_phantoms(f)
 
@@ -164,14 +165,24 @@ static func _update_shadow_trap(f: Fighter, comp: ShadowwarriorComponent):
 	var trap = comp.shadow_trap
 	trap["anim"] += 1
 	trap["timer"] -= 1
+	
+	# 重力 & 落地（空中释放的陷阱自动下落）
+	if not trap.get("grounded", true):
+		trap["vy"] = trap.get("vy", 0.0) + 0.22
+		trap["y"] += trap["vy"]
+		if trap["y"] + trap["h"] >= Constants.GROUND_Y:
+			trap["y"] = Constants.GROUND_Y - trap["h"]
+			trap["vy"] = 0.0
+			trap["grounded"] = true
 
 	match trap["phase"]:
 		"idle":
-			# 检测敌人是否靠近
+			# 检测敌人是否进入陷阱矩形范围
 			var opp = GameWorld.get_opponent(f)
 			if opp and opp.hp > 0:
-				var dx = absf(opp.pos_x - trap["x"])
-				if dx < 60:
+				# 陷阱碰撞箱：以陷阱位置为中心，120×h 的矩形
+				var trap_rect = Rect2(trap["x"] + trap["w"] / 2.0 - 60, trap["y"], 120, trap["h"])
+				if trap_rect.intersects(opp.get_hit_box()):
 					trap["phase"] = "capture"
 					trap["timer"] = 60  # 包裹持续 1 秒
 					trap["captured"] = opp
@@ -211,16 +222,28 @@ static func _update_phantoms(f: Fighter):
 		if ph.hp <= 0:
 			to_remove.append(ph)
 			continue
-		# 重力 & 落地（空中释放的分身自动落地）
+		# 重力 & 落地（空中释放/走出平台边缘的分身自动下落）
 		if not ph.get("grounded", true):
 			ph["vy"] += 0.22  # 与角色重力一致
 			ph["y"] += ph["vy"]
-			if ph["y"] + ph["h"] >= Constants.GROUND_Y:
+			# 检测是否落到任意平台上
+			var landed = false
+			for p in GameWorld.platforms:
+				if p.get("terrain_type", -1) == 3: continue
+				if ph["vy"] >= 0 and ph["x"] + ph["w"] > p["x"] + 4 and ph["x"] < p["x"] + p["w"] - 4 \
+					and ph["y"] + ph["h"] >= p["y"] and ph["y"] + ph["h"] <= p["y"] + p["h"] + 6:
+					ph["y"] = p["y"] - ph["h"]
+					ph["vy"] = 0.0
+					ph["grounded"] = true
+					landed = true
+					break
+			if not landed and ph["y"] + ph["h"] >= Constants.GROUND_Y:
 				ph["y"] = Constants.GROUND_Y - ph["h"]
 				ph["vy"] = 0.0
 				ph["grounded"] = true
 		# 落地后才能移动和攻击
 		if ph.get("grounded", true):
+			var prev_x = ph["x"]
 			# 向敌人移动
 			if opp and opp.hp > 0:
 				var dx = opp.pos_x - ph["x"]
@@ -235,12 +258,22 @@ static func _update_phantoms(f: Fighter):
 						# 攻击
 						if ph["attack_cooldown"] <= 0:
 							ph["attacking"] = true
-							ph["attack_timer"] = 68
+							ph["attack_timer"] = 30
 							ph["attack_delay"] = 8
 							ph["attack_hit_dealt"] = false
 							ph["attack_cooldown"] = 60
 							ph["image_state"] = "attack"
-			# 攻击命中判定
+			# 移动后检测是否还在平台上，否则取消 grounded
+			if ph["x"] != prev_x:
+				var still_on_plat = false
+				for p in GameWorld.platforms:
+					if p.get("terrain_type", -1) == 3: continue
+					if ph["x"] + ph["w"] > p["x"] + 4 and ph["x"] < p["x"] + p["w"] - 4 \
+						and absf(ph["y"] + ph["h"] - p["y"]) < 6:
+						still_on_plat = true
+						break
+				if not still_on_plat:
+					ph["grounded"] = false
 			if ph["attacking"]:
 				ph["attack_timer"] -= 1
 				if ph["attack_delay"] > 0:

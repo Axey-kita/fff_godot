@@ -26,6 +26,9 @@ static var STATUS_DEFS := {
 	"gravity_debuff": {
 		"id": "gravity_debuff", "duration": 120, "vfx_color": Color(0.67, 0.53, 1.0),
 	},
+	"evoker_gazed": {
+		"id": "evoker_gazed", "duration": 600,
+	},
 }
 
 func _init(p_id: String, p_duration: int = 0):

@@ -20,7 +20,7 @@ static func get_config() -> Dictionary:
 			"idle": FrameAnimation.load_from_frames(WITCH_ANI_DIR + "idle/", "witch_idle_f_", [{"index": 1, "duration": 999.0}], true),
 			"walk": FrameAnimation.load_from_frames(WITCH_ANI_DIR + "walk/", "witch_walk_f_", [{"index": 1, "duration": 999.0}], true),
 			"jump": FrameAnimation.load_from_frames(WITCH_ANI_DIR + "jump/", "witch_jump_f_", [{"index": 1, "duration": 999.0}], true),
-			"attack": FrameAnimation.load_from_frames(WITCH_ANI_DIR + "attack/", "witch_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"attack": FrameAnimation.load_from_frames(WITCH_ANI_DIR + "attack/", "witch_attack_f_", [{"index": 1, "duration": 0.5}], false),
 			"ult": FrameAnimation.load_from_frames(WITCH_ANI_DIR + "ult/", "witch_ult_f_", [{"index": 1, "duration": 3.0}], false),
 		},
 		"dex": {
@@ -90,6 +90,7 @@ static func _ult(owner: Fighter) -> Dictionary:
 	var dir = owner.facing if owner.facing != 0 else 1
 	GameWorld.projectiles.append({"x":target_x-200,"y":-500,"w":600,"h":600,"vx":1.0*dir,"vy":1.0,"life":300,"damage":40,"owner":owner,"type":"meteor","exploded":false,"img":PROJ_METEOR})
 	witch_comp.is_casting_ult = true
+	witch_comp.ult_lock_timer = 30  # 0.5s 前摇冻结
 	witch_comp.cast_ult_x = target_x
 	witch_comp.cast_ult_y = -500
 	owner.state = "ult"

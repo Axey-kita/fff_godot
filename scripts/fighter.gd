@@ -1,18 +1,17 @@
 class_name Fighter
 extends Node2D
 
-# Component preloads for type resolution
-const ComponentManager = preload("res://scripts/components/component_manager.gd")
-const AssassinComponent = preload("res://scripts/components/assassin_component.gd")
-const WitchComponent = preload("res://scripts/components/witch_component.gd")
-const ShadowwarriorComponent = preload("res://scripts/components/shadowwarrior_component.gd")
-const PaladinComponent = preload("res://scripts/components/paladin_component.gd")
-const ArcherComponent = preload("res://scripts/components/archer_component.gd")
-const EvokerComponent = preload("res://scripts/components/evoker_component.gd")
-const RoseComponent = preload("res://scripts/components/rose_component.gd")
+# Minimal preloads — only scripts that don't reference Fighter type
+const GameParticle = preload("res://scripts/particle.gd")
+
+# Lazily-loaded class references for cold cache compatibility
+static var _StatusEffectClass = null
+static var _CharConfigsClass = null
+
+# Everything else loaded lazily in setup() to avoid circular dependency
 
 # Component system
-var components: ComponentManager = null
+var components = null # ComponentManager, loaded lazily
 
 # Position & physics
 var pos_x: float = 0
@@ -58,7 +57,7 @@ var boost_timer: int = 0
 var grounded: bool = false
 var state: String = "idle"
 var image_state: String = "idle"
-var current_anim: FrameAnimation = null
+var current_anim = null # FrameAnimation
 var desired_image_state: String = ""  # 技能代码设置的覆盖状态，优先级高于 apply_physics 推导
 var damage_flash: int = 0
 
@@ -143,12 +142,15 @@ func setup(p_x: float, p_y: float, p_is_player: bool, p_char_id: String, p_skill
 	facing = 1 if is_player else -1
 	on_platform = null
 	_init_from_config()
-	# Initialize component manager
-	components = ComponentManager.new()
+	# Initialize component manager (lazy load for cold cache)
+	var CmClass = load("res://scripts/components/component_manager.gd")
+	components = CmClass.new()
 	components.init(self)
 
 func _init_from_config():
-	var cfg = CharConfigs.configs.get(char_id, {})
+	if _CharConfigsClass == null:
+		_CharConfigsClass = load("res://data/char_configs.gd")
+	var cfg = _CharConfigsClass.configs.get(char_id, {})
 	config = cfg
 	hp = cfg.get("hp", 100)
 	max_hp = cfg.get("hp", 100)
@@ -181,19 +183,21 @@ func set_animation_state(state_key: String):
 		if not current_anim.is_playing():
 			current_anim.play()
 
-func get_skill(key: String) -> Skill:
+func get_skill(key: String):
 	return skill_map.get(key)
 
 func add_status(effect_id: String):
+	if _StatusEffectClass == null:
+		_StatusEffectClass = load("res://scripts/status_effect.gd")
 	# Prevent duplicate freeze application
-	var def = StatusEffect.STATUS_DEFS.get(effect_id, {})
+	var def = _StatusEffectClass.STATUS_DEFS.get(effect_id, {})
 	if def.get("freeze", false) and has_status("frozen"):
 		return
 	for s in statuses:
 		if s.id == effect_id:
 			s.timer = s.duration
 			return
-	var inst = StatusEffect.new(effect_id)
+	var inst = _StatusEffectClass.new(effect_id)
 	inst.apply(self)
 	statuses.append(inst)
 
@@ -219,9 +223,9 @@ func get_hit_box() -> Rect2:
 	# 刺客冲刺中扩大受击体积（沿冲刺方向延伸 25 像素），更容易触发闪避
 	if char_id == "assassin" and dashing:
 		if dash_dir > 0:
-			return Rect2(pos_x + 4, pos_y + 4, w - 8 + 25, h - 8)
+			return Rect2(pos_x + 4, pos_y + 4, w - 8 + 76, h - 8)
 		else:
-			return Rect2(pos_x + 4 - 25, pos_y + 4, w - 8 + 25, h - 8)
+			return Rect2(pos_x + 4 - 76, pos_y + 4, w - 8 + 76, h - 8)
 	return Rect2(pos_x + 4, pos_y + 4, w - 8, h - 8)
 
 func get_attack_box() -> Rect2:
@@ -234,8 +238,8 @@ func apply_physics():
 		components.update()
 	
 	# Witch flying state
-	var witch_comp: WitchComponent = components.get_component("witch") if components else null
-	if witch_comp and witch_comp.is_casting_ult:
+	var witch_comp = components.get_component("witch") if components else null
+	if witch_comp and witch_comp.ult_lock_timer > 0:
 		vx = 0
 		vy = 0
 		set_animation_state("ult")
@@ -318,7 +322,7 @@ func apply_physics():
 			if GameWorld.game_running and not GameWorld.game_over and target and target.hp > 0:
 				# 刺客次元斩：使用 slash_x（启动时固定）作为攻击框，避免冲刺中 pos_x 偏移导致命中失败
 				var box: Rect2
-				var assassin_comp: AssassinComponent = components.get_component("assassin") if components else null
+				var assassin_comp = components.get_component("assassin") if components else null
 				if assassin_comp and char_id == "assassin" and assassin_comp.slash_active:
 					box = Rect2(assassin_comp.slash_x, assassin_comp.slash_y, 100, 40)
 				else:
@@ -331,7 +335,7 @@ func apply_physics():
 						energy = minf(max_energy, energy + 5)
 						assassin_comp.enhanced_slash = false
 						assassin_comp.enhanced_slash_timer = 0
-					Fighter.apply_damage(target, dmg, self)
+					apply_damage(target, dmg, self)
 				# 近战攻击也能命中影武者分身（之前只有投射物能打分身）
 				#FIXED BUG: 影武者分身之前只能被投射物命中,近战角色完全无法伤害分身,导致"锁满血"
 				if GameWorld.phantoms.size() > 0:
@@ -345,7 +349,7 @@ func apply_physics():
 						var ph_rect = Rect2(ph["x"], ph["y"], ph["w"], ph["h"])
 						if box.intersects(ph_rect):
 							ph["hp"] -= atk_dmg
-							Fighter.emit_particles(ph["x"] + ph["w"] / 2.0, ph["y"] + ph["h"] / 2.0, 15, Color(0.53, 0.27, 0.8), 4, 6, "star", 0.8)
+							emit_particles(ph["x"] + ph["w"] / 2.0, ph["y"] + ph["h"] / 2.0, 15, Color(0.53, 0.27, 0.8), 4, 6, "star", 0.8)
 				#FIX END
 	if attack_cooldown > 0:
 		attack_cooldown -= 1
@@ -413,9 +417,9 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 		return
 	
 	# Get character components
-	var assassin_comp: AssassinComponent = target.components.get_component("assassin") if target.components else null
-	var paladin_comp: PaladinComponent = target.components.get_component("paladin") if target.components else null
-	var rose_comp: RoseComponent = target.components.get_component("rose") if target.components else null
+	var assassin_comp = target.components.get_component("assassin") if target.components else null
+	var paladin_comp = target.components.get_component("paladin") if target.components else null
+	var rose_comp = target.components.get_component("rose") if target.components else null
 	
 	# 调试日志：追踪伤害来源
 	if assassin_comp:
@@ -442,6 +446,10 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 		emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 12, Color(0.667, 0.533, 1.0), 3, 5, "star", 0.6)
 		return
 
+	# 通用无敌：所有角色 is_invincible 标志生效（玫瑰二技能等）
+	if target.is_invincible:
+		return
+
 	# 格挡：隔开正前方的伤害，攻击者被弹开
 	if target.blocking:
 		if attacker and attacker != target:
@@ -464,8 +472,9 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	# 计算基础伤害
 	var base_dmg: float = dmg
 	if attacker:
-		base_dmg += attacker.attack_boost
-		var attacker_paladin: PaladinComponent = attacker.components.get_component("paladin") if attacker.components else null
+		if attacker.attack_boost > 0:
+			base_dmg *= (1.0 + attacker.attack_boost)
+		var attacker_paladin = attacker.components.get_component("paladin") if attacker.components else null
 		if attacker_paladin and attacker_paladin.holy_empower_active:
 			base_dmg += 5
 		if attacker.dragon_form_active:
@@ -482,7 +491,7 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 
 	# 刺客暗影游走暴击判定（50%概率，1.5倍）
 	var is_critical: bool = false
-	var attacker_assassin: AssassinComponent = attacker.components.get_component("assassin") if attacker and attacker.components else null
+	var attacker_assassin = attacker.components.get_component("assassin") if attacker and attacker.components else null
 	if attacker_assassin and attacker_assassin.shadow_stance:
 		if randf() < 0.5:
 			is_critical = true
@@ -517,7 +526,7 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	target.hit_cooldown = 15
 	# Blood Abyss: attacker gains blood_abyss equal to damage dealt
 	if attacker:
-		var attacker_rose: RoseComponent = attacker.components.get_component("rose") if attacker.components else null
+		var attacker_rose = attacker.components.get_component("rose") if attacker.components else null
 		if attacker_rose:
 			if not attacker_rose.rose_blood_abyss_suppressed:
 				attacker_rose.blood_abyss = minf(40.0, attacker_rose.blood_abyss + final_dmg)
@@ -535,7 +544,7 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 # Call character-specific onDamageReceived hooks via components
 static func _call_on_damage_received(target: Fighter, attacker: Fighter, dmg: float):
 	if target.components:
-		target.components.on_damage_received(attacker, dmg)
+		target.components.call("on_damage_received", attacker, dmg)
 
 static func emit_particles(px: float, py: float, count: int, color: Color, speed: float, size: float, type: String = "circle", spread: float = 1.0):
 	for i in count:
@@ -566,6 +575,19 @@ static func emit_explosion(x: float, y: float, color: Color, count: int = 40):
 		var life = 15 + randf() * 25
 		var sz = 3 + randf() * 8
 		GameWorld.particles.append(GameParticle.new(x, y, p_vx, p_vy, color, life, sz, "star"))
+
+# ===== Generic grab interface =====
+static func grab_fighter_in_rect(grabber: Fighter, area: Rect2, teleport_x: float) -> bool:
+	"""抓取矩形区域内的对手，瞬移到指定x坐标。返回是否抓取成功。"""
+	var target = GameWorld.get_opponent(grabber)
+	if not target or target.hp <= 0:
+		return false
+	if not area.intersects(target.get_hit_box()):
+		return false
+	target.pos_x = clampf(teleport_x - target.w / 2.0, 10, 2390 - target.w)
+	target.vx = 0
+	target.vy = 0
+	return true
 
 # ===== Collision helpers =====
 static func rect_collide(a: Rect2, b: Rect2) -> bool:

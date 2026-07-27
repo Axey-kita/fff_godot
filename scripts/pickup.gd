@@ -39,7 +39,7 @@ func apply_effect(target: Fighter):
 		"health":
 			target.hp = minf(target.max_hp, target.hp + 20)
 		"attack":
-			target.attack_boost = 10
+			target.attack_boost = 0.1  # +10% 伤害
 			target.boost_timer = 180
 		"cooldown":
 			var skill_keys = ["skill1", "skill2", "ult"]

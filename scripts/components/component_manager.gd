@@ -1,15 +1,5 @@
 class_name ComponentManager
 
-# Component preloads for type resolution
-const CharComponent = preload("res://scripts/components/char_component.gd")
-const ArcherComponent = preload("res://scripts/components/archer_component.gd")
-const PaladinComponent = preload("res://scripts/components/paladin_component.gd")
-const WitchComponent = preload("res://scripts/components/witch_component.gd")
-const AssassinComponent = preload("res://scripts/components/assassin_component.gd")
-const ShadowwarriorComponent = preload("res://scripts/components/shadowwarrior_component.gd")
-const EvokerComponent = preload("res://scripts/components/evoker_component.gd")
-const RoseComponent = preload("res://scripts/components/rose_component.gd")
-
 var components: Dictionary = {}
 var owner: Fighter = null
 

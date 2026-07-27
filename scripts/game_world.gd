@@ -1,5 +1,9 @@
 extends Node
 
+# Explicit preloads for cold cache autoload compilation
+const Fighter = preload("res://scripts/fighter.gd")
+const Constants = preload("res://data/constants.gd")
+
 # Game state
 var game_running := false
 var game_over := false
@@ -87,7 +91,7 @@ func reset_world():
 	slow_mo_timer = 0
 	slow_mo_tick = 0
 
-func get_opponent(fighter: Fighter) -> Fighter:
+func get_opponent(fighter):
 	if fighter == player:
 		return enemy
 	return player

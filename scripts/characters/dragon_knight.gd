@@ -7,7 +7,7 @@ static func get_config() -> Dictionary:
 	return {
 		"id": "dragon_knight", "name": "龙骑士", "hp": 110, "max_energy": 100, "energy_regen": 0.05,
 		"speed": 2.15, "attack_range": 44, "attack_damage": 5,
-		"attack_cooldown": 60, "attack_delay": 8, "attack_duration": 68,
+		"attack_cooldown": 60, "attack_delay": 8, "attack_duration": 30,
 		"fields": {
 			"dragon_scales_active": false,
 			"dragon_scales_timer": 0,
@@ -19,7 +19,7 @@ static func get_config() -> Dictionary:
 			"idle": FrameAnimation.load_from_frames(DK_ANI_DIR + "idle/", "dragon_knight_idle_f_", [{"index": 1, "duration": 999.0}], true),
 			"walk": FrameAnimation.load_from_frames(DK_ANI_DIR + "walk/", "dragon_knight_walk_f_", [{"index": 1, "duration": 999.0}], true),
 			"jump": FrameAnimation.load_from_frames(DK_ANI_DIR + "jump/", "dragon_knight_jump_f_", [{"index": 1, "duration": 999.0}], true),
-			"attack": FrameAnimation.load_from_frames(DK_ANI_DIR + "attack/", "dragon_knight_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"attack": FrameAnimation.load_from_frames(DK_ANI_DIR + "attack/", "dragon_knight_attack_f_", [{"index": 1, "duration": 0.5}], false),
 			"ult": FrameAnimation.load_from_frames(DK_ANI_DIR + "ult/", "dragon_knight_ult_f_", [{"index": 1, "duration": 3.0}], false),
 		},
 		"dex": {

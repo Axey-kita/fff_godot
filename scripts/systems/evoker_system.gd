@@ -293,7 +293,8 @@ static func _update_summons() -> void:
 							if es1: es1.cd += 60
 							var es2 = enemy.get_skill("skill2")
 							if es2: es2.cd += 60
-							enemy.add_status("evoker_gazed")
+						# 每帧刷新状态计时器，防止duration=0导致的每帧重新加CD
+						enemy.add_status("evoker_gazed")
 					elif enemy.has_status("evoker_gazed"):
 						var es1 = enemy.get_skill("skill1")
 						if es1: es1.cd = maxi(0, es1.cd - 60)

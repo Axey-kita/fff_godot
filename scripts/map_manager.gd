@@ -20,20 +20,28 @@ static func ensure_init():
 		_load_pool_config()
 
 # ===== 扫描 maps/ 目录下所有 .tscn =====
+# 打包后 DirAccess 无法扫描 res://，改用预定义列表作为 fallback
+static var _builtin_maps: Array[String] = [
+	"res://maps/map_01_battlefield.tscn",
+	"res://maps/map_02_towers.tscn",
+	"res://maps/map_03_voids.tscn.tscn",
+]
+
 static func _scan_maps():
 	_all_maps.clear()
 	var dir = DirAccess.open(MAPS_DIR)
-	if not dir:
-		push_error("[MapManager] 无法打开地图目录: ", MAPS_DIR)
-		return
-	dir.list_dir_begin()
-	var fname = dir.get_next()
-	while fname != "":
-		if fname.ends_with(".tscn") and not fname.begins_with("."):
-			_all_maps.append(MAPS_DIR + fname)
-		fname = dir.get_next()
-	dir.list_dir_end()
-	_all_maps.sort()
+	if dir:
+		dir.list_dir_begin()
+		var fname = dir.get_next()
+		while fname != "":
+			if fname.ends_with(".tscn") and not fname.begins_with("."):
+				_all_maps.append(MAPS_DIR + fname)
+			fname = dir.get_next()
+		dir.list_dir_end()
+		_all_maps.sort()
+	# 开发环境未扫到或打包后：使用预定义列表
+	if _all_maps.is_empty():
+		_all_maps = _builtin_maps.duplicate()
 	print("[MapManager] 扫描到 ", _all_maps.size(), " 张地图: ", _all_maps)
 
 # ===== 加载/保存地图池 =====

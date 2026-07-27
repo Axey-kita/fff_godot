@@ -1,0 +1,98 @@
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+
+[Game] _ready() start
+[CharConfigs] _init_all() start, loading 10 characters...
+[CharConfigs] loading config for: knight
+[CharacterFactory] calling get_config() for: knight
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/knight/idle/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/knight/walk/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/knight/jump/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/knight/attack/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/knight/ult/
+[CharacterFactory] get_config() returned for: knight empty=false
+[CharConfigs] knight loaded OK. animations keys=["idle", "walk", "jump", "attack", "ult"] idle valid=true
+[CharConfigs] loading config for: mage
+[CharacterFactory] calling get_config() for: mage
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/mage/idle/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/mage/walk/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/mage/jump/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/mage/attack/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/mage/ult/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/mage/attack/
+[CharacterFactory] get_config() returned for: mage empty=false
+[CharConfigs] mage loaded OK. animations keys=["idle", "walk", "jump", "attack", "ult", "charge"] idle valid=true
+[CharConfigs] loading config for: archer
+[CharacterFactory] calling get_config() for: archer
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/archer/idle/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/archer/walk/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/archer/jump/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/archer/attack/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/archer/ult/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/archer/charge/
+[CharacterFactory] get_config() returned for: archer empty=false
+[CharConfigs] archer loaded OK. animations keys=["idle", "walk", "jump", "attack", "ult", "charge"] idle valid=true
+[CharConfigs] loading config for: paladin
+[CharacterFactory] calling get_config() for: paladin
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/paladin/idle/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/paladin/walk/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/paladin/jump/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/paladin/attack/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/paladin/charge/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/paladin/ult/
+[CharacterFactory] get_config() returned for: paladin empty=false
+[CharConfigs] paladin loaded OK. animations keys=["idle", "walk", "jump", "attack", "charge", "ult"] idle valid=true
+[CharConfigs] loading config for: witch
+[CharacterFactory] calling get_config() for: witch
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/witch/idle/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/witch/walk/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/witch/jump/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/witch/attack/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/witch/ult/
+[CharacterFactory] get_config() returned for: witch empty=false
+[CharConfigs] witch loaded OK. animations keys=["idle", "walk", "jump", "attack", "ult"] idle valid=true
+[CharConfigs] loading config for: assassin
+[CharacterFactory] calling get_config() for: assassin
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/assassin/idle/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/assassin/walk/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/assassin/jump/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/assassin/attack/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/assassin/skill1/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/assassin/skill2/
+[FrameAnimation] Loaded 14/14 frames from res://assets/char_ani/assassin/ult/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/assassin/charge/
+[CharacterFactory] get_config() returned for: assassin empty=false
+[CharConfigs] assassin loaded OK. animations keys=["idle", "walk", "jump", "attack", "skill1", "skill2", "ult", "charge"] idle valid=true
+[CharConfigs] loading config for: shadowwarrior
+[CharacterFactory] calling get_config() for: shadowwarrior
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/shadowwarrior/idle/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/shadowwarrior/walk/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/shadowwarrior/jump/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/shadowwarrior/attack/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/shadowwarrior/ult/
+[CharacterFactory] get_config() returned for: shadowwarrior empty=false
+[CharConfigs] shadowwarrior loaded OK. animations keys=["idle", "walk", "jump", "attack", "ult"] idle valid=true
+[CharConfigs] loading config for: evoker
+[CharacterFactory] calling get_config() for: evoker
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/evoker/idle/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/evoker/walk/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/evoker/jump/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/evoker/attack/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/evoker/ult/
+[CharacterFactory] get_config() returned for: evoker empty=false
+[CharConfigs] evoker loaded OK. animations keys=["idle", "walk", "jump", "attack", "ult"] idle valid=true
+[CharConfigs] loading config for: rose
+[CharacterFactory] calling get_config() for: rose
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/rose/idle/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/rose/walk/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/rose/jump/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/rose/attack/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/rose/skill1/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/rose/skill2_enhanced/
+[FrameAnimation] Loaded 6/6 frames from res://assets/char_ani/rose/ult/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/rose/charge/
+[CharacterFactory] get_config() returned for: rose empty=false
+[CharConfigs] rose loaded OK. animations keys=["idle", "walk", "jump", "attack", "skill1", "skill2", "skill2_enhanced", "ult", "charge"] idle valid=true
+[CharConfigs] loading config for: dragon_knight
+[CharacterFactory] calling get_config() for: dragon_knight
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/dragon_knight/idle/
+[FrameAnimation] Loaded 1/1 frames from res://assets/char_ani/dragon_knight/walk/

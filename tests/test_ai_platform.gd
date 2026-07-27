@@ -5,7 +5,7 @@ extends GutTest
 func test_reachable_same_platform():
 	# 同一平台 → 可达区间覆盖完整跳跃范围
 	GameWorld.platforms = [{"x": 0, "y": 380, "w": 400, "h": 10, "terrain_type": 0}]
-	var interval = AISystem._get_reachable_x_interval(GameWorld.platforms[0], 380, 1.0)
+	var interval = TrackSystem._get_reachable_x_interval(GameWorld.platforms[0], 380, 1.0)
 	assert_eq(interval.size(), 2, "Same height → interval should have 2 elements")
 	# t_land = 2*9.5/0.22 ≈ 86.36, reach_l = 0 - 1*86.36, reach_r = 400 + 1*86.36
 	assert_lt(interval[0], -80, "Left bound should be ~ -86 (jump range)")
@@ -20,7 +20,7 @@ func test_reachable_horizontal():
 	# 从平台0跳到平台1：间隔100px，move_speed=1.0时 t2≈86.4，reach_r=0+1*86.4=86.4 < 300 → 不可达
 	# 但 move_speed=3.0 时 reach_r=0+3*86.4=259.2 < 300，仍不可达
 	# 用 move_speed=5.0: reach_r=0+5*86.4=432 > 300 → 可达
-	var reachable = AISystem._is_platform_reachable(GameWorld.platforms[0], GameWorld.platforms[1], 5.0)
+	var reachable = TrackSystem._is_platform_reachable(GameWorld.platforms[0], GameWorld.platforms[1], 5.0)
 	assert_true(reachable, "High move_speed → should be reachable")
 
 func test_reachable_vertical_up():
@@ -29,7 +29,7 @@ func test_reachable_vertical_up():
 		{"x": 0, "y": 380, "w": 200, "h": 10, "terrain_type": 0},
 		{"x": 50, "y": 250, "w": 100, "h": 10, "terrain_type": 0},
 	]
-	var reachable = AISystem._is_platform_reachable(GameWorld.platforms[0], GameWorld.platforms[1], 3.0)
+	var reachable = TrackSystem._is_platform_reachable(GameWorld.platforms[0], GameWorld.platforms[1], 3.0)
 	assert_true(reachable, "130px height diff → reachable")
 
 func test_reachable_vertical_down():
@@ -38,7 +38,7 @@ func test_reachable_vertical_down():
 		{"x": 0, "y": 250, "w": 200, "h": 10, "terrain_type": 0},
 		{"x": 50, "y": 380, "w": 100, "h": 10, "terrain_type": 0},
 	]
-	var reachable = AISystem._is_platform_reachable(GameWorld.platforms[0], GameWorld.platforms[1], 3.0)
+	var reachable = TrackSystem._is_platform_reachable(GameWorld.platforms[0], GameWorld.platforms[1], 3.0)
 	assert_true(reachable, "Lower platform → reachable by falling")
 
 func test_reachable_too_high():
@@ -47,7 +47,7 @@ func test_reachable_too_high():
 		{"x": 0, "y": 380, "w": 200, "h": 10, "terrain_type": 0},
 		{"x": 50, "y": 130, "w": 100, "h": 10, "terrain_type": 0},
 	]
-	var reachable = AISystem._is_platform_reachable(GameWorld.platforms[0], GameWorld.platforms[1], 3.0)
+	var reachable = TrackSystem._is_platform_reachable(GameWorld.platforms[0], GameWorld.platforms[1], 3.0)
 	assert_false(reachable, "250px height diff → unreachable")
 
 func test_reachable_too_far():
@@ -57,7 +57,7 @@ func test_reachable_too_far():
 		{"x": 500, "y": 380, "w": 50, "h": 10, "terrain_type": 0},
 	]
 	# 间隔450px，move_speed=3.0时最远3*86.4=259 < 450
-	var reachable = AISystem._is_platform_reachable(GameWorld.platforms[0], GameWorld.platforms[1], 3.0)
+	var reachable = TrackSystem._is_platform_reachable(GameWorld.platforms[0], GameWorld.platforms[1], 3.0)
 	assert_false(reachable, "450px gap → unreachable")
 
 func test_reachable_is_on_platform():
@@ -75,16 +75,13 @@ func test_reachable_get_interval():
 	var plat = {"x": 200, "y": 300, "w": 100, "h": 10, "terrain_type": 0}
 	
 	# 过高不可达
-	var interval = AISystem._get_reachable_x_interval(plat, 50, 3.0)  # 250px diff > 205
+	var interval = TrackSystem._get_reachable_x_interval(plat, 50, 3.0)  # 250px diff > 205
 	assert_eq(interval.size(), 0, "Too high → empty interval")
 
 
 # ── 有向图 + Dijkstra 路径规划测试 ──
 
 func before_each():
-	AISystem._adj = []
-	AISystem._graph_built = false
-	AISystem._jump_commit = false
 	TrackSystem._adj = []
 	TrackSystem._graph_built = false
 	TrackSystem._jump_commit = false
@@ -92,24 +89,22 @@ func before_each():
 	TrackSystem._last_dir = 0
 	TrackSystem._path = []
 	TrackSystem._need_think = true
-	TrackSystem._last_target_plat = null
-	TrackSystem._last_ai_plat = null
 
 func test_graph_empty_platforms():
 	GameWorld.platforms = []
-	AISystem._build_graph()
-	assert_eq(AISystem._adj.size(), 0, "Empty platforms → empty graph")
+	TrackSystem._build_graph()
+	assert_eq(TrackSystem._adj.size(), 0, "Empty platforms → empty graph")
 
 func test_graph_single_platform():
 	GameWorld.platforms = [{"x": 0, "y": 380, "w": 400, "h": 10, "terrain_type": 0}]
-	AISystem._build_graph()
-	assert_eq(AISystem._adj.size(), 1, "One platform → one node")
-	assert_eq(AISystem._adj[0].size(), 0, "One platform → no edges")
+	TrackSystem._build_graph()
+	assert_eq(TrackSystem._adj.size(), 1, "One platform → one node")
+	assert_eq(TrackSystem._adj[0].size(), 0, "One platform → no edges")
 
 func test_find_path_same_platform():
 	GameWorld.platforms = [{"x": 0, "y": 380, "w": 400, "h": 10, "terrain_type": 0}]
 	var p = GameWorld.platforms[0]
-	var path = AISystem._find_path(p, p)
+	var path = TrackSystem._find_path(p, p)
 	assert_eq(path.size(), 1, "Same platform → path of length 1")
 	assert_eq(path[0], p, "Same platform → platform matches")
 
@@ -120,9 +115,9 @@ func test_graph_two_reachable():
 		{"x": 0, "y": 380, "w": 100, "h": 10, "terrain_type": 0},
 		{"x": 120, "y": 380, "w": 100, "h": 10, "terrain_type": 0},
 	]
-	AISystem._build_graph()
-	var edges0 = AISystem._adj[0]
-	var edges1 = AISystem._adj[1]
+	TrackSystem._build_graph()
+	var edges0 = TrackSystem._adj[0]
+	var edges1 = TrackSystem._adj[1]
 	assert_eq(edges0.size(), 1, "plat0→plat1 reachable")
 	assert_eq(edges0[0]["to"], 1, "Edge target = plat1")
 	assert_gt(edges0[0]["weight"], 0, "Edge weight > 0")
@@ -135,7 +130,7 @@ func test_find_path_two_platforms():
 		{"x": 0, "y": 380, "w": 100, "h": 10, "terrain_type": 0},
 		{"x": 120, "y": 380, "w": 100, "h": 10, "terrain_type": 0},
 	]
-	var path = AISystem._find_path(GameWorld.platforms[0], GameWorld.platforms[1])
+	var path = TrackSystem._find_path(GameWorld.platforms[0], GameWorld.platforms[1])
 	assert_eq(path.size(), 2, "Direct reachable → path length 2")
 	assert_eq(path[0], GameWorld.platforms[0], "Path start = from_plat")
 	assert_eq(path[1], GameWorld.platforms[1], "Path end = to_plat")
@@ -146,7 +141,7 @@ func test_find_path_unreachable():
 		{"x": 0, "y": 380, "w": 50, "h": 10, "terrain_type": 0},
 		{"x": 500, "y": 380, "w": 50, "h": 10, "terrain_type": 0},
 	]
-	var path = AISystem._find_path(GameWorld.platforms[0], GameWorld.platforms[1])
+	var path = TrackSystem._find_path(GameWorld.platforms[0], GameWorld.platforms[1])
 	assert_eq(path.size(), 0, "Too far → empty path")
 
 func test_find_path_multi_hop():
@@ -158,7 +153,7 @@ func test_find_path_multi_hop():
 		{"x": 150, "y": 380, "w": 100, "h": 10, "terrain_type": 0},
 		{"x": 290, "y": 380, "w": 100, "h": 10, "terrain_type": 0},
 	]
-	var path = AISystem._find_path(GameWorld.platforms[0], GameWorld.platforms[2])
+	var path = TrackSystem._find_path(GameWorld.platforms[0], GameWorld.platforms[2])
 	assert_eq(path.size(), 3, "Three platforms → path length 3")
 	assert_eq(path[0], GameWorld.platforms[0], "Path[0] = A")
 	assert_eq(path[1], GameWorld.platforms[1], "Path[1] = B")
@@ -173,10 +168,10 @@ func test_find_path_directed():
 		{"x": 0, "y": 150, "w": 100, "h": 10, "terrain_type": 0},  # plat1: 悬挂
 	]
 	# A→B 不可达
-	var path_up = AISystem._find_path(GameWorld.platforms[0], GameWorld.platforms[1])
+	var path_up = TrackSystem._find_path(GameWorld.platforms[0], GameWorld.platforms[1])
 	assert_eq(path_up.size(), 0, "Too high to reach → empty path")
 	# B→A 可达（下落）
-	var path_down = AISystem._find_path(GameWorld.platforms[1], GameWorld.platforms[0])
+	var path_down = TrackSystem._find_path(GameWorld.platforms[1], GameWorld.platforms[0])
 	assert_eq(path_down.size(), 2, "Falling down → reachable")
 	assert_eq(path_down[0], GameWorld.platforms[1], "Path start = B")
 	assert_eq(path_down[1], GameWorld.platforms[0], "Path end = A")
@@ -187,10 +182,10 @@ func test_graph_skip_void_platforms():
 		{"x": 0, "y": 380, "w": 100, "h": 10, "terrain_type": 3},
 		{"x": 0, "y": 250, "w": 100, "h": 10, "terrain_type": 0},
 	]
-	AISystem._build_graph()
-	assert_eq(AISystem._adj.size(), 2, "Two platforms total")
-	assert_eq(AISystem._adj[0].size(), 0, "Void platform → no outgoing edges")
-	assert_eq(AISystem._adj[1].size(), 0, "Only one non-void platform → no edges (no target)")
+	TrackSystem._build_graph()
+	assert_eq(TrackSystem._adj.size(), 2, "Two platforms total")
+	assert_eq(TrackSystem._adj[0].size(), 0, "Void platform → no outgoing edges")
+	assert_eq(TrackSystem._adj[1].size(), 0, "Only one non-void platform → no edges (no target)")
 
 func test_plat_index():
 	GameWorld.platforms = [
@@ -236,10 +231,15 @@ func test_jump_commit_coasts_in_air():
 	var f = _make_ai(true)   # mid-air
 	var p = _make_player()
 	_setup_game_world(f, p)
-	AISystem._jump_commit = true
+	# 跳跃承诺现在由 TrackSystem 管理
+	TrackSystem._jump_commit = true
+	# 设置必要的 TrackSystem 状态
+	TrackSystem._path_move_speed = 1.0
+	TrackSystem._path_dir_to_target = 1
+	TrackSystem._target_plat = null
 
-	var old_vx = f.vx
-	var result = AISystem.update_ai(0)
+	var ai_cx = f.pos_x + f.w / 2.0
+	TrackSystem.follow_path(f, ai_cx)
 
 	assert_eq(f.vx, 0.0, "Jump commit + mid-air → vx = 0 (coast)")
 
@@ -248,11 +248,12 @@ func test_jump_commit_cleared_on_ground():
 	var f = _make_ai(false)  # grounded
 	var p = _make_player()
 	_setup_game_world(f, p)
-	AISystem._jump_commit = true
+	TrackSystem._jump_commit = true
 
-	AISystem.update_ai(0)
+	var ai_cx = f.pos_x + f.w / 2.0
+	TrackSystem.follow_path(f, ai_cx)
 
-	assert_false(AISystem._jump_commit, "Grounded AI → _jump_commit cleared")
+	assert_false(TrackSystem._jump_commit, "Grounded AI → _jump_commit cleared")
 
 func test_jump_commit_not_set_without_jump():
 	# 没有跳跃时 _jump_commit 默认 false
@@ -260,10 +261,10 @@ func test_jump_commit_not_set_without_jump():
 	var p = _make_player()
 	_setup_game_world(f, p)
 
-	# 无平台 → 不会进入平台导航块，不应设置 _jump_commit
-	AISystem.update_ai(0)
+	var ai_cx = f.pos_x + f.w / 2.0
+	TrackSystem.follow_path(f, ai_cx)
 
-	assert_false(AISystem._jump_commit, "No platform navigation → _jump_commit remains false")
+	assert_false(TrackSystem._jump_commit, "No platform navigation → _jump_commit remains false")
 
 func test_intermediate_platform_path_recalculates():
 	# AI 从 A 跳到中间平台 B 后，路径重算为 B→C
@@ -273,11 +274,11 @@ func test_intermediate_platform_path_recalculates():
 		{"x": 290, "y": 380, "w": 100, "h": 10, "terrain_type": 0},  # C
 	]
 	# AI 在 A，目标在 C → 路径 A→B→C
-	var path_from_a = AISystem._find_path(GameWorld.platforms[0], GameWorld.platforms[2])
+	var path_from_a = TrackSystem._find_path(GameWorld.platforms[0], GameWorld.platforms[2])
 	assert_eq(path_from_a.size(), 3, "From A to C → path length 3 (A→B→C)")
 
 	# 模拟 AI 落地到 B（路径自动重算）
-	var path_from_b = AISystem._find_path(GameWorld.platforms[1], GameWorld.platforms[2])
+	var path_from_b = TrackSystem._find_path(GameWorld.platforms[1], GameWorld.platforms[2])
 	assert_eq(path_from_b.size(), 2, "From B to C → path length 2 (B→C)")
 	assert_eq(path_from_b[0], GameWorld.platforms[1], "Path start = B")
 	assert_eq(path_from_b[1], GameWorld.platforms[2], "Path end = C")
@@ -291,7 +292,7 @@ func test_trajectory_not_obstructed_no_other_platform():
 		{"x": 0, "y": 380, "w": 100, "h": 10, "terrain_type": 0},
 		{"x": 120, "y": 380, "w": 100, "h": 10, "terrain_type": 0},
 	]
-	var obstructed = AISystem._trajectory_obstructed(GameWorld.platforms[0], GameWorld.platforms[1])
+	var obstructed = TrackSystem._trajectory_obstructed(GameWorld.platforms[0], GameWorld.platforms[1])
 	assert_false(obstructed, "No other platform → not obstructed")
 
 func test_trajectory_obstructed_by_intermediate():
@@ -303,7 +304,7 @@ func test_trajectory_obstructed_by_intermediate():
 		{"x": 80, "y": 300, "w": 60, "h": 10, "terrain_type": 0},  # B：拦截者
 		{"x": 120, "y": 250, "w": 60, "h": 10, "terrain_type": 0}, # C
 	]
-	var obstructed = AISystem._trajectory_obstructed(GameWorld.platforms[0], GameWorld.platforms[2])
+	var obstructed = TrackSystem._trajectory_obstructed(GameWorld.platforms[0], GameWorld.platforms[2])
 	assert_true(obstructed, "A→C parbola should pass through B → obstructed")
 
 func test_trajectory_not_obstructed_by_bystander():
@@ -314,7 +315,7 @@ func test_trajectory_not_obstructed_by_bystander():
 		{"x": 300, "y": 250, "w": 80, "h": 10, "terrain_type": 0}, # D：远离轨迹
 		{"x": 120, "y": 250, "w": 60, "h": 10, "terrain_type": 0}, # C
 	]
-	var obstructed = AISystem._trajectory_obstructed(GameWorld.platforms[0], GameWorld.platforms[2])
+	var obstructed = TrackSystem._trajectory_obstructed(GameWorld.platforms[0], GameWorld.platforms[2])
 	assert_false(obstructed, "D is far from trajectory → not obstructed")
 
 func test_graph_skips_obstructed_edge():
@@ -325,20 +326,20 @@ func test_graph_skips_obstructed_edge():
 		{"x": 80, "y": 300, "w": 60, "h": 10, "terrain_type": 0},  # B
 		{"x": 120, "y": 250, "w": 60, "h": 10, "terrain_type": 0}, # C
 	]
-	AISystem._build_graph()
+	TrackSystem._build_graph()
 	# A→C 被拦截
 	var ac_edge = null
-	for e in AISystem._adj[0]:
+	for e in TrackSystem._adj[0]:
 		if e["to"] == 2: ac_edge = e
 	assert_null(ac_edge, "A→C blocked by B → no edge")
 	# A→B 应存在
 	var ab_edge = null
-	for e in AISystem._adj[0]:
+	for e in TrackSystem._adj[0]:
 		if e["to"] == 1: ab_edge = e
 	assert_not_null(ab_edge, "A→B should exist")
 	# B→C 应存在
 	var bc_edge = null
-	for e in AISystem._adj[1]:
+	for e in TrackSystem._adj[1]:
 		if e["to"] == 2: bc_edge = e
 	assert_not_null(bc_edge, "B→C should exist")
 
@@ -349,7 +350,7 @@ func test_obstructed_path_finds_alt_route():
 		{"x": 80, "y": 300, "w": 60, "h": 10, "terrain_type": 0},  # B
 		{"x": 120, "y": 250, "w": 60, "h": 10, "terrain_type": 0}, # C
 	]
-	var path = AISystem._find_path(GameWorld.platforms[0], GameWorld.platforms[2])
+	var path = TrackSystem._find_path(GameWorld.platforms[0], GameWorld.platforms[2])
 	assert_eq(path.size(), 3, "Obstructed → should find A→B→C")
 	assert_eq(path[0], GameWorld.platforms[0], "Path[0] = A")
 	assert_eq(path[1], GameWorld.platforms[1], "Path[1] = B")

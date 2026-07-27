@@ -8,13 +8,13 @@ static func get_config() -> Dictionary:
 	return {
 		"id": "knight", "name": "骑士", "hp": 100, "max_energy": 100, "energy_regen": 0.05,
 		"speed": 2.25, "attack_range": 44, "attack_damage": 5,
-		"attack_cooldown": 60, "attack_delay": 8, "attack_duration": 68,
+		"attack_cooldown": 60, "attack_delay": 8, "attack_duration": 30,
 		"fields": {}, "world_arrays": [],
 		"animations": {
 			"idle": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "idle/", "knight_idle_f_", [{"index": 1, "duration": 999.0}], true),
 			"walk": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "walk/", "knight_walk_f_", [{"index": 1, "duration": 999.0}], true),
 			"jump": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "jump/", "knight_jump_f_", [{"index": 1, "duration": 999.0}], true),
-			"attack": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "attack/", "knight_attack_f_", [{"index": 1, "duration": 2.0}], false),
+			"attack": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "attack/", "knight_attack_f_", [{"index": 1, "duration": 0.5}], false),
 			"ult": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "ult/", "knight_ult_f_", [{"index": 1, "duration": 3.0}], false),
 		},
 		"dex": {
@@ -76,7 +76,7 @@ static func handle_input(owner: Fighter, keys: Dictionary) -> int:
 			owner.grounded = false
 		if keys.attack and not owner.shield_active and owner.attack_cooldown <= 0 and not owner.attacking:
 			owner.attacking = true
-			owner.attack_timer = 68
+			owner.attack_timer = 30
 			owner.attack_delay = 8
 			owner.attack_hit_dealt = false
 			owner.attack_cooldown = 60
