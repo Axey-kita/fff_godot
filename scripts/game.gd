@@ -58,7 +58,8 @@ const SW_FADE_IN_SHADOW = preload("res://assets/char_ani/shadowwarrior/fade_in_s
 # Input state
 var keys := {
 	"left": false, "right": false, "up": false, "down": false,
-	"attack": false, "skill1": false, "skill2": false, "ult": false
+	"attack": false, "skill1": false, "skill2": false, "ult": false,
+	"talent1": false,
 }
 
 # Fixed timestep
@@ -76,6 +77,7 @@ func _ready():
 	print("[Game] _ready() start")
 	_last_time = Time.get_ticks_msec()
 	CharConfigs.ensure_init()
+	TalentPool.init()
 	print("[Game] configs OK, selected_char = ", GameWorld.selected_char_id)
 	
 	# Pause UI setup
@@ -91,6 +93,9 @@ func _start_game():
 	var enemy_chars = ["knight","mage","archer","paladin","witch","assassin","shadowwarrior","evoker","rose"]
 	var ai_char = enemy_chars[randi() % enemy_chars.size()]
 	print("Starting game: player=", GameWorld.selected_char_id, " enemy=", ai_char)
+	# ── 天赋测试：玩家装配生命强化 + 烈焰冲刺 ──
+	GameWorld.player_talents = ["vitality", "blaze_rush"]
+	GameWorld.enemy_talents = []
 	init_game(GameWorld.selected_char_id, ai_char)
 
 func init_game(player_char_id: String, enemy_char_id: String):
@@ -114,6 +119,9 @@ func init_game(player_char_id: String, enemy_char_id: String):
 	GameWorld.enemy.setup(spawns.enemy_x, spawns.enemy_y, false, enemy_char_id, e_skills)
 	add_child(GameWorld.enemy)
 	GameWorld.entities = [GameWorld.player, GameWorld.enemy]
+	# ── 装配天赋 ──
+	_assemble_talents(GameWorld.player, GameWorld.player_talents)
+	_assemble_talents(GameWorld.enemy, GameWorld.enemy_talents)
 	PickupSystem.init_pickups()
 	GameWorld.game_running = true
 	GameWorld.game_over = false
@@ -121,6 +129,12 @@ func init_game(player_char_id: String, enemy_char_id: String):
 	print("Game initialized! player.hp=", GameWorld.player.hp, " enemy.hp=", GameWorld.enemy.hp)
 
 ## 根据已加载的平台计算出生位置,确保角色站在地面/平台上
+func _assemble_talents(fighter: Fighter, talent_ids: Array):
+	if talent_ids.is_empty():
+		return
+	fighter.talent_manager = TalentManager.new()
+	fighter.talent_manager.init(fighter, talent_ids)
+
 func _find_spawn_positions() -> Dictionary:
 	var player_x = 160
 	var enemy_x = 600
@@ -274,8 +288,19 @@ func _update():
 	for f in GameWorld.entities:
 		for sk in f.skills:
 			sk.update()
+	# Update status effects (burn, frozen, etc.) every frame
+	for f in GameWorld.entities:
+		f.update_statuses()
+	# Update talent managers
+	for f in GameWorld.entities:
+		if f.talent_manager:
+			f.talent_manager.update()
 	# Input & AI (must happen BEFORE physics, so vx/vy from input take effect same frame)
 	InputHandler.update_player_input(GameWorld, keys)
+	# ── 主动天赋激活 ──
+	if keys["talent1"] and GameWorld.player and GameWorld.player.talent_manager:
+		GameWorld.player.talent_manager.activate_slot(0)
+		keys["talent1"] = false
 	ai_think_delay = AISystem.update_ai(ai_think_delay)
 	# ai_think_delay = TrackSystem.update_track(ai_think_delay)  # 旧 TrackSystem 已替换为 AISystem
 	# Apply physics (after input, matching JS order)
@@ -818,6 +843,9 @@ func _draw_hud(font: Font):
 		# Border
 		draw_rect(Rect2(bx, by, 58, 22), Color(0.3, 0.3, 0.5), false)
 
+	# ── 天赋按钮 ──
+	_draw_talent_buttons(font, p, btn_x_start + 4 * 64)
+
 	# === Game Over overlay ===
 	if GameWorld.game_over:
 		draw_rect(Rect2(0, 0, Constants.W, Constants.H), Color(0, 0, 0, 0.6))
@@ -828,6 +856,28 @@ func _draw_hud(font: Font):
 		draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 + 16), sub, HORIZONTAL_ALIGNMENT_CENTER, -1, 14, Color.WHITE)
 		draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 + 42), "按 R 重新开始", HORIZONTAL_ALIGNMENT_CENTER, -1, 12, Color(0.667, 0.667, 0.667))
 		draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 + 58), "按 ESC 返回菜单", HORIZONTAL_ALIGNMENT_CENTER, -1, 10, Color(0.467, 0.467, 0.467))
+
+func _draw_talent_buttons(font: Font, p: Fighter, start_x: float):
+	if not p.talent_manager or p.talent_slots.is_empty():
+		return
+	var by = Constants.H - 28
+	for i in p.talent_slots.size():
+		var t = p.talent_slots[i]
+		var bx = start_x + i * 64
+		# Background (orange tint for talent)
+		draw_rect(Rect2(bx, by, 58, 22), Color(0.15, 0.1, 0.05, 0.85))
+		# Label
+		var label = "Y " + t.talent_name
+		draw_string(font, Vector2(bx + 4, by + 4), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color(1.0, 0.667, 0.4))
+		# Cooldown overlay
+		var cd_data = p.ad.get(t.talent_id, {})
+		var cd = cd_data.get("cd", 0)
+		if cd > 0:
+			var cd_pct = float(cd) / 300.0  # 默认冷却基数
+			draw_rect(Rect2(bx, by, 58 * cd_pct, 22), Color(0, 0, 0, 0.6))
+			draw_string(font, Vector2(bx + 29, by + 14), str(ceil(cd / 60.0)) + "s", HORIZONTAL_ALIGNMENT_CENTER, -1, 8, Color(1.0, 0.533, 0.533))
+		# Border
+		draw_rect(Rect2(bx, by, 58, 22), Color(0.5, 0.35, 0.1), false)
 
 # ===== Evoker drawing functions =====
 
@@ -1008,6 +1058,7 @@ func _unhandled_input(event: InputEvent):
 			KEY_U: keys["skill1"] = pr
 			KEY_I: keys["skill2"] = pr
 			KEY_O: keys["ult"] = pr
+			KEY_Y: keys["talent1"] = pr
 			KEY_R:
 				if pr and GameWorld.game_over:
 					_restart_game()

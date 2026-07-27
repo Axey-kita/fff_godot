@@ -36,6 +36,11 @@ extends Control
 @onready var map_pool_container = $MapPoolOverlay/MapPoolPanel/MapPoolScroll/MapPoolGrid
 @onready var map_pool_close = $MapPoolOverlay/MapPoolPanel/MapPoolHeader/MapPoolCloseBtn
 
+# Pokedex state
+var _dex_body: Control = null
+var _dex_desc: Label = null
+var _dex_char_id: String = ""
+
 var selected_char := "knight"
 var chars_initialized := false
 var char_cards := {}
@@ -128,53 +133,129 @@ func _style_dex_card(btn: Button):
 	btn.add_theme_color_override("font_color", Color.WHITE)
 
 func _on_dex_card_clicked(char_id: String):
+	_dex_char_id = char_id
 	var cfg = CharConfigs.configs.get(char_id, {})
 	var dex = cfg.get("dex", {})
+	var intro = dex.get("intro", "")
 	
+	# Header
 	dex_detail_icon.text = dex.get("icon", "?")
 	dex_detail_name.text = CharConfigs.get_char_name(char_id)
-	dex_intro_label.text = dex.get("intro", "")
 	
-	# Stats
-	for child in dex_stats_row.get_children():
-		child.queue_free()
+	# Hide old layout, build new
+	dex_stats_row.visible = false
+	dex_intro_label.visible = false
+	var old_scroll = dex_skills_container.get_parent()
+	if old_scroll: old_scroll.visible = false
+	
+	# Remove previous body if exists
+	if _dex_body and _dex_body.get_parent():
+		_dex_body.queue_free()
+	
+	# New layout: VBoxContainer (top image+text | bottom skill buttons)
+	_dex_body = VBoxContainer.new()
+	_dex_body.add_theme_constant_override("separation", 12)
+	_dex_body.name = "DexBody"
+	
+	# === Top row: idle image (left) + description text (right) ===
+	var top_row = HBoxContainer.new()
+	top_row.add_theme_constant_override("separation", 20)
+	top_row.size_flags_vertical = Control.SIZE_EXPAND
+	
+	# Character idle image (clickable → restore intro)
+	var idle_tex = _get_dex_idle_texture(char_id)
+	if idle_tex:
+		var tex_btn = Button.new()
+		tex_btn.icon = idle_tex
+		tex_btn.expand_icon = true
+		tex_btn.flat = true
+		tex_btn.custom_minimum_size = Vector2(240, 320)
+		tex_btn.pressed.connect(_on_dex_char_portrait_clicked.bind(intro))
+		top_row.add_child(tex_btn)
+	
+	# Text area (dynamic description + stats)
+	var text_area = VBoxContainer.new()
+	text_area.add_theme_constant_override("separation", 8)
+	text_area.size_flags_horizontal = Control.SIZE_EXPAND
+	
+	var desc = Label.new()
+	desc.name = "DescLabel"
+	desc.text = intro
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.add_theme_color_override("font_color", Color(0.65, 0.65, 0.75))
+	desc.add_theme_font_size_override("font_size", 13)
+	desc.size_flags_vertical = Control.SIZE_EXPAND
+	desc.custom_minimum_size = Vector2(330, 0)  # 约 25 字/行
+	_dex_desc = desc  # 保存引用供技能按钮使用
+	text_area.add_child(desc)
+	
+	# Stats row at bottom of text area
+	var stats_box = HBoxContainer.new()
+	stats_box.add_theme_constant_override("separation", 16)
 	for s in dex.get("stats", []):
 		var lbl = Label.new()
 		lbl.text = s.get("label", "") + " " + str(s.get("value", ""))
-		lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+		lbl.add_theme_color_override("font_color", Color(0.5, 0.5, 0.55))
 		lbl.add_theme_font_size_override("font_size", 10)
-		dex_stats_row.add_child(lbl)
+		stats_box.add_child(lbl)
+	text_area.add_child(stats_box)
 	
-	# Skills
-	for child in dex_skills_container.get_children():
-		child.queue_free()
-	for sk in dex.get("skills", []):
-		var skill_box = VBoxContainer.new()
-		skill_box.add_theme_constant_override("separation", 2)
-		
-		var name_lbl = Label.new()
-		name_lbl.text = sk.get("name", "")
-		name_lbl.add_theme_color_override("font_color", Color(1.0, 0.843, 0.0))
-		name_lbl.add_theme_font_size_override("font_size", 12)
-		skill_box.add_child(name_lbl)
-		
-		var desc_lbl = Label.new()
-		desc_lbl.text = sk.get("desc", "")
-		desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		desc_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.7))
-		desc_lbl.add_theme_font_size_override("font_size", 9)
-		skill_box.add_child(desc_lbl)
-		
-		var meta_lbl = Label.new()
-		meta_lbl.text = sk.get("meta", "")
-		meta_lbl.add_theme_color_override("font_color", Color(0.4, 0.4, 0.5))
-		meta_lbl.add_theme_font_size_override("font_size", 8)
-		skill_box.add_child(meta_lbl)
-		
-		dex_skills_container.add_child(skill_box)
+	top_row.add_child(text_area)
+	_dex_body.add_child(top_row)
+	
+	# === Bottom row: skill buttons (horizontal, wraps) ===
+	var bottom_row = HFlowContainer.new()
+	bottom_row.add_theme_constant_override("separation", 8)
+	bottom_row.alignment = HFlowContainer.ALIGNMENT_CENTER
+	
+	for i in range(dex.get("skills", []).size()):
+		var sk = dex["skills"][i]
+		var btn = Button.new()
+		btn.text = sk.get("name", "")
+		btn.custom_minimum_size = Vector2(140, 36)
+		btn.pressed.connect(_on_dex_skill_clicked.bind(i, dex, intro))
+		_style_dex_skill_btn(btn)
+		bottom_row.add_child(btn)
+	
+	_dex_body.add_child(bottom_row)
+	dex_detail.add_child(_dex_body)
 	
 	dex_list_scroll.visible = false
 	dex_detail.visible = true
+
+func _on_dex_skill_clicked(skill_index: int, dex: Dictionary, intro: String):
+	var sk = dex.get("skills", [])[skill_index]
+	if _dex_desc:
+		_dex_desc.text = "【" + sk.get("name", "") + "】\n\n" + sk.get("desc", "") + "\n\n" + sk.get("meta", "")
+
+func _on_dex_char_portrait_clicked(intro: String):
+	if _dex_desc:
+		_dex_desc.text = intro
+
+func _get_dex_idle_texture(char_id: String) -> Texture2D:
+	var cfg = CharConfigs.configs.get(char_id, {})
+	var anims: Dictionary = cfg.get("animations", {})
+	var idle_anim: FrameAnimation = anims.get("idle")
+	if idle_anim:
+		idle_anim.play()
+		return idle_anim.get_current_texture()
+	return null
+
+func _style_dex_skill_btn(btn: Button):
+	var normal = StyleBoxFlat.new()
+	normal.bg_color = Color(1, 1, 1, 0.05)
+	normal.set_corner_radius_all(6)
+	normal.border_width_left = 1; normal.border_width_right = 1
+	normal.border_width_top = 1; normal.border_width_bottom = 1
+	normal.border_color = Color(0.35, 0.35, 0.4, 0.5)
+	btn.add_theme_stylebox_override("normal", normal)
+	var hover = normal.duplicate()
+	hover.bg_color = Color(1.0, 0.843, 0.0, 0.12)
+	hover.border_color = Color(1.0, 0.843, 0.0, 0.5)
+	btn.add_theme_stylebox_override("hover", hover)
+	btn.add_theme_font_size_override("font_size", 12)
+	btn.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	btn.add_theme_color_override("font_hover_color", Color(1.0, 0.95, 0.8))
 
 func _on_pokedex_pressed():
 	pokedex_overlay.visible = true

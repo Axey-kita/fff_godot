@@ -13,6 +13,10 @@ var difficulty := "medium"
 var frame := 0
 var hit_stop := 0
 
+# Talent system
+var player_talents: Array = []
+var enemy_talents: Array = []
+
 # Slow motion
 var slow_mo_timer := 0
 var slow_mo_tick := 0
