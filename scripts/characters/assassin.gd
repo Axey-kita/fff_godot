@@ -146,6 +146,7 @@ static func _ult(owner: Fighter) -> Dictionary:
 				comp.ult_active = false
 				comp.time_stop = false
 				comp.time_stop_timer = 0
+			owner.state_flags["time_stop"] = false
 			owner.state = "idle"
 	})
 	

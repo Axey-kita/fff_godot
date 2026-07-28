@@ -1,6 +1,10 @@
 class_name Fighter
 extends Node2D
 
+# ── 信号 ──
+signal hp_changed(old_val: float, new_val: float)
+signal energy_changed(old_val: float, new_val: float)
+
 # Minimal preloads — only scripts that don't reference Fighter type
 const GameParticle = preload("res://scripts/particle.gd")
 
@@ -125,6 +129,26 @@ var dragon_scales_active: bool = false
 var dragon_scales_timer: int = 0
 var dragon_form_active: bool = false
 var dragon_form_timer: int = 0
+var dk_burn_applied: bool = false
+var dk_sky_rise_active: bool = false
+var dk_sky_rise_anim_timer: int = 0
+var dk_dive_attack_timer: int = 0
+var dk_crash_timer: int = 0
+var dk_crack_ends_flight: bool = false
+var dk_flight_timer: int = 0
+var dk_shield_active: bool = false
+var dk_shield_timer: int = 0
+var dk_shield_absorbed_damage: float = 0.0
+var dk_shield_held: bool = false
+var dk_ult_active: bool = false
+var dk_ult_timer: int = 0
+
+# ── 天赋系统 ──
+var ad: Dictionary = {}                    # 天赋命名空间 { talent_id: {...} }
+var talent_manager: TalentManager = null
+var talent_slots: Array = []
+var _stat_base: Dictionary = {}            # 属性原始值快照
+var _stat_mods: Dictionary = {}            # { attr: [{ source, add, mul }, ...] }
 
 # Forced skill timer
 var forced_skill_timer: int = 0
@@ -173,6 +197,50 @@ func _init_from_config():
 		current_anim = anims["idle"]
 		current_anim.play()
 		image_state = "idle"
+	_snapshot_stats()
+
+# ── 属性修饰系统 ──
+func _snapshot_stats():
+	_stat_base["max_hp"] = max_hp
+	_stat_base["max_energy"] = max_energy
+	_stat_base["attack_damage"] = attack_damage
+	_stat_base["attack_speed"] = attack_speed
+	_stat_base["attack_range"] = attack_range
+
+func add_stat_mod(attr: String, source: String, add: float = 0.0, mul: float = 1.0):
+	if not _stat_mods.has(attr):
+		_stat_mods[attr] = []
+	_stat_mods[attr].append({"source": source, "add": add, "mul": mul})
+	_recalc_stat(attr)
+	# 修饰最大血量后同步当前血量
+	if attr == "max_hp":
+		hp = minf(hp, max_hp)
+
+func _recalc_stat(attr: String):
+	var base = _stat_base.get(attr, _get_attr_val(attr))
+	var total_add = 0.0
+	var total_mul = 1.0
+	for m in _stat_mods.get(attr, []):
+		total_add += m.add
+		total_mul *= m.mul
+	_set_attr_val(attr, (base + total_add) * total_mul)
+
+func _get_attr_val(attr: String) -> float:
+	match attr:
+		"max_hp": return max_hp
+		"max_energy": return max_energy
+		"attack_damage": return attack_damage
+		"attack_speed": return attack_speed
+		"attack_range": return attack_range
+	return 0.0
+
+func _set_attr_val(attr: String, val: float):
+	match attr:
+		"max_hp": max_hp = val
+		"max_energy": max_energy = val
+		"attack_damage": attack_damage = val
+		"attack_speed": attack_speed = val
+		"attack_range": attack_range = val
 
 func set_animation_state(state_key: String):
 	image_state = state_key
@@ -379,7 +447,9 @@ func apply_physics():
 			energy = maxf(0, energy - 10)
 			if energy <= 0:
 				dragon_form_active = false
-	update_statuses()
+	# Dragon Knight: 凌空/举盾/大招 重力跳过 (计时由 update_systems 管理)
+	if dk_sky_rise_active or dk_crash_timer > 0 or dk_shield_active or dk_ult_active:
+		pass
 	for s in skills:
 		s.update()
 	var regen = config.get("energy_regen", 0.083)
@@ -394,7 +464,9 @@ func apply_physics():
 	if attacking and attack_timer <= 0 and not charging_attack:
 		attacking = false
 		state = "idle"
-	if image_state.begins_with("skill") and not attacking:
+	if dk_ult_active:
+		pass  # 龙魂大招期间动画由 update_systems 管理
+	elif image_state.begins_with("skill") and not attacking:
 		pass  # Keep skill-specific animation state (set by character logic)
 	elif dashing or charging_skill1 or charging:
 		set_animation_state("charge")
@@ -402,7 +474,7 @@ func apply_physics():
 		set_animation_state("attack")
 	elif state == "ult":
 		set_animation_state("ult")
-	elif not grounded:
+	elif not grounded:  # 地面在空中且非凌空飞行
 		set_animation_state("jump")
 	elif state == "walk":
 		set_animation_state("walk")
@@ -410,7 +482,7 @@ func apply_physics():
 		set_animation_state("idle")
 
 # ===== Static damage function =====
-static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockback: bool = true, hit_color: Color = Color(1.0, 0.53, 0.27), sound_name: String = "hit_enemy"):
+static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockback: bool = true, hit_color: Color = Color(1.0, 0.53, 0.27), sound_name: String = "hit_enemy", damage_source: String = "", recursion_depth: int = 0):
 	if not target or target.hp <= 0:
 		return
 	if attacker == target:
@@ -444,6 +516,12 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	if assassin_comp and assassin_comp.is_invincible:
 		print("[DAMAGE-DEBUG] ✓ 无敌免疫成功，伤害被拦截")
 		emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 12, Color(0.667, 0.533, 1.0), 3, 5, "star", 0.6)
+		return
+
+	# Dragon Knight 鳞反：举盾吸收伤害
+	if target.dk_shield_active:
+		target.dk_shield_absorbed_damage += dmg
+		emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 10, Color(1.0, 0.3, 0.1), 3, 5, "circle", 0.5)
 		return
 
 	# 通用无敌：所有角色 is_invincible 标志生效（玫瑰二技能等）
@@ -512,6 +590,10 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 		final_dmg = maxf(1.0, floorf(final_dmg * 0.7))
 		knockback = false
 
+	# Dragon Knight 龙魂大招：免疫击退和击飞
+	if target.dk_ult_active:
+		knockback = false
+
 	# 暴击伤害倍率
 	if is_critical:
 		final_dmg = floorf(final_dmg * 1.5)
@@ -521,6 +603,7 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	# 角色钩子：受伤时触发
 	_call_on_damage_received(target, attacker, base_dmg)
 
+	var old_hp = target.hp
 	target.hp -= final_dmg
 	target.damage_flash = 10
 	target.hit_cooldown = 15
@@ -538,6 +621,12 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 25, hit_color, 6, 6, "circle", 0.8)
 	if target.hp < 0:
 		target.hp = 0
+	target.hp_changed.emit(old_hp, target.hp)
+	# ── 天赋事件广播 ──
+	TalentEventBus.emit_damage_dealt(attacker, target, final_dmg, damage_source, recursion_depth)
+	TalentEventBus.emit_damage_received(target, attacker, final_dmg, damage_source, recursion_depth)
+	if target.hp <= 0:
+		TalentEventBus.emit_kill(attacker, target)
 	AudioManager.play_sound(sound_name)
 	# updateHUD() would go here
 

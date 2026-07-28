@@ -49,7 +49,7 @@ static func get_config() -> Dictionary:
 				{"name": "血刃（普通攻击）", "desc": "向前挥砍，造成 5 点伤害。", "meta": "消耗：无 ｜ 冷却：1 秒"},
 				{"name": "血之月华（技能一）", "desc": "突进抓取敌人，身后留下刀光（10伤害）。血渊≥20 时强化，消耗 20 血渊。", "meta": "消耗：15 能 / 20 血渊 ｜ 冷却：8 秒"},
 				{"name": "夜翼瞬袭（技能二）", "desc": "【常态】化身蝙蝠群向前突进吸附敌人造成伤害。\n【强化·血渊≥20】化身蝙蝠群自由飞行3秒，接近敌人造成持续伤害。", "meta": "常态：20能 / 12秒 ｜ 强化：30能 / 18秒"},
-			{"name": "暗夜华尔兹（大招）", "desc": "技能设计中...", "meta": "消耗：100 能 ｜ 冷却：5 秒"},
+			{"name": "暗夜华尔兹（大招）", "desc": "展开血之领域，全屏暗红特效覆盖战场。释放期间蔷薇免疫一切伤害，时间近乎停滞，对敌人持续造成约 40 点总伤害。六段斩击过后，舞步终了，暗夜重归寂静。", "meta": "消耗：100 能 ｜ 冷却：5 秒"},
 			]
 		},
 	}
@@ -398,6 +398,7 @@ static func _ult(owner: Fighter) -> Dictionary:
 			if comp:
 				comp.time_stop = false
 				comp.time_stop_timer = 0
+			owner.state_flags["time_stop"] = false
 			owner.state = "idle"
 	})
 	
