@@ -137,6 +137,16 @@ static func _release_paladin_charge(owner: Fighter):
 #修复:冲刺+蓄力都结束后清空image_state,下一帧apply_physics自动恢复idle/walk
 static func update_systems(f: Fighter):
 	if f.hp <= 0: return
+	# ── 绘制注入 ──
+	f.hud_resource_color = Color(1.0, 0.843, 0.0)  # 能量条金色
+	var comp = f.components.get_component("paladin") if f.components else null
+	if comp and (comp.divine_shield_active or comp.holy_empower_active):
+		f.state_flags["paladin_aura"] = {
+			"shield_alpha": 0.32 if comp.divine_shield_active else 0.24,
+			"holy_active": comp.holy_empower_active
+		}
+	else:
+		f.state_flags.erase("paladin_aura")
 	# AI 自动释放蓄力：最大蓄力 2 秒后自动冲锋
 	if f.charging_skill1:
 		var ct = (Time.get_ticks_msec() - f.charge_start_time) / 1000.0

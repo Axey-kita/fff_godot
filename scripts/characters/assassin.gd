@@ -3,7 +3,7 @@ class_name AssassinCharacter
 
 const AssassinComponent = preload("res://scripts/components/assassin_component.gd")
 
-const PROJ_SLASH2 = preload("res://assets/54.png")
+const PROJ_SLASH2 = preload("res://assets/fx_assassin_slash.png")
 const ASSASSIN_ANI_DIR = "res://assets/char_ani/assassin/"
 
 static func get_config() -> Dictionary:
@@ -141,6 +141,7 @@ static func _ult(owner: Fighter) -> Dictionary:
 		"position": {"type": "fullscreen"},
 		"owner": owner,
 		"overlay_id": "assassin_ult",
+		"border_color": Color(0.53, 0.27, 0.8),
 		"on_finish": func():
 			if comp:
 				comp.ult_active = false
@@ -207,10 +208,50 @@ static func handle_input(owner: Fighter, keys: Dictionary) -> int:
 	Fighter.update_state(owner, mx)
 	return mx
 
-## 系统更新：大招持续伤害
+## 系统更新：大招持续伤害 + 注册/注销绘制回调
 static func update_systems(f: Fighter):
 	var comp: AssassinComponent = f.components.get_component("assassin") if f.components else null
-	if not comp or not comp.ult_active:
+	if not comp:
+		return
+	# 次元斩：活跃时注册绘制回调
+	if comp.slash_active:
+		GameWorld.register_draw_effect(str(f.get_instance_id()) + "_slash", func(font, cam_x):
+			var items: Array = []
+			var sx = comp.slash_x - cam_x
+			if sx > -120 and sx < Constants.W + 120:
+				var tex = preload("res://assets/fx_assassin_slash_ult.png")
+				if comp.slash_facing < 0:
+					items.append({"type": "set_transform", "pos": Vector2(sx + 100, comp.slash_y), "scale": Vector2(-1, 1)})
+					items.append({"type": "tex", "tex": tex, "rect": Rect2(0, 0, 100, 40), "color": Color(1,1,1,0.9)})
+					items.append({"type": "reset_transform"})
+				else:
+					items.append({"type": "tex", "tex": tex, "rect": Rect2(sx, comp.slash_y, 100, 40), "color": Color(1,1,1,0.9)})
+			return items
+		, 0)
+	else:
+		GameWorld.unregister_draw_effect(str(f.get_instance_id()) + "_slash")
+	# 暗影游走残影：活跃时注册绘制回调
+	if comp.shadow_stance and comp.shadow_trail.size() > 0:
+		GameWorld.register_draw_effect(str(f.get_instance_id()) + "_trail", func(font, cam_x):
+			var items: Array = []
+			for trail in comp.shadow_trail:
+				var tx = trail["x"] - cam_x
+				if tx > -60 and tx < Constants.W + 60:
+					var alpha = trail["life"] / 12.0
+					if trail["facing"] < 0:
+						items.append({"type": "set_transform", "pos": Vector2(tx + f.w, trail["y"]), "scale": Vector2(-1, 1)})
+					else:
+						items.append({"type": "set_transform", "pos": Vector2(tx, trail["y"]), "scale": Vector2.ONE})
+					var anim = f.current_anim
+					if anim and anim.current_texture:
+						items.append({"type": "tex", "tex": anim.current_texture, "rect": Rect2(0, 0, f.w, f.h), "color": Color(0.4, 0.27, 0.6, alpha * 0.5)})
+					items.append({"type": "reset_transform"})
+			return items
+		, 1)
+	else:
+		GameWorld.unregister_draw_effect(str(f.get_instance_id()) + "_trail")
+	# 大招持续伤害
+	if not comp.ult_active:
 		return
 	# 每 15 帧（0.25s）造成 3 点伤害，全程约 2.8s → ~ 33.6 点
 	comp.ult_damage_timer += 1
@@ -219,3 +260,33 @@ static func update_systems(f: Fighter):
 		var target = GameWorld.get_opponent(f)
 		if target and target.hp > 0:
 			Fighter.apply_damage(target, 3, f, false, Color(0.53, 0.27, 0.8))
+	# 冲刺回调注入：一瞬闪避
+	if f.dashing and comp.is_invincible:
+		f.dash_step_callbacks = [func(old_x, new_x): _check_dodge_through_projectiles(f, old_x, new_x, comp)]
+	else:
+		f.dash_step_callbacks.clear()
+
+# ── 刺客闪避（从 DashSystem 迁移至此）──
+static func _check_dodge_through_projectiles(f: Fighter, old_x: float, new_x: float, comp: AssassinComponent):
+	var top = f.pos_y + 4
+	var bottom = f.pos_y + f.h - 4
+	var path_x = minf(old_x, new_x)
+	var path_w = absf(new_x - old_x) + f.w
+	var path_rect = Rect2(path_x, top, path_w, bottom - top)
+	for p in GameWorld.projectiles:
+		var owner = p.get("owner")
+		if owner == null or owner == f: continue
+		var opp = GameWorld.get_opponent(f)
+		if owner != opp: continue
+		var proj_rect = Rect2(p["x"], p["y"], p["w"], p["h"])
+		if path_rect.intersects(proj_rect):
+			if not comp.dodge_success:
+				comp.dodge_success = true
+				comp.dodge_slow_mo = 30
+				comp.shadow_energy = minf(comp.shadow_energy_max, comp.shadow_energy + 1)
+				if comp.shadow_energy >= comp.shadow_energy_max and not comp.shadow_stance:
+					comp.shadow_stance = true
+					comp.shadow_stance_timer = 480
+				Fighter.emit_particles(f.pos_x + f.w / 2.0, f.pos_y + f.h / 2.0, 15, Color(0.667, 0.533, 1.0), 3, 5, "star", 0.8)
+				print("[DODGE-DEBUG] ★ 闪避触发（路径检测）！shadow_energy=", comp.shadow_energy, " dodge_slow_mo=", comp.dodge_slow_mo)
+			break

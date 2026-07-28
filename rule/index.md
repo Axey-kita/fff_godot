@@ -2,7 +2,7 @@
 
 > **本文档整合项目所有开发规范，是代码编写和审查的唯一强制依据。**
 >
-> 来源文档：[DEVELOPERS_README/](DEVELOPERS_README/) | [反模式参考](.trae/documents/fix-anti-patterns.md) | [角色开发规范](docs/char-spec.md)
+> 来源文档：[DEVELOPERS_README.md](../DEVELOPERS_README.md) | [反模式参考](.trae/documents/fix-anti-patterns.md) | [角色开发规范](docs/char-spec.md)
 
 ---
 

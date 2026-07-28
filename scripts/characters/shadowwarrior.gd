@@ -3,6 +3,22 @@ class_name ShadowwarriorCharacter
 
 const ShadowwarriorComponent = preload("res://scripts/components/shadowwarrior_component.gd")
 
+# Draw preloads (从 game.gd 迁移至此)
+const SW_TRAP_A        = preload("res://assets/fx_shadow_trap_a.png")
+const SW_TRAP_B        = preload("res://assets/fx_shadow_trap_b.png")
+const SW_CLONE_REVEAL  = preload("res://assets/fx_shadow_clone_reveal.png")
+const SW_IAIDO_SLASH   = preload("res://assets/fx_shadow_iaido_slash.png")
+const SW_RETREAT       = preload("res://assets/fx_shadow_retreat.png")
+const SW_BREAK_STRIKE  = preload("res://assets/fx_shadow_break_strike.png")
+const SW_GRAB          = preload("res://assets/fx_shadow_grab.png")
+const SW_GRAB_BURST    = preload("res://assets/fx_shadow_grab_burst.png")
+const SW_IDLE_IMG      = preload("res://assets/char_ani/shadowwarrior/idle/shadowwarrior_idle_f_1.png")
+const SW_WALK_IMG      = preload("res://assets/char_ani/shadowwarrior/walk/shadowwarrior_walk_f_1.png")
+const SW_ATTACK_IMG    = preload("res://assets/char_ani/shadowwarrior/attack/shadowwarrior_attack_f_1.png")
+const SW_ULT_IMG       = preload("res://assets/char_ani/shadowwarrior/ult/shadowwarrior_ult_f_1.png")
+const SW_BREAK_SHADOW  = preload("res://assets/char_ani/shadowwarrior/break_shadow.png")
+const SW_FADE_IN_SHADOW = preload("res://assets/char_ani/shadowwarrior/fade_in_shadow.png")
+
 const SHADOWWARRIOR_ANI_DIR = "res://assets/char_ani/shadowwarrior/"
 
 static func get_config() -> Dictionary:
@@ -106,6 +122,19 @@ static func update_systems(f: Fighter):
 	var comp: ShadowwarriorComponent = f.components.get_component("shadowwarrior") if f.components else null
 	if not comp:
 		return
+	# ── 绘制注入（每帧更新）──
+	_inject_draw(f, comp)
+	# ── 冲刺伤害覆盖：破影一击 10 点 ──
+	f.dash_damage_override = 10.0 if comp.break_strike_timer > 0 else 0.0
+	
+	# ── 居合全局冻结：委托中断器管理计时（定格 30f / 停留 90f）──
+	if comp.iaido_active:
+		var t = comp.iaido_timer
+		if t == 150:
+			FrameInterrupter.add("iaido", 30)
+		elif t == 90:
+			FrameInterrupter.add("iaido", 90)
+		comp.iaido_timer -= 1
 	
 	# === 技能1：影缚·袭 - 创建陷阱 ===
 	if comp.pending_trap:
@@ -331,6 +360,103 @@ static func _update_iaido(f: Fighter, comp: ShadowwarriorComponent):
 		# 将角色位置更新到刀光终点（大招结束后停留在终点）
 		var end_x = slash.get("start_x", f.pos_x) + slash["dir"] * slash["w"]
 		f.pos_x = clampf(end_x, 10, 2390 - f.w)
+
+# ── 绘制注入 ──
+static var _draw_registered := false
+static func _inject_draw(f: Fighter, comp: ShadowwarriorComponent):
+	var fid = str(f.get_instance_id())
+	# Fighter 本体绘制注入
+	f.state_flags["skip_fighter_draw"] = comp.iaido_active
+	if comp.stealth_active:
+		f.state_flags["draw_alpha_mod"] = 0.5
+	else:
+		f.state_flags.erase("draw_alpha_mod")
+	if comp.stealth_active and f.dashing:
+		f.state_flags["draw_texture_override"] = SW_FADE_IN_SHADOW
+	elif comp.break_strike_timer > 0:
+		f.state_flags["draw_texture_override"] = SW_BREAK_SHADOW
+	else:
+		f.state_flags.erase("draw_texture_override")
+	# 世界级绘制：替身陷阱 + 居合刀光
+	GameWorld.register_draw_effect(fid + "_sw", func(font, cam_x):
+		var items: Array = []
+		# 暗影替身
+		if comp.shadow_trap_active and not comp.shadow_trap.is_empty():
+			var trap = comp.shadow_trap
+			match trap["phase"]:
+				"idle":
+					var img = SW_TRAP_A if (trap["anim"] / 30) % 2 == 0 else SW_TRAP_B
+					items += _sw_draw_items(img, trap["x"], trap["y"]+f.h*0.4, f.w, f.h*0.6, cam_x, f.facing, 0.7)
+				"capture":
+					if trap["captured"] and trap["captured"] is Fighter and trap["captured"].hp > 0:
+						var cap = trap["captured"]
+						items += _sw_draw_items(SW_GRAB, cap.pos_x - 10, cap.pos_y - 10, cap.w + 20, cap.h + 20, cam_x, 1, 0.95)
+				"burst":
+					var cap = trap["captured"]
+					var bx = cap.pos_x - 10 if (cap and cap is Fighter) else trap["x"] - 10
+					var by = cap.pos_y - 10 if (cap and cap is Fighter) else trap["y"] - 10
+					var bw = (cap.w + 20 if (cap and cap is Fighter) else trap["w"] + 20)
+					var bh = (cap.h + 20 if (cap and cap is Fighter) else trap["h"] + 20)
+					items += _sw_draw_items(SW_GRAB_BURST, bx, by, bw, bh, cam_x, 1, 1.0)
+		# 居合刀光
+		if comp.iaido_active and not comp.iaido_slash.is_empty():
+			var slash = comp.iaido_slash
+			items += _sw_draw_items(SW_IAIDO_SLASH, slash["x"], slash["y"], slash["w"], slash["h"], cam_x, slash.get("dir", 1), 0.85)
+			var t = comp.iaido_timer
+			var progress: float
+			if t > 120: progress = 0.0
+			elif t > 90: progress = (120 - t) / 30.0
+			else: progress = 1.0
+			var start_x: float = slash.get("start_x", f.pos_x)
+			var end_x = start_x + slash["dir"] * slash["w"]
+			var pose_x = start_x + (end_x - start_x) * progress
+			var iw = SW_ULT_IMG.get_width(); var ih = SW_ULT_IMG.get_height()
+			var s = minf(f.w / iw, f.h / ih)
+			items += _sw_draw_items(SW_ULT_IMG, pose_x + (f.w - iw*s) / 2.0, f.pos_y + f.h - ih*s*1.5, iw*s, ih*s*1.5, cam_x, f.facing, 1.0)
+		return items
+	, 5)
+	# 分身绘制
+	GameWorld.register_draw_effect(fid + "_phantoms", func(font, cam_x):
+		var items: Array = []
+		for ph in GameWorld.phantoms:
+			if ph.get("hp", 0) <= 0: continue
+			var state = ph.get("image_state", "idle")
+			var img: Texture2D = SW_IDLE_IMG
+			match state:
+				"attack": img = SW_ATTACK_IMG
+				"walk":   img = SW_WALK_IMG
+			var px = ph["x"] - cam_x
+			if px < -ph["w"] or px > Constants.W + ph["w"]: continue
+			var py = ph["y"] + ph["h"] * 0.5
+			var dh = ph["h"] * 0.6
+			if ph["facing"] < 0:
+				items.append({"type": "set_transform", "pos": Vector2(px + ph["w"], py), "scale": Vector2(-1, 1)})
+				items.append({"type": "tex", "tex": img, "rect": Rect2(0, 0, ph["w"], dh), "color": Color(1,1,1,0.75)})
+				items.append({"type": "reset_transform"})
+			else:
+				items.append({"type": "tex", "tex": img, "rect": Rect2(px, py, ph["w"], dh), "color": Color(1,1,1,0.75)})
+			var hp_pct = maxf(0, ph["hp"] / maxf(ph.get("max_hp", 1.0), 1.0))
+			items.append({"type": "rect", "rect": Rect2(px, py - 8, ph["w"], 4), "color": Color(0, 0, 0, 0.5)})
+			items.append({"type": "rect", "rect": Rect2(px, py - 8, ph["w"] * hp_pct, 4), "color": Color(0.53, 0.27, 0.8)})
+		return items
+	, 4)
+	_draw_registered = true
+
+static func _unregister_draw(f: Fighter):
+	var fid = str(f.get_instance_id())
+	GameWorld.unregister_draw_effect(fid + "_sw")
+	GameWorld.unregister_draw_effect(fid + "_phantoms")
+
+static func _sw_draw_items(img: Texture2D, wx: float, wy: float, w: float, h: float, cam_x: float, facing: int = 1, alpha: float = 1.0) -> Array:
+	if not img: return []
+	var px = wx - cam_x
+	var cx = px + w / 2.0; var cy = wy + h / 2.0
+	var sc = Vector2(-1 if facing < 0 else 1, 1)
+	return [
+		{"type": "set_transform", "pos": Vector2(cx, cy), "scale": sc},
+		{"type": "tex", "tex": img, "rect": Rect2(-w / 2.0, -h / 2.0, w, h), "color": Color(1, 1, 1, alpha)},
+		{"type": "reset_transform"},
+	]
 
 ## 输入处理（替代 input_handler.gd 中的 _input_shadowwarrior）
 static func handle_input(owner: Fighter, keys: Dictionary) -> int:

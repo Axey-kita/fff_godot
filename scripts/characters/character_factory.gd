@@ -47,6 +47,11 @@ static func get_config(char_id: String) -> Dictionary:
 		print("[CharacterFactory] get_config() returned for: ", char_id, " empty=", entry["config"].is_empty())
 	return entry["config"]
 
+## 重置所有角色配置缓存（重开游戏时调用，避免大招修改的 config 残留）
+static func reset_configs():
+	for entry in _char_registry.values():
+		entry["config"] = null
+
 static func create_skills(char_id: String) -> Array:
 	var entry = _char_registry.get(char_id, {})
 	if entry.is_empty():
@@ -84,3 +89,18 @@ static func create_component(char_id: String, owner: Fighter) -> CharComponent:
 		comp.init(owner)
 		return comp
 	return null
+
+## 角色全局更新调度（替代 game.gd 直接调用 XXSystem.update()）
+static func call_global_update(char_id: String):
+	var entry = _char_registry.get(char_id, {})
+	var cls = entry.get("cls")
+	if cls and cls.has_method("update_global"):
+		cls.update_global()
+
+## 重新注入全局绘制（reset_world 清除后调用，仅无参版本）
+static func reinject_draws():
+	for cid in ["evoker", "witch"]:
+		var entry = _char_registry.get(cid, {})
+		var cls = entry.get("cls")
+		if cls:
+			cls._inject_draw()

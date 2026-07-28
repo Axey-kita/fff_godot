@@ -96,6 +96,8 @@ static func handle_input(p: Fighter, keys: Dictionary) -> int:
 
 static func update_systems(f: Fighter):
 	if f.hp <= 0: return
+	# ── HUD 标签注入 ──
+	f.hud_skill_labels = {"attack": "J 血刃", "skill1": "U 血之月华", "skill2": "I 夜翼瞬袭", "ult": "O 暗夜华尔兹"}
 	var comp: RoseComponent = f.components.get_component("rose") if f.components else null
 	if not comp: return
 	
@@ -155,7 +157,7 @@ static func update_systems(f: Fighter):
 	# Skill1: dash 阶段向前抓取（一次判定）
 	elif f.dashing and f.image_state == "skill1" and not comp.rose_skill1_grab_done:
 		var rx = f.pos_x if f.dash_dir > 0 else f.pos_x - 120
-		var grab_rect = Rect2(rx, f.pos_y - 40, 120, 40)
+		var grab_rect = Rect2(rx, f.pos_y - 4, 120, f.h + 8)  # 与刀光拖尾同高
 		var teleport_x = clampf(comp.rose_skill1_grab_pos_x, 20, 2380)
 		if Fighter.grab_fighter_in_rect(f, grab_rect, teleport_x):
 			print("[ROSE-GRAB] 向前抓取成功: frame=", GameWorld.frame)
@@ -227,7 +229,7 @@ static func _has_active_enhanced_trails(f: Fighter) -> bool:
 			return true
 	return false
 
-## 刀光拖尾更新（rose 专属，从 character_systems 移出）
+## 刀光拖尾更新 + 绘制回调注册（rose 专属，从 character_systems 移出）
 static func update_rose_trails():
 	var to_remove: Array = []
 	for trail in GameWorld.rose_slash_trails:
@@ -247,6 +249,31 @@ static func update_rose_trails():
 					trail["hit_dealt"] = true
 	for t in to_remove:
 		GameWorld.rose_slash_trails.erase(t)
+	# 注册/注销绘制回调（有拖尾就画，没就注销）
+	if GameWorld.rose_slash_trails.is_empty():
+		GameWorld.unregister_draw_effect("rose_slash_trails")
+	else:
+		GameWorld.register_draw_effect("rose_slash_trails", func(font, cam_x):
+			var items: Array = []
+			for trail in GameWorld.rose_slash_trails:
+				var tx = trail["x"] - cam_x
+				if tx > -200 and tx < Constants.W + 200:
+					var tex: Texture2D = null
+					var trail_anim: FrameAnimation = trail.get("anim")
+					if trail_anim:
+						tex = trail_anim.get_current_texture()
+					if not tex:
+						tex = trail.get("img")
+					if tex:
+						var dir = trail.get("dir", 1)
+						if dir < 0:
+							items.append({"type": "set_transform", "pos": Vector2(tx + trail["w"], trail["y"]), "scale": Vector2(-1, 1)})
+							items.append({"type": "tex", "tex": tex, "rect": Rect2(0, 0, trail["w"], trail["h"]), "color": Color(1,1,1,0.85)})
+							items.append({"type": "reset_transform"})
+						else:
+							items.append({"type": "tex", "tex": tex, "rect": Rect2(tx, trail["y"], trail["w"], trail["h"]), "color": Color(1,1,1,0.85)})
+			return items
+		, 0)
 
 static func _can_use_skill1(owner: Fighter) -> bool:
 	var comp: RoseComponent = owner.components.get_component("rose") if owner.components else null
@@ -328,6 +355,7 @@ static func _skill1(owner: Fighter) -> Dictionary:
 			"timer": 60,  # 1 second
 			"damage": slash_damage,
 			"owner": owner,  # Track who created this slash
+			"img": ROSE_SLASH_IMG
 		}
 		GameWorld.rose_slash_trails.append(slash)
 	

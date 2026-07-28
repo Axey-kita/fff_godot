@@ -40,6 +40,16 @@ func on_kill(data: Dictionary):
 		if t.on_kill.is_valid():
 			t.on_kill.call(data)
 
+func on_in_void(data: Dictionary):
+	for t in talents:
+		if t.on_in_void.is_valid():
+			t.on_in_void.call(data)
+
+func on_dash_end():
+	for t in talents:
+		if t.on_dash_end.is_valid():
+			t.on_dash_end.call()
+
 # 主动天赋接口
 func activate_slot(index: int) -> Dictionary:
 	if not owner:

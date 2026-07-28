@@ -39,3 +39,7 @@ static func emit_damage_received(fighter, attacker, dmg: float,
 static func emit_kill(fighter, target):
 	if fighter and fighter.talent_manager:
 		fighter.talent_manager.on_kill({"fighter": fighter, "target": target})
+
+static func emit_dash_end(fighter):
+	if fighter and fighter.talent_manager:
+		fighter.talent_manager.on_dash_end()

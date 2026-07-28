@@ -14,4 +14,6 @@ static func update_flame_zones():
 				var ti = f.get("tick_interval", 60)
 				if f["timer"] >= ti:
 					f["timer"] = 0
-					Fighter.apply_damage(target, f["damage"], f["owner"], false)
+					# 龙骑士免疫火焰区域伤害
+					if target.char_id != "dragon_knight":
+						Fighter.apply_damage(target, f["damage"], f["owner"], false)

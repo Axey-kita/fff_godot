@@ -142,6 +142,12 @@ var dk_shield_absorbed_damage: float = 0.0
 var dk_shield_held: bool = false
 var dk_ult_active: bool = false
 var dk_ult_timer: int = 0
+var dk_ult_phase2_active: bool = false
+var dk_ult_phase2_timer: int = 0
+var dk_ult_fire_tick: int = 0
+var dk_ult_fire_total: float = 0.0
+var dk_ult_claw_dealt: bool = false
+var dk_ult_target_locked: bool = false
 
 # ── 天赋系统 ──
 var ad: Dictionary = {}                    # 天赋命名空间 { talent_id: {...} }
@@ -149,6 +155,31 @@ var talent_manager: TalentManager = null
 var talent_slots: Array = []
 var _stat_base: Dictionary = {}            # 属性原始值快照
 var _stat_mods: Dictionary = {}            # { attr: [{ source, add, mul }, ...] }
+
+# ── 绘制注入（角色向世界注册绘制逻辑）──
+var draw_overrides: Array = []             # [{cb: Callable, z: int}] _draw_fighter 后执行
+var hud_skill_labels: Dictionary = {}      # {"attack": "J 血刃", ...} 为空则用默认标签
+var hud_resource_color: Color = Color(0.0, 0.831, 1.0)  # 能量条颜色（Paladin 改金色）
+
+# ── 冲刺注入（角色向 DashSystem 注入逻辑）──
+var dash_step_callbacks: Array = []        # [Callable(old_x, new_x)] 每帧冲刺回调
+var dash_damage_override: float = 0.0      # 0=默认15，>0=覆盖冲刺伤害
+
+## 对局结束时解除所有注入（在 queue_free 之前调用）
+func detach_injections():
+	# 清除以实例 ID 注册的绘制回调
+	var fid = str(get_instance_id())
+	GameWorld.unregister_draw_effect(fid + "_slash")
+	GameWorld.unregister_draw_effect(fid + "_trail")
+	GameWorld.unregister_draw_effect(fid + "_sw")
+	GameWorld.unregister_draw_effect(fid + "_phantoms")
+	# 重置注入字段
+	dash_step_callbacks.clear()
+	dash_damage_override = 0.0
+	draw_overrides.clear()
+	hud_skill_labels.clear()
+	hud_resource_color = Color(0.0, 0.831, 1.0)
+	state_flags.clear()
 
 # Forced skill timer
 var forced_skill_timer: int = 0
@@ -257,6 +288,9 @@ func get_skill(key: String):
 func add_status(effect_id: String):
 	if _StatusEffectClass == null:
 		_StatusEffectClass = load("res://scripts/status_effect.gd")
+	# 龙骑士免疫灼烧
+	if char_id == "dragon_knight" and effect_id == "burn":
+		return
 	# Prevent duplicate freeze application
 	var def = _StatusEffectClass.STATUS_DEFS.get(effect_id, {})
 	if def.get("freeze", false) and has_status("frozen"):
@@ -335,7 +369,26 @@ func apply_physics():
 			vy = 0
 		pos_x += vx
 		pos_y += vy
+		# 墙壁碰撞：不可穿过 is_wall 地形块
+		for p in GameWorld.platforms:
+			if not p.get("is_wall", false):
+				continue
+			if pos_y + h > p["y"] and pos_y < p["y"] + p["h"] \
+				and pos_x + w > p["x"] and pos_x < p["x"] + p["w"]:
+				if vx > 0:
+					pos_x = p["x"] - w
+				else:
+					pos_x = p["x"] + p["w"]
+				vx = 0
 		grounded = false
+		# 虚空触碰 → 事件分发（天赋可拦截）
+		for p in GameWorld.platforms:
+			if p.get("terrain_type", -1) != 3:
+				continue
+			if pos_x + w > p["x"] + 4 and pos_x < p["x"] + p["w"] - 4 \
+				and pos_y + h > p["y"] and pos_y < p["y"] + p["h"]:
+				_on_void_touch()
+				break
 		for p in GameWorld.platforms:
 			if p == passthrough_platform:
 				continue  # 穿透当前悬挂平台
@@ -466,6 +519,8 @@ func apply_physics():
 		state = "idle"
 	if dk_ult_active:
 		pass  # 龙魂大招期间动画由 update_systems 管理
+	elif not grounded and attacking and image_state == "attack_air":
+		pass  # 空中下砸动画由角色 update_systems 管理
 	elif image_state.begins_with("skill") and not attacking:
 		pass  # Keep skill-specific animation state (set by character logic)
 	elif dashing or charging_skill1 or charging:
@@ -695,6 +750,31 @@ static func reflect_projectile(proj: Dictionary, defender: Fighter) -> bool:
 	emit_particles(proj["x"] + proj["w"] / 2.0, proj["y"] + proj["h"] / 2.0, 25, Color(1.0, 0.867, 0.267), 5, 7, "star", 1.2)
 	AudioManager.play_sound("parry")
 	return true
+
+## 虚空触碰：默认即死，天赋可通过 on_in_void 拦截
+func _on_void_touch():
+	var pre_hp = hp
+	if talent_manager:
+		talent_manager.on_in_void({"fighter": self, "pre_hp": pre_hp})
+	if hp == pre_hp:  # 无天赋处理 → 即死
+		hp = 0
+
+## 虚空亲和：传送到随机地面位置
+func _teleport_to_random_ground():
+	var grounds: Array = []
+	for p in GameWorld.platforms:
+		if p.get("is_ground", false) or p.get("terrain_type", -1) == 0:
+			grounds.append(p)
+	if grounds.is_empty():
+		pos_x = 400; pos_y = Constants.GROUND_Y - h
+		return
+	var g = grounds[randi() % grounds.size()]
+	pos_x = clampf(g["x"] + (g["w"] - w) / 2.0, 10, 2400 - 10 - w)
+	pos_y = g["y"] - h
+	vx = 0; vy = 0
+	dashing = false
+	grounded = true
+	emit_particles(pos_x + w / 2.0, pos_y, 20, Color(0.667, 0.267, 1.0), 3, 8, "circle")
 
 # ===== Movement helpers (used by character input strategies) =====
 static func apply_movement(f: Fighter, mx: int, max_spd: float):

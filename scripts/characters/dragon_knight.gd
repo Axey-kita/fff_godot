@@ -3,7 +3,7 @@ class_name DragonKnightCharacter
 
 const DK_ANI_DIR = "res://assets/char_ani/dragon_knight/"
 const DK_FIRE_STAB = preload("res://assets/fx_dragon_knight_fire_stab.png")
-const DK_SKY_SPLIT = preload("res://assets/fx_dragon_knight_sky_split.png")
+const DK_SKY_SPLIT = preload("res://assets/char_ani/dragon_knight/attack/44e1392e445ac500905fc2865a5c3a0d.png")
 const DK_UPPERCUT = preload("res://assets/fx_dragon_knight_uppercut.png")
 const DK_AIR_STANCE = preload("res://assets/fx_dragon_knight_air_stance.png")
 const DK_DIVE_STRIKE = preload("res://assets/fx_dragon_knight_dive_strike.png")
@@ -12,6 +12,7 @@ const DK_FIREBALL_GROUND = preload("res://assets/fx_dragon_knight_fireball_groun
 const DK_FIREBALL_AIR = preload("res://assets/fx_dragon_knight_fireball_air.png")
 const DK_DRAGON_IDLE = preload("res://assets/fx_dragon_knight_dragon_idle.png")
 const DK_DRAGON_FLIGHT = preload("res://assets/fx_dragon_knight_dragon_flight.png")
+const DK_JUMP = preload("res://assets/char_ani/dragon_knight/idle/961E57E544F8638D4EE54F793C5477CF.png")
 
 ## 从预加载贴图创建单帧 FrameAnimation
 static func _make_anim(tex: Texture2D, dur: float, loop: bool = false) -> FrameAnimation:
@@ -29,12 +30,18 @@ static func get_config() -> Dictionary:
 			"dragon_form_active": false,
 			"dragon_form_timer": 0,
 			"dk_burn_applied": false,
+			"dk_ult_phase2_active": false,
+			"dk_ult_phase2_timer": 0,
+			"dk_ult_fire_tick": 0,
+			"dk_ult_fire_total": 0.0,
+			"dk_ult_claw_dealt": false,
+			"dk_ult_target_locked": false,
 		},
 		"world_arrays": [],
 		"animations": {
 			"idle": FrameAnimation.load_from_frames(DK_ANI_DIR + "idle/", "dragon_knight_idle_f_", [{"index": 1, "duration": 999.0}], true),
 			"walk": FrameAnimation.load_from_frames(DK_ANI_DIR + "walk/", "dragon_knight_walk_f_", [{"index": 1, "duration": 999.0}], true),
-			"jump": FrameAnimation.load_from_frames(DK_ANI_DIR + "jump/", "dragon_knight_jump_f_", [{"index": 1, "duration": 999.0}], true),
+			"jump": _make_anim(DK_JUMP, 999.0, true),
 			"attack": _make_anim(DK_FIRE_STAB, 0.5),
 			"attack_air": _make_anim(DK_SKY_SPLIT, 0.5),
 			"skill1": _make_anim(DK_UPPERCUT, 0.5),
@@ -55,7 +62,7 @@ static func get_config() -> Dictionary:
 				{"name": "烈焰（普通攻击）", "desc": "地面：将火焰缠绕长枪向前猛刺，造成 5 点伤害并附加灼烧。空中：裂空——向下猛击。", "meta": "消耗：无 ｜ 冷却：1 秒"},
 				{"name": "凌空 / 寂灭（技能一）", "desc": "【凌空】举枪上挑，击飞敌人并造成 5 点伤害+灼烧，自身进入 3 秒凌空飞行状态。\n【寂灭】凌空期间再次释放，斜向下冲刺重击敌人，造成 10 点伤害+灼烧，结束凌空。", "meta": "消耗：15 能量 ｜ 冷却：15 秒"},
 				{"name": "鳞反（技能二）", "desc": "举盾防御，免疫所有伤害并吸收伤害值。防御结束后释放红色冲击波击飞敌人，造成 10 + 吸收伤害。点按举盾1秒，长按最多3秒（松手结束）。", "meta": "消耗：15 能量 ｜ 冷却：15 秒"},
-				{"name": "龙魂（大招）", "desc": "化身为巨龙，免疫击退击飞，自由飞行 10 秒。飞行中只能使用火球普攻：喷射火球造成 7 伤害+灼烧。空中火球斜向下攻击。", "meta": "消耗：40 能量 ｜ 冷却：20 秒"},
+				{"name": "龙魂（大招）", "desc": "化身为巨龙，免疫击退击飞，自由飞行 10 秒。飞行中只能使用火球普攻：喷射火球造成 7 伤害+灼烧。再次释放大招触发二段龙魂爆发，播放动画并造成 25 点大范围伤害，之后退出龙形态。", "meta": "消耗：40 能量 ｜ 冷却：20 秒"},
 			]
 		},
 		"ai_profile": {"ideal_range": [0, 140], "kite": false},
@@ -148,6 +155,64 @@ static func _ult(owner: Fighter) -> Dictionary:
 	Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h / 2.0, 60, Color(1.0, 0.15, 0.05), 14, 20, "star")
 	return {"success": true}
 
+## 大招二段：龙魂动画攻击（变龙后再次按键触发）— 全屏 overlay 动画
+static func _start_ult_phase2(owner: Fighter):
+	# 防重复
+	for entry in GameWorld.active_overlays:
+		if entry.get("overlay_id") == "dk_ult":
+			return
+
+	var anim = FrameAnimation.load_from_frames(DK_ANI_DIR + "ult/ani/", "dragon_knight_f_", [
+		{"index": 1, "duration": 0.507},
+		{"index": 2, "duration": 0.338},
+		{"index": 3, "duration": 0.338},
+		{"index": 4, "duration": 0.169},
+		{"index": 5, "duration": 0.507},
+		{"index": 6, "duration": 0.338},
+		{"index": 7, "duration": 0.507},
+		{"index": 8, "duration": 0.507},
+		{"index": 9, "duration": 0.338},
+		{"index": 10, "duration": 0.338},
+		{"index": 11, "duration": 0.169},
+		{"index": 12, "duration": 0.169},
+		{"index": 13, "duration": 0.169},
+		{"index": 14, "duration": 0.169},
+		{"index": 15, "duration": 0.169},
+		{"index": 16, "duration": 1.000},
+	], false)
+	if anim.frames.is_empty():
+		return
+	anim.play()
+
+	owner.dk_ult_phase2_active = true
+	owner.dk_ult_phase2_timer = int(anim.total_duration * 60)
+	owner.dk_ult_fire_tick = 0
+	owner.dk_ult_fire_total = 0.0
+	owner.dk_ult_claw_dealt = false
+	# 锁敌：开大瞬间在范围内的敌人必吃满全部伤害
+	var target_check = GameWorld.get_opponent(owner)
+	owner.dk_ult_target_locked = target_check and target_check.hp > 0 and \
+		absf(target_check.pos_x + target_check.w / 2.0 - owner.pos_x - owner.w / 2.0) < 300 and \
+		absf(target_check.pos_y + target_check.h / 2.0 - owner.pos_y - owner.h / 2.0) < 400
+	owner.vx = 0; owner.vy = 0
+
+	GameWorld.active_overlays.append({
+		"anim": anim,
+		"position": {"type": "fullscreen"},
+		"owner": owner,
+		"overlay_id": "dk_ult",
+		"border_color": Color(1.0, 0.1, 0.0),
+		"on_finish": func():
+			owner.dk_ult_active = false
+			owner.dk_ult_phase2_active = false
+			owner.config["image_scale"] = 1.2
+			owner.set_animation_state("idle"); owner.state = "idle"
+			var s3 = owner.get_skill("ult")
+			if s3: s3.cd = s3.cooldown
+	})
+
+	Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h / 2.0, 80, Color(1.0, 0.1, 0.0), 16, 25, "star")
+
 # ===== 输入处理 =====
 static func handle_input(owner: Fighter, keys: Dictionary) -> int:
 	if owner.dk_crash_timer > 0:
@@ -165,12 +230,18 @@ static func handle_input(owner: Fighter, keys: Dictionary) -> int:
 	if keys.right: mx = 1
 	if keys.up and owner.grounded: owner.vy = -10; owner.grounded = false
 	if keys.attack and owner.attack_cooldown <= 0 and not owner.attacking:
-		owner.attacking = true; owner.attack_timer = 30; owner.attack_delay = 8
-		owner.attack_hit_dealt = false; owner.attack_cooldown = 60
-		owner.dk_burn_applied = false
-		owner.state = "attack"
-		Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h / 2.0, 15, Color(1.0, 0.4, 0.1), 4, 6, "star")
-		keys.attack = false
+		# 空中跳劈消耗 10 能量
+		if not owner.grounded and owner.energy < 10:
+			keys.attack = false
+		else:
+			if not owner.grounded:
+				owner.energy -= 10
+			owner.attacking = true; owner.attack_timer = 30; owner.attack_delay = 8
+			owner.attack_hit_dealt = false; owner.attack_cooldown = 60
+			owner.dk_burn_applied = false
+			owner.state = "attack"
+			Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h / 2.0, 15, Color(1.0, 0.4, 0.1), 4, 6, "star")
+			keys.attack = false
 	if keys.skill1:
 		var s = owner.get_skill("skill1")
 		if s: var r = s.try_use(owner); if r.get("success"): keys.skill1 = false
@@ -217,15 +288,26 @@ static func _input_sky_rise(owner: Fighter, keys: Dictionary) -> int:
 		Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h, 12, Color(1.0, 0.5, 0.1), 4, 6, "circle")
 		keys.attack = false
 
-	# 技能一 → 通过 try_use 到 _skill1_phase2
+	# 技能一 → 寂灭（二段）：绕过 try_use 的 cd 检查，直接释放
 	if keys.skill1:
-		var s = owner.get_skill("skill1")
-		if s: var r = s.try_use(owner); if r.get("success"): keys.skill1 = false
+		_skill1_phase2(owner)
+		keys.skill1 = false
 
 	return 0
 
-## 龙魂大招输入：自由飞行 + 火球普攻
+## 龙魂大招输入：自由飞行 + 火球普攻 + 二段动画大招
 static func _input_ult(owner: Fighter, keys: Dictionary) -> int:
+	# 二段动画大招中：锁定所有输入
+	if owner.dk_ult_phase2_active:
+		keys.ult = false
+		return 0
+
+	# 再次按下大招 → 触发二段动画大招
+	if keys.ult:
+		_start_ult_phase2(owner)
+		keys.ult = false
+		return 0
+
 	var fly_speed = 3.5
 	var jx = 0.0; var jy = 0.0
 	if keys.left: jx -= 1.0
@@ -254,7 +336,7 @@ static func _input_ult(owner: Fighter, keys: Dictionary) -> int:
 			# 地面火球从口部偏高位置发射
 			py = owner.pos_y - 110
 			GameWorld.projectiles.append({
-				"x": px, "y": py, "w": 150, "h": 150,
+				"x": px, "y": py-18, "w": 150, "h": 150,
 				"vx": 5.0 * owner.facing, "vy": 0.0,
 				"life": 120, "damage": 7, "owner": owner,
 				"type": "dk_fireball", "color": Color(1.0, 0.3, 0.1),
@@ -291,6 +373,7 @@ static func update_systems(owner: Fighter):
 			should_end = true
 		if should_end:
 			owner.dk_shield_active = false
+			owner.set_animation_state("idle"); owner.state = "idle"
 			var total_dmg = 10.0 + owner.dk_shield_absorbed_damage
 			var target = GameWorld.get_opponent(owner)
 			if target and target.hp > 0:
@@ -305,8 +388,35 @@ static func update_systems(owner: Fighter):
 			if s2: s2.cd = s2.cooldown
 		return
 
-	# 龙魂大招：倒计时 + 飞行动画交替
+	# 龙魂大招：倒计时 + 飞行动画交替 + 二段（全屏 overlay）
 	if owner.dk_ult_active:
+		# 二段：吐火 + 爪击两段伤害（动画由 overlay 系统管理）
+		if owner.dk_ult_phase2_active:
+			owner.vx = 0; owner.vy = 0
+			owner.dk_ult_phase2_timer -= 1
+			# ── 吐火阶段（frame3 ~ frame10，timer 292 → 110）：每15帧出伤，共15伤 ──
+			if owner.dk_ult_phase2_timer <= 292 and owner.dk_ult_phase2_timer > 110 and owner.dk_ult_fire_total < 15.0:
+				owner.dk_ult_fire_tick += 1
+				if owner.dk_ult_fire_tick >= 15:
+					owner.dk_ult_fire_tick = 0
+					var dmg = minf(1.25, 15.0 - owner.dk_ult_fire_total)
+					owner.dk_ult_fire_total += dmg
+					if owner.dk_ult_target_locked:
+						var target = GameWorld.get_opponent(owner)
+						if target and target.hp > 0:
+							Fighter.apply_damage(target, dmg, owner)
+			# ── 爪击（frame13，timer ≤ 90）：瞬间 10 伤 ──
+			if not owner.dk_ult_claw_dealt and owner.dk_ult_phase2_timer <= 90:
+				owner.dk_ult_claw_dealt = true
+				if owner.dk_ult_target_locked:
+					var target = GameWorld.get_opponent(owner)
+					if target and target.hp > 0:
+						Fighter.apply_damage(target, 10, owner)
+						target.vy = -16
+						target.vx = owner.facing * 10
+				Fighter.emit_particles(owner.pos_x + owner.w / 2.0, owner.pos_y + owner.h / 2.0, 80, Color(1.0, 0.1, 0.0), 16, 24, "star")
+			return
+
 		owner.dk_ult_timer -= 1
 		# 攻击时不覆盖动画；否则每30帧切换 idle/flight
 		if not owner.attacking:
@@ -318,6 +428,7 @@ static func update_systems(owner: Fighter):
 		if owner.dk_ult_timer <= 0:
 			owner.dk_ult_active = false
 			owner.config["image_scale"] = 1.2  # 恢复原始大小
+			owner.set_animation_state("idle"); owner.state = "idle"
 			var s3 = owner.get_skill("ult")
 			if s3: s3.cd = s3.cooldown
 		return
@@ -342,6 +453,7 @@ static func update_systems(owner: Fighter):
 		# 冲刺结束 → 落地，进入冷却
 		if owner.dk_crash_timer <= 0:
 			owner.dk_crash_timer = 0
+			owner.set_animation_state("idle"); owner.state = "idle"
 			var s = owner.get_skill("skill1")
 			if s: s.cd = s.cooldown
 		return
@@ -359,6 +471,7 @@ static func update_systems(owner: Fighter):
 			owner.dk_flight_timer -= 1
 		if owner.dk_flight_timer <= 0 and owner.dk_sky_rise_active:
 			owner.dk_sky_rise_active = false
+			owner.set_animation_state("idle"); owner.state = "idle"
 			var s = owner.get_skill("skill1")
 			if s: s.cd = s.cooldown
 		# 裂空：向下冲刺（距离驱动，参考圣骑士冲刺）
@@ -383,6 +496,7 @@ static func update_systems(owner: Fighter):
 		if owner.dk_crack_ends_flight and owner.dk_dive_attack_timer <= 0:
 			owner.dk_sky_rise_active = false
 			owner.dk_crack_ends_flight = false
+			owner.set_animation_state("idle"); owner.state = "idle"
 			var s2 = owner.get_skill("skill1")
 			if s2: s2.cd = s2.cooldown
 		return
@@ -398,6 +512,25 @@ static func update_systems(owner: Fighter):
 	# 空中攻击时强制覆盖贴图为裂空
 	if not owner.grounded:
 		owner.set_animation_state("attack_air")
+
+	# 空中下砸：完全接管命中判定，禁用 fighter.gd 的方向性攻击框
+	if not owner.grounded and owner.attacking and not owner.dk_burn_applied:
+		owner.attack_hit_dealt = true  # 阻止 fighter.gd 标准攻击判定
+		if owner.attack_delay <= 0:
+			var target = GameWorld.get_opponent(owner)
+			if target and target.hp > 0:
+				# 以玩家正下方为中心，160×160 范围区域伤害
+				var cx = owner.pos_x + owner.w / 2.0
+				var cy = owner.pos_y + owner.h
+				var impact_area = Rect2(cx - 5, cy - 5, 10, 10)
+				if impact_area.intersects(target.get_hit_box()):
+					owner.dk_burn_applied = true
+					Fighter.apply_damage(target, owner.attack_damage, owner)
+					target.add_status("burn")
+					var burn = target.statuses.back()
+					if burn and burn.id == "burn":
+						burn.duration = 240; burn.timer = 240
+						burn.tick_damage = 1.0; burn.tick_interval = 120
 
 	# 地面普攻：2 帧后向前突刺
 	if not owner.dashing and owner.attack_timer == 28:

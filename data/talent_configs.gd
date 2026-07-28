@@ -12,14 +12,17 @@ static var data := {
 		"reflect_per_stack": 1.5,
 	},
 	"blaze_rush": {
-		"dash_damage": 10,
-		"cooldown": 300,
+		"dash_damage": 6,
+		"cooldown": 600,
 	},
 	"vampiric": {
 		"heal_pct": 0.1,
 		"heal_per_stack": 0.05,
 	},
+	"void_affinity": {
+		"hp_pct": 0.5,
+	},
 }
 
-static func get(id: String) -> Dictionary:
+static func get_talent(id: String) -> Dictionary:
 	return data.get(id, {})

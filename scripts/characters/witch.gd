@@ -3,13 +3,14 @@ class_name WitchCharacter
 
 const WitchComponent = preload("res://scripts/components/witch_component.gd")
 
-const PROJ_GRAVITY = preload("res://assets/45-20260705224120.png")
-const IMG_TORNADO = preload("res://assets/50-20260705225200.png")
-const IMG_VORTEX = preload("res://assets/47-20260705224456.png")
-const PROJ_METEOR = preload("res://assets/46-20260705224210.png")
+const PROJ_GRAVITY = preload("res://assets/fx_gravity_ball.png")
+const IMG_TORNADO = preload("res://assets/fx_tornado.png")
+const IMG_VORTEX = preload("res://assets/fx_vortex.png")
+const PROJ_METEOR = preload("res://assets/fx_meteor.png")
 const WITCH_ANI_DIR = "res://assets/char_ani/witch/"
 
 static func get_config() -> Dictionary:
+	_inject_draw()
 	return {
 		"id": "witch", "name": "魔女", "hp": 70, "max_energy": 120, "energy_regen": 0.083,
 		"speed": 2.0, "attack_range": 0, "attack_damage": 0,
@@ -97,6 +98,68 @@ static func _ult(owner: Fighter) -> Dictionary:
 	owner.vx = 0
 	owner.vy = 0
 	return {"success": true}
+
+# ===== 全局实体更新（龙卷风 + 漩涡，从 tornado_system.gd 迁移至此）=====
+static func update_global():
+	for i in range(GameWorld.tornadoes.size() - 1, -1, -1):
+		var t = GameWorld.tornadoes[i]
+		t["life"] -= 1
+		if t["life"] <= 0: GameWorld.tornadoes.remove_at(i); continue
+		var target = GameWorld.get_opponent(t["owner"])
+		if target and target.hp > 0:
+			var dx2 = (t["x"]+t["w"]/2)-(target.pos_x+target.w/2)
+			var dy2 = (t["y"]+t["h"]/2)-(target.pos_y+target.h/2)
+			var d2 = sqrt(dx2*dx2+dy2*dy2)
+			if d2 < 150:
+				var pull = t.get("pull_strength", 0.3)
+				var ang = atan2(dy2, dx2)
+				target.vx += cos(ang)*pull; target.vy += sin(ang)*pull*0.5
+			if target.get_hit_box().intersects(Rect2(t["x"], t["y"], t["w"], t["h"])):
+				t["timer"] = t.get("timer", 0) + 1
+				var ti = t.get("tick_interval", 60)
+				if t["timer"] >= ti:
+					t["timer"] = 0
+					Fighter.apply_damage(target, t["damage"], t["owner"], false)
+	for i in range(GameWorld.vortexes.size()-1,-1,-1):
+		var v = GameWorld.vortexes[i]
+		v["life"] -= 1
+		if v["life"] <= 0: GameWorld.vortexes.remove_at(i); continue
+		var target = GameWorld.get_opponent(v["owner"])
+		if target and target.hp > 0:
+			var dx2 = (v["x"]+v["w"]/2)-(target.pos_x+target.w/2)
+			var dy2 = (v["y"]+v["h"]/2)-(target.pos_y+target.h/2)
+			var d2 = sqrt(dx2*dx2+dy2*dy2)
+			if d2 < 130:
+				var pull = v.get("pull_strength", 0.4)
+				var ang = atan2(dy2, dx2)
+				target.vx += cos(ang)*pull; target.vy += sin(ang)*pull*0.4
+			if target.get_hit_box().intersects(Rect2(v["x"], v["y"], v["w"], v["h"])):
+				v["timer"] = v.get("timer", 0) + 1
+				var ti = v.get("tick_interval", 30)
+				if v["timer"] >= ti:
+					v["timer"] = 0
+					Fighter.apply_damage(target, v["damage"], v["owner"], false)
+
+# ── 绘制注入（龙卷风 + 漩涡渲染，从 game.gd 迁移至此）──
+static func _inject_draw():
+	GameWorld.register_draw_effect("witch_tornadoes", func(font, cam_x):
+		var items: Array = []
+		for t in GameWorld.tornadoes:
+			var px = t["x"] - cam_x
+			if px > -t["w"] and px < Constants.W + t["w"]:
+				if t.has("img") and t["img"] is Texture2D:
+					items.append({"type": "tex", "tex": t["img"], "rect": Rect2(px, t["y"], t["w"], t["h"]), "color": Color(1,1,1,0.8)})
+				else:
+					items.append({"type": "rect", "rect": Rect2(px, t["y"], t["w"], t["h"]), "color": Color(0.533, 0.867, 1.0, 0.8)})
+		for v in GameWorld.vortexes:
+			var px = v["x"] - cam_x
+			if px > -v["w"] and px < Constants.W + v["w"]:
+				if v.has("img") and v["img"] is Texture2D:
+					items.append({"type": "tex", "tex": v["img"], "rect": Rect2(px, v["y"], v["w"], v["h"]), "color": Color(1,1,1,0.8)})
+				else:
+					items.append({"type": "rect", "rect": Rect2(px, v["y"], v["w"], v["h"]), "color": Color(0.467, 0.267, 0.667, 0.8)})
+		return items
+	, 0)
 
 ## 输入处理（替代 input_handler.gd 中的 _input_witch）
 static func handle_input(owner: Fighter, keys: Dictionary) -> int:

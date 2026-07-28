@@ -14,8 +14,10 @@ var frame := 0
 var hit_stop := 0
 
 # Talent system
+const MAX_TALENT_SLOTS := 3
 var player_talents: Array = []
 var enemy_talents: Array = []
+var talent_pool: Array = []  # 主菜单中已选择的天赋 ID 列表
 
 # Slow motion
 var slow_mo_timer := 0
@@ -46,6 +48,29 @@ var rose_slash_trails: Array = []
 var rose_joystick_dir: Vector2 = Vector2.ZERO
 var active_overlays: Array = []  # [{anim, position, owner, overlay_id, on_finish}]
 
+# 角色注入的绘制回调 { "key": unique_key, "cb": Callable, "z": int }
+# 角色在 skill 激活时注册，用完自行注销；game.gd 只遍历调用，不关心来源
+static var draw_effect_callbacks: Array = []
+
+## 注册绘制回调（角色调用）
+static func register_draw_effect(key: String, cb: Callable, z: int = 0):
+	# 同名 key 先移除旧注册
+	unregister_draw_effect(key)
+	draw_effect_callbacks.append({"key": key, "cb": cb, "z": z})
+	draw_effect_callbacks.sort_custom(_sort_by_z)
+
+static func unregister_draw_effect(key: String):
+	for i in range(draw_effect_callbacks.size() - 1, -1, -1):
+		if draw_effect_callbacks[i].get("key") == key:
+			draw_effect_callbacks.remove_at(i)
+
+static func _sort_by_z(a: Dictionary, b: Dictionary) -> bool:
+	return a.get("z", 0) < b.get("z", 0)
+
+# 清理绘制回调（切场景/退出时调用，避免 lambda 持有已释放对象导致挂起）
+static func cleanup_draw_callbacks():
+	draw_effect_callbacks.clear()
+
 # Platforms
 var platforms: Array = []
 
@@ -75,6 +100,7 @@ func init_platforms():
 	]
 
 func reset_world():
+	FrameInterrupter.reset()
 	projectiles.clear()
 	particles.clear()
 	pickups.clear()
@@ -89,6 +115,7 @@ func reset_world():
 	gravity_balls.clear()
 	rose_slash_trails.clear()
 	active_overlays.clear()
+	draw_effect_callbacks.clear()
 	entities.clear()
 	camera.x = 0
 	pickup_timer = 0

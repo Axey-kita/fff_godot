@@ -16,8 +16,10 @@ var can_activate: Callable = func(): return false
 var activate: Callable = func(): return {"success": false}
 
 # 事件回调（字典参数）
+var on_dash_end: Callable = func(): pass
 var on_damage_dealt: Callable = func(data: Dictionary): pass
 var on_damage_received: Callable = func(data: Dictionary): pass
 var on_skill_used: Callable = func(data: Dictionary): pass
 var on_dodge: Callable = func(data: Dictionary): pass
 var on_kill: Callable = func(data: Dictionary): pass
+var on_in_void: Callable = func(data: Dictionary): pass

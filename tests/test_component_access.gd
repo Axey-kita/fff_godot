@@ -64,12 +64,12 @@ const GLOBAL_FIELDS = [
 # 递归获取目录下所有 .gd 文件
 func _get_gd_files(dir: String) -> Array:
 	var files = []
-	var dir_access = Directory.new()
-	if dir_access.open(dir) == OK:
-		dir_access.list_dir_begin(true, false)
+	var dir_access = DirAccess.open(dir)
+	if dir_access:
+		dir_access.list_dir_begin()
 		var filename = dir_access.get_next()
 		while filename != "":
-			if dir_access.current_is_dir():
+			if dir_access.current_is_dir() and filename != "." and filename != "..":
 				files.append_array(_get_gd_files(dir + "/" + filename))
 			elif filename.ends_with(".gd"):
 				files.append(dir + "/" + filename)
@@ -80,8 +80,8 @@ func _get_gd_files(dir: String) -> Array:
 # 检查单个文件中的组件字段访问违规
 func _check_file(filepath: String) -> Array:
 	var violations = []
-	var file = File.new()
-	if file.open(filepath, File.READ) != OK:
+	var file = FileAccess.open(filepath, FileAccess.READ)
+	if file == null:
 		return violations
 	
 	var content = file.get_as_text()
@@ -148,8 +148,8 @@ func test_no_direct_component_field_access():
 func test_global_fields_allowed():
 	# 验证全局字段列表包含所有 Fighter 类中的字段
 	var fighter_file = "res://scripts/fighter.gd"
-	var file = File.new()
-	if file.open(fighter_file, File.READ) != OK:
+	var file = FileAccess.open(fighter_file, FileAccess.READ)
+	if file == null:
 		return
 	
 	var content = file.get_as_text()

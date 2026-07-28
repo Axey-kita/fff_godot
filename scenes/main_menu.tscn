@@ -90,6 +90,15 @@ offset_bottom = 46.0
 text = "🗺 地图池"
 flat = true
 
+[node name="TalentBtn" type="Button" parent="."]
+layout_mode = 0
+offset_left = 230.0
+offset_top = 12.0
+offset_right = 330.0
+offset_bottom = 46.0
+text = "✨ 天赋"
+flat = true
+
 [node name="PokedexOverlay" type="ColorRect" parent="."]
 visible = false
 layout_mode = 1
@@ -131,6 +140,21 @@ custom_minimum_size = Vector2(44, 36)
 text = "✕"
 flat = true
 
+[node name="DexTabBar" type="HBoxContainer" parent="PokedexOverlay/PokedexPanel"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="CharTabBtn" type="Button" parent="PokedexOverlay/PokedexPanel/DexTabBar"]
+layout_mode = 2
+text = "📖 角色图鉴"
+flat = true
+
+[node name="TalentTabBtn" type="Button" parent="PokedexOverlay/PokedexPanel/DexTabBar"]
+layout_mode = 2
+text = "✨ 天赋图鉴"
+flat = true
+
 [node name="DexListScroll" type="ScrollContainer" parent="PokedexOverlay/PokedexPanel"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -141,6 +165,16 @@ layout_mode = 2
 columns = 4
 theme_override_constants/h_separation = 10
 theme_override_constants/v_separation = 10
+
+[node name="TalentDexScroll" type="ScrollContainer" parent="PokedexOverlay/PokedexPanel"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 320)
+
+[node name="TalentDexList" type="VBoxContainer" parent="PokedexOverlay/PokedexPanel/TalentDexScroll"]
+layout_mode = 2
+theme_override_constants/separation = 8
 
 [node name="DexDetail" type="VBoxContainer" parent="PokedexOverlay/PokedexPanel"]
 visible = false
@@ -358,3 +392,73 @@ custom_minimum_size = Vector2(0, 280)
 [node name="MapPoolGrid" type="VBoxContainer" parent="MapPoolOverlay/MapPoolPanel/MapPoolScroll"]
 layout_mode = 2
 theme_override_constants/separation = 6
+
+[node name="TalentOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.8)
+
+[node name="TalentPanel" type="VBoxContainer" parent="TalentOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -200.0
+offset_right = 220.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="TalentHeader" type="HBoxContainer" parent="TalentOverlay/TalentPanel"]
+layout_mode = 2
+alignment = 2
+
+[node name="TalentTitle" type="Label" parent="TalentOverlay/TalentPanel/TalentHeader"]
+layout_mode = 2
+text = "✨ 天赋选择"
+horizontal_alignment = 1
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+
+[node name="TalentCloseBtn" type="Button" parent="TalentOverlay/TalentPanel/TalentHeader"]
+layout_mode = 2
+custom_minimum_size = Vector2(44, 36)
+text = "✕"
+flat = true
+
+[node name="TalentSlotBar" type="HBoxContainer" parent="TalentOverlay/TalentPanel"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 8
+
+[node name="SlotLabel" type="Label" parent="TalentOverlay/TalentPanel/TalentSlotBar"]
+layout_mode = 2
+text = "天赋栏位:"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1, 0.84, 0.4, 1)
+
+[node name="TipLabel" type="Label" parent="TalentOverlay/TalentPanel"]
+layout_mode = 2
+text = "点击天赋装入空槽位，再次点击移除"
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.6, 0.55, 0.5, 1)
+horizontal_alignment = 1
+
+[node name="TalentScroll" type="ScrollContainer" parent="TalentOverlay/TalentPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 240)
+
+[node name="TalentGrid" type="GridContainer" parent="TalentOverlay/TalentPanel/TalentScroll"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8

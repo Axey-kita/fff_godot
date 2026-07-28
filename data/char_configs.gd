@@ -9,6 +9,12 @@ static func ensure_init():
 	if configs.is_empty():
 		_init_all()
 
+## 重置配置缓存（重开游戏时调用，避免大招等修改的 config 残留）
+static func reset():
+	configs.clear()
+	CharacterFactory.reset_configs()
+	_init_all()
+
 static func get_all_ids() -> Array:
 	return configs.keys()
 

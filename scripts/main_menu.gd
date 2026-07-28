@@ -36,6 +36,17 @@ extends Control
 @onready var map_pool_container = $MapPoolOverlay/MapPoolPanel/MapPoolScroll/MapPoolGrid
 @onready var map_pool_close = $MapPoolOverlay/MapPoolPanel/MapPoolHeader/MapPoolCloseBtn
 
+@onready var talent_btn = $TalentBtn
+@onready var talent_overlay = $TalentOverlay
+@onready var talent_container = $TalentOverlay/TalentPanel/TalentScroll/TalentGrid
+@onready var talent_close = $TalentOverlay/TalentPanel/TalentHeader/TalentCloseBtn
+@onready var talent_slot_bar = $TalentOverlay/TalentPanel/TalentSlotBar
+
+@onready var talent_tab_btn = $PokedexOverlay/PokedexPanel/DexTabBar/TalentTabBtn
+@onready var char_tab_btn = $PokedexOverlay/PokedexPanel/DexTabBar/CharTabBtn
+@onready var talent_dex_scroll = $PokedexOverlay/PokedexPanel/TalentDexScroll
+@onready var talent_dex_list = $PokedexOverlay/PokedexPanel/TalentDexScroll/TalentDexList
+
 # Pokedex state
 var _dex_body: Control = null
 var _dex_desc: Label = null
@@ -46,19 +57,22 @@ var chars_initialized := false
 var char_cards := {}
 var _title_click_count := 0  # 作弊计数器
 
-const IMG_TITLE = preload("res://assets/34-20260705005653.png")
-const IMG_PVE = preload("res://assets/29-20260705005340.png")
-const IMG_COMING = preload("res://assets/33-20260705005611.png")
-const IMG_PVP = preload("res://assets/31-20260705005426.png")
-const IMG_BG = preload("res://assets/无标题102_20260722154610.png")
-const IMG_DIFF_EASY = preload("res://assets/36-20260705005735.png")
-const IMG_DIFF_MEDIUM = preload("res://assets/38-20260705005805.png")
-const IMG_DIFF_HARD = preload("res://assets/39-20260705005825.png")
+const IMG_TITLE = preload("res://assets/ui_title.png")
+const IMG_PVE = preload("res://assets/ui_btn_pve.png")
+const IMG_COMING = preload("res://assets/ui_btn_coming.png")
+const IMG_PVP = preload("res://assets/ui_btn_pvp.png")
+const IMG_BG = preload("res://assets/bg_main_menu.png")
+const IMG_DIFF_EASY = preload("res://assets/ui_diff_easy.png")
+const IMG_DIFF_MEDIUM = preload("res://assets/ui_diff_medium.png")
+const IMG_DIFF_HARD = preload("res://assets/ui_diff_hard.png")
 const IMG_DIFF_HELL = preload("res://assets/ui_diff_hell.png")
+
+
 
 
 func _ready():
 	print("[MainMenu] _ready() start")
+	TalentPool.init()
 	_init_char_configs()
 	print("[MainMenu] configs initialized, setting up UI...")
 	
@@ -93,11 +107,18 @@ func _ready():
 	_style_diff_buttons()
 	_style_char_select_buttons()
 	_style_map_pool_ui()
+	_style_talent_ui()
 	
 	MapManager.ensure_init()
 	_populate_characters()
 	_populate_dex_grid()
+	_populate_talents()
+	_populate_talent_dex()
 	_populate_map_pool()
+	
+	# Pokedex tab switching
+	char_tab_btn.pressed.connect(_on_char_tab_pressed)
+	talent_tab_btn.pressed.connect(_on_talent_tab_pressed)
 
 # ===== Pokedex =====
 
@@ -150,12 +171,24 @@ func _on_dex_card_clicked(char_id: String):
 	
 	# Remove previous body if exists
 	if _dex_body and _dex_body.get_parent():
-		_dex_body.queue_free()
+		_dex_body.get_parent().queue_free()
+
+	# Clean up any old scroll containers from previous character
+	for child in dex_detail.get_children():
+		if child.get("name") == "DexBodyScroll":
+			child.queue_free()
 	
-	# New layout: VBoxContainer (top image+text | bottom skill buttons)
+	# New layout: ScrollContainer → VBoxContainer (top image+text | bottom skill buttons)
+	var scroll = ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.name = "DexBodyScroll"
+
 	_dex_body = VBoxContainer.new()
 	_dex_body.add_theme_constant_override("separation", 12)
 	_dex_body.name = "DexBody"
+	_dex_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_dex_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	
 	# === Top row: idle image (left) + description text (right) ===
 	var top_row = HBoxContainer.new()
@@ -169,7 +202,7 @@ func _on_dex_card_clicked(char_id: String):
 		tex_btn.icon = idle_tex
 		tex_btn.expand_icon = true
 		tex_btn.flat = true
-		tex_btn.custom_minimum_size = Vector2(240, 320)
+		tex_btn.custom_minimum_size = Vector2(160, 214)
 		tex_btn.pressed.connect(_on_dex_char_portrait_clicked.bind(intro))
 		top_row.add_child(tex_btn)
 	
@@ -218,7 +251,8 @@ func _on_dex_card_clicked(char_id: String):
 		bottom_row.add_child(btn)
 	
 	_dex_body.add_child(bottom_row)
-	dex_detail.add_child(_dex_body)
+	scroll.add_child(_dex_body)
+	dex_detail.add_child(scroll)
 	
 	dex_list_scroll.visible = false
 	dex_detail.visible = true
@@ -262,9 +296,61 @@ func _on_pokedex_pressed():
 	menu_main.visible = false
 	pokedex_btn.visible = false
 	exit_btn.visible = false
-	# Reset to list view
-	dex_detail.visible = false
+	# Default to character tab
+	_on_char_tab_pressed()
+
+func _on_char_tab_pressed():
+	talent_dex_scroll.visible = false
 	dex_list_scroll.visible = true
+	dex_detail.visible = false
+	char_tab_btn.add_theme_color_override("font_color", Color(1.0, 0.84, 0.4))
+	talent_tab_btn.add_theme_color_override("font_color", Color(0.6, 0.6, 0.7))
+
+func _on_talent_tab_pressed():
+	dex_list_scroll.visible = false
+	dex_detail.visible = false
+	talent_dex_scroll.visible = true
+	talent_tab_btn.add_theme_color_override("font_color", Color(1.0, 0.84, 0.4))
+	char_tab_btn.add_theme_color_override("font_color", Color(0.6, 0.6, 0.7))
+
+func _populate_talent_dex():
+	for child in talent_dex_list.get_children():
+		child.queue_free()
+	
+	for tid in TalentPool.get_all_ids():
+		var meta = TalentPool.get_metadata(tid)
+		var name_str = meta.get("name", tid)
+		var desc_str = meta.get("desc", "")
+		var is_skill = meta.get("is_skill", false)
+		var type_str = "主动" if is_skill else "被动"
+		
+		var card = VBoxContainer.new()
+		card.add_theme_constant_override("separation", 2)
+		
+		var header = HBoxContainer.new()
+		header.add_theme_constant_override("separation", 6)
+		
+		var name_lbl = Label.new()
+		name_lbl.text = name_str + "  (" + type_str + ")"
+		name_lbl.add_theme_font_size_override("font_size", 15)
+		name_lbl.add_theme_color_override("font_color", Color(1.0, 0.84, 0.4))
+		header.add_child(name_lbl)
+		
+		card.add_child(header)
+		
+		var desc_lbl = Label.new()
+		desc_lbl.text = desc_str
+		desc_lbl.add_theme_font_size_override("font_size", 12)
+		desc_lbl.add_theme_color_override("font_color", Color(0.65, 0.65, 0.75))
+		desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		card.add_child(desc_lbl)
+		
+		# Separator
+		var sep = HSeparator.new()
+		sep.modulate = Color(0.4, 0.4, 0.4, 0.3)
+		card.add_child(sep)
+		
+		talent_dex_list.add_child(card)
 
 func _on_dex_close():
 	pokedex_overlay.visible = false
@@ -284,6 +370,12 @@ func _style_dex_overlay():
 	title.add_theme_color_override("font_color", Color(1.0, 0.843, 0.0))
 	dex_detail_name.add_theme_color_override("font_color", Color(1.0, 0.843, 0.0))
 	dex_intro_label.add_theme_color_override("font_color", Color(0.55, 0.55, 0.65))
+	# Tab buttons
+	for btn in [char_tab_btn, talent_tab_btn]:
+		btn.add_theme_font_size_override("font_size", 14)
+		btn.add_theme_color_override("font_color", Color(0.6, 0.6, 0.7))
+		btn.add_theme_color_override("font_hover_color", Color(1.0, 0.84, 0.4))
+	_add_talent_slot_styles()
 
 # ===== Styling helpers =====
 
@@ -544,9 +636,11 @@ func _on_title_clicked(event: InputEvent):
 			_show_toast("作弊：" + status)
 
 func _on_exit_pressed():
+	GameWorld.cleanup_draw_callbacks()
 	get_tree().quit()
 
 func _on_start_pressed():
+	GameWorld.player_talents = GameWorld.talent_pool.duplicate()
 	get_tree().change_scene_to_file("res://scenes/game.tscn")
 
 # ===== 地图池管理 =====
@@ -617,3 +711,205 @@ func _on_map_pool_close():
 	pokedex_btn.visible = true
 	exit_btn.visible = true
 	map_pool_btn.visible = true
+
+# ===== 天赋管理 =====
+
+func _add_talent_slot_styles():
+	# Style existing slot boxes (called after populate to restyle)
+	for child in talent_slot_bar.get_children():
+		if child is PanelContainer:
+			var style = StyleBoxFlat.new()
+			if child.get_child_count() > 0 and child.get_child(0) is Label:
+				var lbl = child.get_child(0)
+				if lbl.text == "":
+					style.bg_color = Color(0.8, 0.6, 0.2, 0.08)
+					style.border_color = Color(0.8, 0.6, 0.2, 0.25)
+				else:
+					style.bg_color = Color(0.8, 0.6, 0.2, 0.15)
+					style.border_color = Color(0.8, 0.6, 0.2, 0.6)
+			style.set_corner_radius_all(6)
+			style.border_width_left = 1; style.border_width_right = 1
+			style.border_width_top = 1; style.border_width_bottom = 1
+			child.add_theme_stylebox_override("panel", style)
+
+func _style_talent_ui():
+	talent_btn.pressed.connect(_on_talent_pressed)
+	talent_close.pressed.connect(_on_talent_close)
+	# Talent button style
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.8, 0.6, 0.2, 0.12)
+	style.set_corner_radius_all(8)
+	style.border_width_left = 2; style.border_width_right = 2
+	style.border_width_top = 2; style.border_width_bottom = 2
+	style.border_color = Color(0.8, 0.6, 0.2, 0.4)
+	talent_btn.add_theme_stylebox_override("normal", style)
+	var hover = style.duplicate()
+	hover.bg_color = Color(0.8, 0.6, 0.2, 0.25)
+	hover.border_color = Color(0.8, 0.6, 0.2, 0.6)
+	talent_btn.add_theme_stylebox_override("hover", hover)
+	talent_btn.add_theme_color_override("font_color", Color(1.0, 0.84, 0.4))
+	talent_btn.add_theme_color_override("font_hover_color", Color(1.0, 0.9, 0.6))
+	
+	var title = $TalentOverlay/TalentPanel/TalentHeader/TalentTitle
+	title.add_theme_color_override("font_color", Color(1.0, 0.84, 0.4))
+	talent_close.add_theme_color_override("font_color", Color(0.914, 0.271, 0.157))
+	talent_close.add_theme_font_size_override("font_size", 20)
+
+func _rebuild_slot_bar():
+	# Remove old slot panels (keep SlotLabel)
+	for child in talent_slot_bar.get_children():
+		if child is PanelContainer:
+			child.queue_free()
+	# Add slot panels
+	for i in range(GameWorld.MAX_TALENT_SLOTS):
+		var panel = PanelContainer.new()
+		panel.custom_minimum_size = Vector2(96, 28)
+		
+		var hbox = HBoxContainer.new()
+		hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		
+		if i < GameWorld.talent_pool.size():
+			var tid = GameWorld.talent_pool[i]
+			var meta = TalentPool.get_metadata(tid)
+			
+			var lbl = Label.new()
+			lbl.text = meta.get("name", tid)
+			lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			lbl.add_theme_font_size_override("font_size", 10)
+			lbl.add_theme_color_override("font_color", Color(1.0, 0.84, 0.4))
+			hbox.add_child(lbl)
+			
+			# Remove button
+			var rm_btn = Button.new()
+			rm_btn.text = "✕"
+			rm_btn.flat = true
+			rm_btn.custom_minimum_size = Vector2(16, 16)
+			rm_btn.add_theme_font_size_override("font_size", 8)
+			rm_btn.add_theme_color_override("font_color", Color(0.914, 0.271, 0.157))
+			rm_btn.add_theme_color_override("font_hover_color", Color(1.0, 0.4, 0.3))
+			rm_btn.pressed.connect(_on_slot_remove.bind(i))
+			hbox.add_child(rm_btn)
+		else:
+			var lbl = Label.new()
+			lbl.text = ""
+			lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			hbox.add_child(lbl)
+		
+		panel.add_child(hbox)
+		talent_slot_bar.add_child(panel)
+	
+	_add_talent_slot_styles()
+
+func _on_slot_remove(slot_index: int):
+	if slot_index < GameWorld.talent_pool.size():
+		GameWorld.talent_pool.remove_at(slot_index)
+		_populate_talents()
+
+func _populate_talents():
+	for child in talent_container.get_children():
+		child.queue_free()
+	
+	_rebuild_slot_bar()
+	
+	# 统计每个天赋在 talent_pool 中出现了几次（支持重复选取=叠层）
+	var count_map = {}
+	for tid in GameWorld.talent_pool:
+		count_map[tid] = count_map.get(tid, 0) + 1
+	
+	for tid in TalentPool.get_all_ids():
+		var meta = TalentPool.get_metadata(tid)
+		var count = count_map.get(tid, 0)
+		var is_skill = meta.get("is_skill", false)
+		var type_str = "主动" if is_skill else "被动"
+		
+		# Create talent card
+		var card = PanelContainer.new()
+		card.custom_minimum_size = Vector2(180, 56)
+		card.mouse_filter = Control.MOUSE_FILTER_STOP
+		
+		# Card style (highlighted if selected)
+		var card_style = StyleBoxFlat.new()
+		if count > 0:
+			card_style.bg_color = Color(0.8, 0.6, 0.2, 0.2)
+			card_style.border_color = Color(0.8, 0.6, 0.2, 0.8)
+		else:
+			card_style.bg_color = Color(0.15, 0.15, 0.18, 0.8)
+			card_style.border_color = Color(0.3, 0.3, 0.35, 0.5)
+		card_style.set_corner_radius_all(8)
+		card_style.border_width_left = 2; card_style.border_width_right = 2
+		card_style.border_width_top = 2; card_style.border_width_bottom = 2
+		card.add_theme_stylebox_override("panel", card_style)
+		
+		# Click: left=添加, right=移除
+		card.gui_input.connect(_on_talent_card_clicked.bind(tid))
+		
+		# Content
+		var vbox = VBoxContainer.new()
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox.add_theme_constant_override("separation", 2)
+		
+		var name_lbl = Label.new()
+		var name_text = meta.get("name", tid)
+		if count > 0:
+			name_text += "  ×" + str(count)
+		name_lbl.text = name_text
+		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_lbl.add_theme_font_size_override("font_size", 13)
+		name_lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.7) if count > 0 else Color(0.8, 0.8, 0.85))
+		vbox.add_child(name_lbl)
+		
+		var type_lbl = Label.new()
+		type_lbl.text = type_str
+		type_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		type_lbl.add_theme_font_size_override("font_size", 10)
+		var type_color = Color(0.5, 0.7, 1.0) if type_str == "主动" else Color(0.5, 0.9, 0.6)
+		type_lbl.add_theme_color_override("font_color", type_color)
+		vbox.add_child(type_lbl)
+		
+		card.add_child(vbox)
+		talent_container.add_child(card)
+
+func _on_talent_card_clicked(event: InputEvent, tid: String):
+	if not (event is InputEventMouseButton and event.pressed):
+		return
+	var is_skill = TalentPool.get_metadata(tid).get("is_skill", false)
+	if event.button_index == MOUSE_BUTTON_LEFT:
+		# 左键：添加
+		if GameWorld.talent_pool.size() >= GameWorld.MAX_TALENT_SLOTS:
+			return
+		# 主动天赋只能取 1 次
+		if is_skill and tid in GameWorld.talent_pool:
+			return
+		GameWorld.talent_pool.append(tid)
+		_populate_talents()
+	elif event.button_index == MOUSE_BUTTON_RIGHT:
+		# 右键：移除最后出现的该天赋
+		var idx = -1
+		for j in range(GameWorld.talent_pool.size() - 1, -1, -1):
+			if GameWorld.talent_pool[j] == tid:
+				idx = j
+				break
+		if idx >= 0:
+			GameWorld.talent_pool.remove_at(idx)
+			_populate_talents()
+	print("[Talent] ", TalentPool.get_metadata(tid).get("name", tid),
+		" 当前=", GameWorld.talent_pool)
+
+func _on_talent_pressed():
+	talent_overlay.visible = true
+	menu_main.visible = false
+	pokedex_btn.visible = false
+	exit_btn.visible = false
+	map_pool_btn.visible = false
+	talent_btn.visible = false
+	_rebuild_slot_bar()
+
+func _on_talent_close():
+	talent_overlay.visible = false
+	menu_main.visible = true
+	pokedex_btn.visible = true
+	exit_btn.visible = true
+	map_pool_btn.visible = true
+	talent_btn.visible = true
