@@ -262,6 +262,8 @@ func _update():
 	# Input & AI (must happen BEFORE physics, so vx/vy from input take effect same frame)
 	InputHandler.update_player_input(GameWorld, keys)
 	InputRouter.handle_talent_keys(keys)
+	if touch_controls:
+		touch_controls.update_talent_visibility()
 	ai_think_delay = AISystem.update_ai(ai_think_delay)
 	# Apply physics (after input, matching JS order)
 	_apply_physics_all()
