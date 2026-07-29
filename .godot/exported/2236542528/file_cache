@@ -203,7 +203,7 @@ res://assets/ui_title.png::7f31fd2db0344eeb144b9067f5b3a3fa189562f6afd24bab5b5d6
 res://maps/map_01_battlefield.tscn::cb207d5941a460002c69f418ad2a50f4::1785066039::res://.godot/exported/2236542528/export-4694e813d446055b01ce291fe899b9a1-map_01_battlefield.scn
 res://maps/map_02_towers.tscn::bb351c922ef19f0f77bfe383f84b11af::1785067608::res://.godot/exported/2236542528/export-4ecb7e5dc8ed106a353e6ae3c29e8ae4-map_02_towers.scn
 res://maps/map_03_voids.tscn.tscn::484477943f36f6c81315da56a51b3899::1785232995::res://.godot/exported/2236542528/export-ef9e2946447b335e682cc64d78d52090-map_03_voids.tscn.scn
-res://scenes/game.tscn::021d84726ebc5f7f33dd44e7a36c62fc::1785066114::res://.godot/exported/2236542528/export-c2a7af834e91ff64325daddf58e45dc0-game.scn
+res://scenes/game.tscn::a26b9ac06dd68f41ea479dc513e8c098::1785247391::res://.godot/exported/2236542528/export-c2a7af834e91ff64325daddf58e45dc0-game.scn
 res://scenes/main_menu.tscn::b8c893b4c753014e36c78ac8e5b907ef::1785244718::res://.godot/exported/2236542528/export-ea5c6ad4629af728dc514cefde332394-main_menu.scn
 res://.gutconfig.json::4c4ee110e489ed141d2688a85addf191::1785027195::
 res://assets/char_ani/dragon_knight/attack/44e1392e445ac500905fc2865a5c3a0d.png::44e1392e445ac500905fc2865a5c3a0dd37542b8445b3c54455d132026fb5e5e::1785239754::
@@ -214,3 +214,4 @@ res://assets/char_ani/dragon_knight/ult/ani/dragon_knight_f_14.png::350f6ac141b4
 res://assets/char_ani/dragon_knight/ult/ani/dragon_knight_f_15.png::66ed8bfc668bf339a621f6ea749ed6c153cb9d5b2d151f33ca219b78d3816356::1785240169::
 res://assets/char_ani/dragon_knight/ult/ani/dragon_knight_f_16.png::892e0b45b0545638c219afd2a0dac0f5905f719d9fe60cab8b1d86c5f490db01::1785240169::
 res://assets/char_ani/dragon_knight/idle/961E57E544F8638D4EE54F793C5477CF.png::961e57e544f8638d4ee54f793c5477cfdf3607694c5f157a63d0fe97015c89d0::1785242543::
+res://scenes/touch_controls.tscn::3ffb2078a797f9c52c5829e8ce168362::1785247519::res://.godot/exported/2236542528/export-f0ede4bb06c234cd60561a1c3c706c1e-touch_controls.scn
