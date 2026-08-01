@@ -10,6 +10,7 @@ const Shadowwarrior = preload("res://scripts/characters/shadowwarrior.gd")
 const Evoker = preload("res://scripts/characters/evoker.gd")
 const Rose = preload("res://scripts/characters/rose.gd")
 const DragonKnight = preload("res://scripts/characters/dragon_knight.gd")
+const Bard = preload("res://scripts/characters/bard.gd")
 
 # Component preloads
 const COMP_ARCHER = preload("res://scripts/components/archer_component.gd")
@@ -19,9 +20,10 @@ const COMP_ASSASSIN = preload("res://scripts/components/assassin_component.gd")
 const COMP_SHADOWWARRIOR = preload("res://scripts/components/shadowwarrior_component.gd")
 const COMP_EVOKER = preload("res://scripts/components/evoker_component.gd")
 const COMP_ROSE = preload("res://scripts/components/rose_component.gd")
-const COMP_KNIGHT = preload("res://scripts/components/char_component.gd")  # fallback: no special component
+const COMP_KNIGHT = preload("res://scripts/components/knight_component.gd")
 const COMP_MAGE = preload("res://scripts/components/char_component.gd")    # fallback
 const COMP_DRAGON_KNIGHT = preload("res://scripts/components/char_component.gd")  # fallback
+const COMP_BARD = preload("res://scripts/components/bard_component.gd")
 
 static var _char_registry := {
 	"knight": { "cls": Knight, "config": null, "comp": COMP_KNIGHT },
@@ -34,6 +36,7 @@ static var _char_registry := {
 	"evoker": { "cls": Evoker, "config": null, "comp": COMP_EVOKER },
 	"rose": { "cls": Rose, "config": null, "comp": COMP_ROSE },
 	"dragon_knight": { "cls": DragonKnight, "config": null, "comp": COMP_DRAGON_KNIGHT },
+	"bard": { "cls": Bard, "config": null, "comp": COMP_BARD },
 }
 
 static func get_config(char_id: String) -> Dictionary:

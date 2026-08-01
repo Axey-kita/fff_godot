@@ -89,9 +89,13 @@ static func update_ai(ai_think_delay: int) -> int:
 	var skill1 = f.get_skill("skill1")
 	var skill2 = f.get_skill("skill2")
 	var ult = f.get_skill("ult")
-	
+
+	var can_use_s1 = skill1 and skill1.can_use(f) and dist < 350
+	var can_use_s2 = skill2 and skill2.can_use(f)
+	var can_use_ult = ult and ult.can_use(f)
+
 	# ── 3. ATTACK: 地狱战术 → Archer → Evoker → 技能 → 近战 ──
-	
+
 	# ---- Hell-specific tactics ----
 	var is_hell = GameWorld.difficulty == "hell"
 	if is_hell:
@@ -117,12 +121,62 @@ static func update_ai(ai_think_delay: int) -> int:
 			skill2.try_use(f)
 			_state = "DEFEND"
 			return new_delay
-	
+
+		# ── 地狱角色专属战术 ──
+		match f.char_id:
+			"assassin":
+				# 刺客：玩家攻击时尝试一技能完美闪避, 60%概率
+				if skill1 and skill1.can_use(f) and player and player.attacking and dist < 200 and rand < 0.6:
+					f.facing = dir_to_target
+					skill1.try_use(f)
+					_state = "ATTACK"
+					return new_delay
+
+			"witch":
+				# 魔女：能量>50%时跳跃进入飞行模式，然后空中打击
+				if f.energy > f.max_energy * 0.5 and f.grounded and rand < 0.15:
+					f.vy = -10  # 跳跃
+					var wc = f.components.get_component("witch") if f.components else null
+					if wc: wc.is_flying = true
+					_state = "ATTACK"
+					return new_delay
+				# 飞行中：优先使用普攻和一技能
+				var wc = f.components.get_component("witch") if f.components else null
+				if wc and wc.is_flying and dist < 400:
+					if can_use_s1 and rand < diff["skill_rate"]:
+						f.facing = dir_to_target
+						skill1.try_use(f)
+						_state = "ATTACK"
+						return new_delay
+					var atk = f.get_skill("attack")
+					if atk and atk.can_use(f):
+						f.facing = dir_to_target
+						atk.try_use(f)
+						_state = "ATTACK"
+						return new_delay
+			
+			"shadowwarrior":
+				# 影武者：隐身中快速靠近破隐一击
+				var sw_comp2 = f.components.get_component("shadowwarrior") if f.components else null
+				if sw_comp2 and sw_comp2.stealth_active:
+					if dist < 60 and f.attack_cooldown <= 0 and not f.attacking:
+						f.attacking = true; f.attack_timer = 30; f.attack_delay = 8
+						f.attack_hit_dealt = false; f.attack_cooldown = 60; f.state = "attack"
+						sw_comp2.stealth_active = false  # 破隐
+						_state = "ATTACK"
+						return new_delay
+
+			"paladin":
+				# 圣骑士：距离>500时蓄力一技能，蓄满后远距离冲刺撞击
+				if dist > 500 and can_use_s1 and not f.charging_skill1 and not f.dashing and rand < 0.2:
+					f.facing = dir_to_target
+					skill1.try_use(f)
+					_state = "ATTACK"
+					return new_delay
+
+	# ── 角色特定走位修正 ──
+
 	# ---- Skill usage ----
-	var can_use_s1 = skill1 and skill1.can_use(f) and dist < 350
-	var can_use_s2 = skill2 and skill2.can_use(f)
-	var can_use_ult = ult and ult.can_use(f)
-	
 	# 技能一：远程距离判定
 	if dist > 150 and dist < 350 and can_use_s1 and randf() < diff["skill_rate"] * 1.5:
 		f.facing = dir_to_target
@@ -159,6 +213,14 @@ static func update_ai(ai_think_delay: int) -> int:
 			_state = "ATTACK"
 			return new_delay
 
+		# ⑥ 影武者：使用技能后尝试进入隐身
+		var sw_comp = f.components.get_component("shadowwarrior") if f.components else null
+		if sw_comp and not sw_comp.stealth_active and f.char_id == "shadowwarrior" and rand < 0.5:
+			sw_comp.stealth_active = true
+			sw_comp.stealth_timer = 360
+			_state = "ATTACK"
+			return new_delay
+
 	# ---- Archer: buff优先 → 无条件蓄力 → 同线放箭 ----
 	if f.char_id == "archer":
 		f.facing = dir_to_target
@@ -192,6 +254,14 @@ static func update_ai(ai_think_delay: int) -> int:
 
 	# ---- Evoker: summon management & ranged combat ----
 	if f.char_id == "evoker":
+		# HP < 30% → 优先大招
+		if can_use_ult and f.hp < f.max_hp * 0.3 and dist < 350:
+			f.facing = dir_to_target
+			ult.try_use(f)
+			_state = "ATTACK"
+			return new_delay
+
+		# HP < 50% → 防御大招
 		if can_use_ult and f.hp < f.max_hp * 0.5 and dist < 250:
 			f.facing = dir_to_target
 			ult.try_use(f)
@@ -322,14 +392,16 @@ static func update_ai(ai_think_delay: int) -> int:
 				return new_delay
 		# dist >= 150: 远处拉开距离（desire_min=200），下方 CHASE/KITE 处理
 	
-	# ── 4. PICKUP: 能量<30% + 有安全路径的球 ──
+	# ── 4. PICKUP: 能量<20% 或 HP<40% → 寻找对应球 ──
 	# 识别 AI 当前所在平台
 	var ai_cx = f.pos_x + f.w / 2.0
 	var ai_feet_y = f.pos_y + f.h
 	var ai_plat = _find_ai_platform(ai_cx, ai_feet_y)
-	
-	if f.energy < f.max_energy * 0.3:
-		var pickup_result = _evaluate_pickup(f, ai_plat, dist)
+
+	var need_energy = f.energy < f.max_energy * 0.2
+	var need_health = f.hp < f.max_hp * 0.4
+	if need_energy or need_health:
+		var pickup_result = _evaluate_pickup(f, ai_plat, dist, need_energy, need_health)
 		if pickup_result != null:
 			var pickup_plat = pickup_result["plat"]
 			var pickup_target = pickup_result["target"]
@@ -388,6 +460,25 @@ static func _is_melee(f) -> bool:
 ## 获取角色走位参数
 ## 返回 {min, max}
 static func _get_desire_range(f, dist) -> Dictionary:
+	# ── 地狱特殊走位 ──
+	if GameWorld.difficulty == "hell":
+		match f.char_id:
+			"evoker":
+				# HP < 60% → 跟随模式（缩小距离）
+				if f.hp < f.max_hp * 0.6:
+					return {"min": 0, "max": 120}
+			"shadowwarrior":
+				# 隐身中 → 快速贴脸
+				var sw_comp = f.components.get_component("shadowwarrior") if f.components else null
+				if sw_comp and sw_comp.stealth_active:
+					return {"min": 0, "max": 30}
+			"paladin":
+				# 蓄力/冲刺中保持远距离
+				if f.charging_skill1 or f.dashing:
+					return {"min": 500, "max": 800}
+				# 平时也保持较远距离等待蓄力机会
+				return {"min": 350, "max": 600}
+
 	match f.char_id:
 		"knight":
 			return {"min": 0, "max": 80}
@@ -458,19 +549,19 @@ static func _should_dodge(f, target, dist, diff) -> bool:
 ## 路径第一跳平台是玩家所在平台 → 评分 -60
 ## 评分 > 50 且 dist > 150 → 执行 PICKUP 状态
 ## 返回 {target, plat} 或 null
-static func _evaluate_pickup(f, ai_plat, dist_to_enemy: float):
+static func _evaluate_pickup(f, ai_plat, dist_to_enemy: float, need_energy: bool, need_health: bool):
 	# 检查是否已被玩家接近（dist < 150 时不应拾取）
 	if dist_to_enemy < 150:
 		return null
-	
+
 	var best_score = 0.0
 	var best_target = null
 	var best_plat = null
-	
+
 	for item in GameWorld.pickups:
 		if not item or not item.active:
 			continue
-		
+
 		# 找到拾取物所在平台
 		var item_cx = item.x + item.w / 2.0
 		var item_feet_y = item.y + item.h / 2.0
@@ -480,13 +571,13 @@ static func _evaluate_pickup(f, ai_plat, dist_to_enemy: float):
 			if _is_on_platform(item_cx, item_feet_y, p):
 				item_plat = p
 				break
-		
+
 		if item_plat == null:
 			continue
-		
+
 		# 基础评分
 		var score = 50.0
-		
+
 		# 角色特定权重
 		if f.char_id == "assassin" and item.type == "energy":
 			score += 20.0
@@ -494,6 +585,12 @@ static func _evaluate_pickup(f, ai_plat, dist_to_enemy: float):
 			score += 30.0
 		elif f.char_id == "evoker" and item.type == "cooldown":
 			score += 40.0
+
+		# 通用需求权重：需能量时能量球+20，需血量时血球+20
+		if need_energy and item.type == "energy":
+			score += 20.0
+		if need_health and item.type == "health":
+			score += 20.0
 		
 		# 玩家在拾取物同平台 → 危险，评分 -80
 		var player_on_plat = false

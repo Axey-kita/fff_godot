@@ -15,20 +15,20 @@ static func draw(game_node: CanvasItem, font: Font):
 	_draw_game_over(game_node, font)
 
 ## 绘制蓄力条（角色上方）
-static func draw_charge_bar(game_node: CanvasItem, owner: Fighter, cam_x: float):
+static func draw_charge_bar(game_node: CanvasItem, owner: Fighter, cam_x: float, cam_y: float = 0.0):
 	if not is_instance_valid(owner):
 		return
 	if not owner.charging and not owner.charging_skill1 and not owner.charging_attack:
 		return
 	var px = owner.pos_x - cam_x + owner.w / 2.0
-	var py = owner.pos_y - 20
+	var py = owner.pos_y - cam_y - 20
 	var max_width = 40.0
 	var charge_time: float
 	if owner.charging_skill1 or owner.charging_attack:
 		charge_time = (Time.get_ticks_msec() - owner.charge_start_time) / 1000.0
 	else:
 		charge_time = (Time.get_ticks_msec() - owner.charge_start) / 1000.0
-	var max_charge = 2.0 if (owner.charging_skill1 or owner.charging_attack) else 3.0
+	var max_charge = 3.0  # 骑士半月斩最长蓄力3秒
 	var progress = clampf(charge_time / max_charge, 0.0, 1.0)
 
 	game_node.draw_rect(Rect2(px - max_width / 2.0 - 2, py - 2, max_width + 4, 10), Color(0, 0, 0, 0.6))

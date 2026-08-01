@@ -166,6 +166,7 @@ static func update_systems(f: Fighter):
 				"h": f.h,
 				"hp": 5.0,
 				"max_hp": 5.0,
+				"life": 300,  # 5秒存活
 				"facing": f.facing,
 				"image_state": "walk",
 				"attack_cooldown": 0,
@@ -208,7 +209,7 @@ static func _update_shadow_trap(f: Fighter, comp: ShadowwarriorComponent):
 		"idle":
 			# 检测敌人是否进入陷阱矩形范围
 			var opp = GameWorld.get_opponent(f)
-			if opp and opp.hp > 0:
+			if opp and opp.hp > 0 and not opp.is_invincible:
 				# 陷阱碰撞箱：以陷阱位置为中心，120×h 的矩形
 				var trap_rect = Rect2(trap["x"] + trap["w"] / 2.0 - 60, trap["y"], 120, trap["h"])
 				if trap_rect.intersects(opp.get_hit_box()):
@@ -251,6 +252,12 @@ static func _update_phantoms(f: Fighter):
 		if ph.hp <= 0:
 			to_remove.append(ph)
 			continue
+		# 存活计时（5秒）
+		if ph.has("life"):
+			ph["life"] -= 1
+			if ph["life"] <= 0:
+				to_remove.append(ph)
+				continue
 		# 重力 & 落地（空中释放/走出平台边缘的分身自动下落）
 		if not ph.get("grounded", true):
 			ph["vy"] += 0.22  # 与角色重力一致
@@ -378,7 +385,7 @@ static func _inject_draw(f: Fighter, comp: ShadowwarriorComponent):
 	else:
 		f.state_flags.erase("draw_texture_override")
 	# 世界级绘制：替身陷阱 + 居合刀光
-	GameWorld.register_draw_effect(fid + "_sw", func(font, cam_x):
+	GameWorld.register_draw_effect(fid + "_sw", func(font, cam_x, _cam_y = 0.0):
 		var items: Array = []
 		# 暗影替身
 		if comp.shadow_trap_active and not comp.shadow_trap.is_empty():
@@ -386,22 +393,22 @@ static func _inject_draw(f: Fighter, comp: ShadowwarriorComponent):
 			match trap["phase"]:
 				"idle":
 					var img = SW_TRAP_A if (trap["anim"] / 30) % 2 == 0 else SW_TRAP_B
-					items += _sw_draw_items(img, trap["x"], trap["y"]+f.h*0.4, f.w, f.h*0.6, cam_x, f.facing, 0.7)
+					items += _sw_draw_items(img, trap["x"], trap["y"]+f.h*0.4 - _cam_y, f.w, f.h*0.6, cam_x, f.facing, 0.7)
 				"capture":
 					if trap["captured"] and trap["captured"] is Fighter and trap["captured"].hp > 0:
 						var cap = trap["captured"]
-						items += _sw_draw_items(SW_GRAB, cap.pos_x - 10, cap.pos_y - 10, cap.w + 20, cap.h + 20, cam_x, 1, 0.95)
+						items += _sw_draw_items(SW_GRAB, cap.pos_x - 10, cap.pos_y - 10 - _cam_y, cap.w + 20, cap.h + 20, cam_x, 1, 0.95)
 				"burst":
 					var cap = trap["captured"]
 					var bx = cap.pos_x - 10 if (cap and cap is Fighter) else trap["x"] - 10
-					var by = cap.pos_y - 10 if (cap and cap is Fighter) else trap["y"] - 10
+					var by = (cap.pos_y - 10 if (cap and cap is Fighter) else trap["y"] - 10) - _cam_y
 					var bw = (cap.w + 20 if (cap and cap is Fighter) else trap["w"] + 20)
 					var bh = (cap.h + 20 if (cap and cap is Fighter) else trap["h"] + 20)
 					items += _sw_draw_items(SW_GRAB_BURST, bx, by, bw, bh, cam_x, 1, 1.0)
 		# 居合刀光
 		if comp.iaido_active and not comp.iaido_slash.is_empty():
 			var slash = comp.iaido_slash
-			items += _sw_draw_items(SW_IAIDO_SLASH, slash["x"], slash["y"], slash["w"], slash["h"], cam_x, slash.get("dir", 1), 0.85)
+			items += _sw_draw_items(SW_IAIDO_SLASH, slash["x"], slash["y"] - _cam_y, slash["w"], slash["h"], cam_x, slash.get("dir", 1), 0.85)
 			var t = comp.iaido_timer
 			var progress: float
 			if t > 120: progress = 0.0
@@ -412,11 +419,11 @@ static func _inject_draw(f: Fighter, comp: ShadowwarriorComponent):
 			var pose_x = start_x + (end_x - start_x) * progress
 			var iw = SW_ULT_IMG.get_width(); var ih = SW_ULT_IMG.get_height()
 			var s = minf(f.w / iw, f.h / ih)
-			items += _sw_draw_items(SW_ULT_IMG, pose_x + (f.w - iw*s) / 2.0, f.pos_y + f.h - ih*s*1.5, iw*s, ih*s*1.5, cam_x, f.facing, 1.0)
+			items += _sw_draw_items(SW_ULT_IMG, pose_x + (f.w - iw*s) / 2.0, f.pos_y + f.h - ih*s*1.5 - _cam_y, iw*s, ih*s*1.5, cam_x, f.facing, 1.0)
 		return items
 	, 5)
 	# 分身绘制
-	GameWorld.register_draw_effect(fid + "_phantoms", func(font, cam_x):
+	GameWorld.register_draw_effect(fid + "_phantoms", func(font, cam_x, _cam_y = 0.0):
 		var items: Array = []
 		for ph in GameWorld.phantoms:
 			if ph.get("hp", 0) <= 0: continue
@@ -427,7 +434,7 @@ static func _inject_draw(f: Fighter, comp: ShadowwarriorComponent):
 				"walk":   img = SW_WALK_IMG
 			var px = ph["x"] - cam_x
 			if px < -ph["w"] or px > Constants.W + ph["w"]: continue
-			var py = ph["y"] + ph["h"] * 0.5
+			var py = ph["y"] + ph["h"] * 0.5 - _cam_y
 			var dh = ph["h"] * 0.6
 			if ph["facing"] < 0:
 				items.append({"type": "set_transform", "pos": Vector2(px + ph["w"], py), "scale": Vector2(-1, 1)})

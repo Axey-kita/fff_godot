@@ -105,7 +105,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.8)
+color = Color(0, 0, 0, 0)
 
 [node name="PokedexPanel" type="VBoxContainer" parent="PokedexOverlay"]
 layout_mode = 1
@@ -229,7 +229,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.75)
+color = Color(0, 0, 0, 0)
 
 [node name="DiffPanel" type="VBoxContainer" parent="DiffSelect"]
 layout_mode = 1
@@ -293,7 +293,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.75)
+color = Color(0, 0, 0, 0.35)
 
 [node name="CharPanel" type="VBoxContainer" parent="CharSelect"]
 layout_mode = 1
@@ -349,7 +349,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.8)
+color = Color(0, 0, 0, 0)
 
 [node name="MapPoolPanel" type="VBoxContainer" parent="MapPoolOverlay"]
 layout_mode = 1
@@ -399,7 +399,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.8)
+color = Color(0, 0, 0, 0.35)
 
 [node name="TalentPanel" type="VBoxContainer" parent="TalentOverlay"]
 layout_mode = 1

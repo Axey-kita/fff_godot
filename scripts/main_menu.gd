@@ -50,12 +50,14 @@ extends Control
 # Pokedex state
 var _dex_body: Control = null
 var _dex_desc: Label = null
+var _dex_easter: Label = null
 var _dex_char_id: String = ""
 
 var selected_char := "knight"
 var chars_initialized := false
 var char_cards := {}
 var _title_click_count := 0  # 作弊计数器
+var _talent_from_char_select := false  # 天赋界面是否来自选人界面
 
 const IMG_TITLE = preload("res://assets/ui_title.png")
 const IMG_PVE = preload("res://assets/ui_btn_pve.png")
@@ -91,6 +93,7 @@ func _ready():
 	pvp_button.pressed.connect(_on_pvp_pressed)
 	pokedex_btn.pressed.connect(_on_pokedex_pressed)
 	exit_btn.pressed.connect(_on_exit_pressed)
+	talent_btn.pressed.connect(_on_talent_dex_pressed)
 	easy_btn.pressed.connect(_on_easy_pressed)
 	medium_btn.pressed.connect(_on_medium_pressed)
 	hard_btn.pressed.connect(_on_hard_pressed)
@@ -100,6 +103,11 @@ func _ready():
 	back_button.pressed.connect(_on_back_pressed)
 	dex_close_btn.pressed.connect(_on_dex_close)
 	dex_back_btn.pressed.connect(_on_dex_back)
+	
+	# 显示天赋图鉴入口（独立于角色图鉴）
+	talent_btn.visible = true
+	talent_btn.text = "📖 天赋图鉴"
+	_style_talent_dex_button()
 	
 	_style_pokedex_button()
 	_style_exit_button()
@@ -195,8 +203,8 @@ func _on_dex_card_clicked(char_id: String):
 	top_row.add_theme_constant_override("separation", 20)
 	top_row.size_flags_vertical = Control.SIZE_EXPAND
 	
-	# Character idle image (clickable → restore intro)
-	var idle_tex = _get_dex_idle_texture(char_id)
+	# Character portrait image (clickable → restore intro)
+	var idle_tex = _get_portrait_texture(char_id)
 	if idle_tex:
 		var tex_btn = Button.new()
 		tex_btn.icon = idle_tex
@@ -233,6 +241,17 @@ func _on_dex_card_clicked(char_id: String):
 		stats_box.add_child(lbl)
 	text_area.add_child(stats_box)
 	
+	# Easter egg label (yellow, shown after介绍)
+	var easter = Label.new()
+	easter.name = "EasterLabel"
+	easter.text = ""
+	easter.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	easter.add_theme_color_override("font_color", Color(1.0, 0.84, 0.0))  # 金色/黄色
+	easter.add_theme_font_size_override("font_size", 13)
+	easter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_dex_easter = easter
+	text_area.add_child(easter)
+	
 	top_row.add_child(text_area)
 	_dex_body.add_child(top_row)
 	
@@ -261,18 +280,19 @@ func _on_dex_skill_clicked(skill_index: int, dex: Dictionary, intro: String):
 	var sk = dex.get("skills", [])[skill_index]
 	if _dex_desc:
 		_dex_desc.text = "【" + sk.get("name", "") + "】\n\n" + sk.get("desc", "") + "\n\n" + sk.get("meta", "")
+	if _dex_easter:
+		_dex_easter.text = "\n\n" + sk.get("easter_egg", "")
 
 func _on_dex_char_portrait_clicked(intro: String):
 	if _dex_desc:
 		_dex_desc.text = intro
+	if _dex_easter:
+		_dex_easter.text = "\n\n" + CharConfigs.configs.get(_dex_char_id, {}).get("dex", {}).get("easter_egg", "")
 
-func _get_dex_idle_texture(char_id: String) -> Texture2D:
-	var cfg = CharConfigs.configs.get(char_id, {})
-	var anims: Dictionary = cfg.get("animations", {})
-	var idle_anim: FrameAnimation = anims.get("idle")
-	if idle_anim:
-		idle_anim.play()
-		return idle_anim.get_current_texture()
+func _get_portrait_texture(char_id: String) -> Texture2D:
+	var path = "res://assets/char_ani/" + char_id + "/portrait/" + char_id + "_portrait.png"
+	if ResourceLoader.exists(path):
+		return load(path) as Texture2D
 	return null
 
 func _style_dex_skill_btn(btn: Button):
@@ -296,8 +316,220 @@ func _on_pokedex_pressed():
 	menu_main.visible = false
 	pokedex_btn.visible = false
 	exit_btn.visible = false
+	talent_btn.visible = false
+	map_pool_btn.visible = false
 	# Default to character tab
 	_on_char_tab_pressed()
+
+
+# ===== 独立天赋图鉴 =====
+
+var _talent_dex_overlay: Control = null
+var _talent_dex_detail: Control = null
+var _talent_dex_name: Label = null
+var _talent_dex_type: Label = null
+var _talent_dex_desc: Label = null
+var _talent_dex_list_container: Control = null
+
+func _on_talent_dex_pressed():
+	if not _talent_dex_overlay:
+		_create_talent_dex_overlay()
+	_talent_dex_overlay.visible = true
+	menu_main.visible = false
+	pokedex_btn.visible = false
+	exit_btn.visible = false
+	talent_btn.visible = false
+	map_pool_btn.visible = false
+
+func _create_talent_dex_overlay():
+	var overlay = ColorRect.new()
+	overlay.name = "TalentDexOverlay"
+	overlay.color = Color(0.05, 0.05, 0.08, 0.95)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+	
+	# 标题栏
+	var header = HBoxContainer.new()
+	header.alignment = BoxContainer.ALIGNMENT_END
+	header.add_theme_constant_override("separation", 12)
+	header.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	header.offset_top = 10; header.offset_right = -20
+	overlay.add_child(header)
+	
+	var title = Label.new()
+	title.text = "📖 天赋图鉴"
+	title.add_theme_color_override("font_color", Color(1.0, 0.84, 0.4))
+	title.add_theme_font_size_override("font_size", 22)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(title)
+	
+	var close_btn = Button.new()
+	close_btn.text = "✕ 关闭"
+	close_btn.add_theme_color_override("font_color", Color(0.914, 0.271, 0.157))
+	close_btn.add_theme_font_size_override("font_size", 16)
+	close_btn.pressed.connect(_on_talent_dex_close)
+	header.add_child(close_btn)
+	
+	# 双栏主体
+	var body = HBoxContainer.new()
+	body.add_theme_constant_override("separation", 20)
+	body.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 0)
+	body.offset_top = 50; body.offset_bottom = -20
+	body.offset_left = 20; body.offset_right = -20
+	overlay.add_child(body)
+	
+	# 左侧：天赋卡牌列表
+	var left_panel = VBoxContainer.new()
+	left_panel.custom_minimum_size = Vector2(220, 0)
+	body.add_child(left_panel)
+	
+	var left_label = Label.new()
+	left_label.text = "天赋列表"
+	left_label.add_theme_color_override("font_color", Color(0.67, 0.53, 1.0))
+	left_label.add_theme_font_size_override("font_size", 14)
+	left_panel.add_child(left_label)
+	
+	var left_scroll = ScrollContainer.new()
+	left_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	left_panel.add_child(left_scroll)
+	
+	var card_list = VBoxContainer.new()
+	card_list.add_theme_constant_override("separation", 6)
+	left_scroll.add_child(card_list)
+	_talent_dex_list_container = card_list
+	
+	# 右侧：天赋详情
+	_talent_dex_detail = VBoxContainer.new()
+	_talent_dex_detail.add_theme_constant_override("separation", 10)
+	_talent_dex_detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_talent_dex_detail.visible = false
+	body.add_child(_talent_dex_detail)
+	
+	var detail_header = HBoxContainer.new()
+	detail_header.add_theme_constant_override("separation", 12)
+	
+	_talent_dex_type = Label.new()
+	_talent_dex_type.add_theme_font_size_override("font_size", 13)
+	detail_header.add_child(_talent_dex_type)
+	
+	_talent_dex_name = Label.new()
+	_talent_dex_name.add_theme_font_size_override("font_size", 20)
+	_talent_dex_name.add_theme_color_override("font_color", Color(1.0, 0.84, 0.4))
+	detail_header.add_child(_talent_dex_name)
+	
+	_talent_dex_detail.add_child(detail_header)
+	
+	# 分隔线
+	var detail_sep = HSeparator.new()
+	detail_sep.modulate = Color(0.5, 0.4, 0.6, 0.5)
+	_talent_dex_detail.add_child(detail_sep)
+	
+	# 描述文字（自动换行）
+	_talent_dex_desc = Label.new()
+	_talent_dex_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_talent_dex_desc.add_theme_font_size_override("font_size", 14)
+	_talent_dex_desc.add_theme_color_override("font_color", Color(0.6, 0.6, 0.7))
+	_talent_dex_desc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_talent_dex_detail.add_child(_talent_dex_desc)
+	
+	# 右侧占位提示
+	var placeholder = Label.new()
+	placeholder.text = "← 点击左侧天赋查看详情"
+	placeholder.add_theme_font_size_override("font_size", 14)
+	placeholder.add_theme_color_override("font_color", Color(0.4, 0.4, 0.45))
+	placeholder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	placeholder.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	placeholder.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	placeholder.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	placeholder.name = "TalentDexPlaceholder"
+	body.add_child(placeholder)
+	
+	# 填充左侧天赋卡片
+	for tid in TalentPool.get_all_ids():
+		var meta = TalentPool.get_metadata(tid)
+		var name_str = meta.get("name", tid)
+		var is_skill = meta.get("is_skill", false)
+		var type_str = "主动" if is_skill else "被动"
+		var type_color = Color(0.5, 0.7, 1.0) if is_skill else Color(0.5, 0.9, 0.6)
+		
+		var card = Button.new()
+		card.text = name_str
+		card.custom_minimum_size = Vector2(200, 40)
+		card.pressed.connect(_on_talent_dex_card_clicked.bind(tid))
+		
+		# 卡片样式
+		var normal = StyleBoxFlat.new()
+		normal.bg_color = Color(1, 1, 1, 0.06)
+		normal.set_corner_radius_all(8)
+		normal.border_width_left = 2; normal.border_width_right = 2
+		normal.border_width_top = 2; normal.border_width_bottom = 2
+		normal.border_color = Color(0.4, 0.3, 0.5, 0.5)
+		card.add_theme_stylebox_override("normal", normal)
+		var hover = normal.duplicate()
+		hover.bg_color = Color(0.67, 0.53, 1.0, 0.15)
+		hover.border_color = Color(0.67, 0.53, 1.0, 0.7)
+		card.add_theme_stylebox_override("hover", hover)
+		card.add_theme_font_size_override("font_size", 13)
+		card.add_theme_color_override("font_color", Color.WHITE)
+		card.add_theme_color_override("font_hover_color", Color(0.8, 0.67, 1.0))
+		
+		# 类型标记
+		var card_inner = HBoxContainer.new()
+		card_inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card_inner.add_theme_constant_override("separation", 8)
+		
+		var type_badge = Label.new()
+		type_badge.text = type_str
+		type_badge.add_theme_font_size_override("font_size", 10)
+		type_badge.add_theme_color_override("font_color", type_color)
+		card_inner.add_child(type_badge)
+		
+		var name_lbl = Label.new()
+		name_lbl.text = name_str
+		name_lbl.add_theme_font_size_override("font_size", 13)
+		name_lbl.add_theme_color_override("font_color", Color.WHITE)
+		card_inner.add_child(name_lbl)
+		
+		card.text = ""  # Clear default text since we use inner labels
+		card.add_child(card_inner)
+		
+		card_list.add_child(card)
+	
+	_talent_dex_overlay = overlay
+
+func _on_talent_dex_card_clicked(tid: String):
+	var meta = TalentPool.get_metadata(tid)
+	var name_str = meta.get("name", tid)
+	var desc_str = meta.get("desc", "")
+	var is_skill = meta.get("is_skill", false)
+	
+	_talent_dex_name.text = name_str
+	_talent_dex_type.text = "【主动】" if is_skill else "【被动】"
+	_talent_dex_type.add_theme_color_override("font_color", Color(0.5, 0.7, 1.0) if is_skill else Color(0.5, 0.9, 0.6))
+	
+	# 格式化描述：每行开头添加缩进和列表标记
+	var formatted = ""
+	for line in desc_str.split("\n"):
+		if line.strip_edges().is_empty():
+			formatted += "\n"
+		else:
+			formatted += "✦ " + line + "\n"
+	_talent_dex_desc.text = formatted
+	
+	# 显示详情面板，隐藏占位符
+	_talent_dex_detail.visible = true
+	var placeholder = _talent_dex_overlay.find_child("TalentDexPlaceholder", true, false)
+	if placeholder: placeholder.visible = false
+
+func _on_talent_dex_close():
+	if _talent_dex_overlay:
+		_talent_dex_overlay.visible = false
+	menu_main.visible = true
+	pokedex_btn.visible = true
+	exit_btn.visible = true
+	talent_btn.visible = true
+	map_pool_btn.visible = true
 
 func _on_char_tab_pressed():
 	talent_dex_scroll.visible = false
@@ -357,6 +589,8 @@ func _on_dex_close():
 	menu_main.visible = true
 	pokedex_btn.visible = true
 	exit_btn.visible = true
+	talent_btn.visible = true
+	map_pool_btn.visible = true
 
 func _on_dex_back():
 	dex_detail.visible = false
@@ -370,6 +604,8 @@ func _style_dex_overlay():
 	title.add_theme_color_override("font_color", Color(1.0, 0.843, 0.0))
 	dex_detail_name.add_theme_color_override("font_color", Color(1.0, 0.843, 0.0))
 	dex_intro_label.add_theme_color_override("font_color", Color(0.55, 0.55, 0.65))
+	talent_tab_btn.visible = false
+	char_tab_btn.text = "📋 角色列表"
 	# Tab buttons
 	for btn in [char_tab_btn, talent_tab_btn]:
 		btn.add_theme_font_size_override("font_size", 14)
@@ -393,6 +629,21 @@ func _style_pokedex_button():
 	pokedex_btn.add_theme_stylebox_override("hover", hover_style)
 	pokedex_btn.add_theme_color_override("font_color", Color(1.0, 0.843, 0.0))
 	pokedex_btn.add_theme_color_override("font_hover_color", Color(1.0, 0.843, 0.0, 0.8))
+
+func _style_talent_dex_button():
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.416, 0.298, 0.612, 0.15)
+	style.set_corner_radius_all(8)
+	style.border_width_left = 2; style.border_width_right = 2
+	style.border_width_top = 2; style.border_width_bottom = 2
+	style.border_color = Color(0.416, 0.298, 0.612, 0.4)
+	talent_btn.add_theme_stylebox_override("normal", style)
+	var hover_style = style.duplicate()
+	hover_style.bg_color = Color(0.416, 0.298, 0.612, 0.25)
+	hover_style.border_color = Color(0.416, 0.298, 0.612, 0.6)
+	talent_btn.add_theme_stylebox_override("hover", hover_style)
+	talent_btn.add_theme_color_override("font_color", Color(0.67, 0.53, 1.0))
+	talent_btn.add_theme_color_override("font_hover_color", Color(0.8, 0.67, 1.0))
 
 func _style_exit_button():
 	var style = StyleBoxFlat.new()
@@ -456,11 +707,7 @@ func _populate_characters():
 
 func _create_char_card(char_id: String) -> Control:
 	var config = CharConfigs.configs.get(char_id, {})
-	var animations = config.get("animations", {})
-	var idle_anim = animations.get("idle", null)
-	var img = null
-	if idle_anim is FrameAnimation and not idle_anim.frames.is_empty():
-		img = idle_anim.frames[0].texture
+	var img = _get_portrait_texture(char_id)
 	var name_str = CharConfigs.get_char_name(char_id)
 	var hp = config.get("hp", 0)
 	var energy = config.get("max_energy", 0)
@@ -617,6 +864,7 @@ func _show_toast(msg: String):
 	)
 
 func _show_char_select():
+	diff_select.visible = false
 	menu_main.visible = false
 	pokedex_btn.visible = false; exit_btn.visible = false
 	char_select.visible = true
@@ -640,8 +888,13 @@ func _on_exit_pressed():
 	get_tree().quit()
 
 func _on_start_pressed():
-	GameWorld.player_talents = GameWorld.talent_pool.duplicate()
-	get_tree().change_scene_to_file("res://scenes/game.tscn")
+	# 重置天赋池为3个空槽位
+	GameWorld.talent_pool = ["", "", ""]
+	# 弹出天赋选择界面
+	_talent_from_char_select = true
+	talent_overlay.visible = true
+	char_select.visible = false
+	_rebuild_slot_bar()
 
 # ===== 地图池管理 =====
 
@@ -703,6 +956,7 @@ func _on_map_pool_pressed():
 	menu_main.visible = false
 	pokedex_btn.visible = false
 	exit_btn.visible = false
+	talent_btn.visible = false
 	map_pool_btn.visible = false
 
 func _on_map_pool_close():
@@ -710,20 +964,27 @@ func _on_map_pool_close():
 	menu_main.visible = true
 	pokedex_btn.visible = true
 	exit_btn.visible = true
+	talent_btn.visible = true
 	map_pool_btn.visible = true
 
 # ===== 天赋管理 =====
 
 func _add_talent_slot_styles():
-	# Style existing slot boxes (called after populate to restyle)
-	for child in talent_slot_bar.get_children():
-		if child is PanelContainer:
+	# 遍历槽位栏中的所有 VBox → PanelContainer
+	for vbox in talent_slot_bar.get_children():
+		if not (vbox is VBoxContainer):
+			continue
+		for child in vbox.get_children():
+			if not (child is PanelContainer):
+				continue
 			var style = StyleBoxFlat.new()
-			if child.get_child_count() > 0 and child.get_child(0) is Label:
-				var lbl = child.get_child(0)
-				if lbl.text == "":
-					style.bg_color = Color(0.8, 0.6, 0.2, 0.08)
-					style.border_color = Color(0.8, 0.6, 0.2, 0.25)
+			# 检查是否装有天赋（通过子 HBox 里 Label 的文字判断）
+			var hbox = child.get_child(0) if child.get_child_count() > 0 else null
+			if hbox and hbox.get_child_count() > 0 and hbox.get_child(0) is Label:
+				var lbl = hbox.get_child(0)
+				if lbl.text == "" or lbl.text == "空":
+					style.bg_color = Color(0.35, 0.35, 0.4, 0.08)
+					style.border_color = Color(0.35, 0.35, 0.4, 0.25)
 				else:
 					style.bg_color = Color(0.8, 0.6, 0.2, 0.15)
 					style.border_color = Color(0.8, 0.6, 0.2, 0.6)
@@ -733,45 +994,59 @@ func _add_talent_slot_styles():
 			child.add_theme_stylebox_override("panel", style)
 
 func _style_talent_ui():
-	talent_btn.pressed.connect(_on_talent_pressed)
 	talent_close.pressed.connect(_on_talent_close)
-	# Talent button style
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.8, 0.6, 0.2, 0.12)
-	style.set_corner_radius_all(8)
-	style.border_width_left = 2; style.border_width_right = 2
-	style.border_width_top = 2; style.border_width_bottom = 2
-	style.border_color = Color(0.8, 0.6, 0.2, 0.4)
-	talent_btn.add_theme_stylebox_override("normal", style)
-	var hover = style.duplicate()
-	hover.bg_color = Color(0.8, 0.6, 0.2, 0.25)
-	hover.border_color = Color(0.8, 0.6, 0.2, 0.6)
-	talent_btn.add_theme_stylebox_override("hover", hover)
-	talent_btn.add_theme_color_override("font_color", Color(1.0, 0.84, 0.4))
-	talent_btn.add_theme_color_override("font_hover_color", Color(1.0, 0.9, 0.6))
+	# 不再连接 talent_btn（已隐藏）
 	
 	var title = $TalentOverlay/TalentPanel/TalentHeader/TalentTitle
 	title.add_theme_color_override("font_color", Color(1.0, 0.84, 0.4))
 	talent_close.add_theme_color_override("font_color", Color(0.914, 0.271, 0.157))
 	talent_close.add_theme_font_size_override("font_size", 20)
+	
+	# 在天赋面板底部添加"开始战斗"确认按钮
+	var confirm_btn = Button.new()
+	confirm_btn.name = "TalentConfirmBtn"
+	confirm_btn.text = "⚔️ 开始战斗"
+	confirm_btn.custom_minimum_size = Vector2(0, 40)
+	confirm_btn.pressed.connect(_on_talent_confirm)
+	_style_action_button(confirm_btn, Color(0.298, 0.686, 0.314), "⚔️ 开始战斗")
+	$TalentOverlay/TalentPanel.add_child(confirm_btn)
+	
+	# 更新提示文字
+	var tip = $TalentOverlay/TalentPanel/TipLabel
+	tip.text = "左键添加天赋 | 右键移除天赋 | 主动天赋→槽位①  被动天赋→槽位②③"
 
 func _rebuild_slot_bar():
-	# Remove old slot panels (keep SlotLabel)
+	# Remove old slot panels and type labels (keep SlotLabel)
 	for child in talent_slot_bar.get_children():
-		if child is PanelContainer:
+		if not (child is Label and child.name == "SlotLabel"):
 			child.queue_free()
-	# Add slot panels
+	
+	var slot_type_labels = ["主动天赋", "被动天赋①", "被动天赋②"]
+	var slot_type_colors = [Color(0.5, 0.7, 1.0), Color(0.5, 0.9, 0.6), Color(0.5, 0.9, 0.6)]
+	
 	for i in range(GameWorld.MAX_TALENT_SLOTS):
+		var vbox = VBoxContainer.new()
+		vbox.add_theme_constant_override("separation", 2)
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		
+		# 类型标签（主动/被动）
+		var type_lbl = Label.new()
+		type_lbl.text = slot_type_labels[i]
+		type_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		type_lbl.add_theme_font_size_override("font_size", 9)
+		type_lbl.add_theme_color_override("font_color", slot_type_colors[i])
+		vbox.add_child(type_lbl)
+		
+		# 槽位面板
 		var panel = PanelContainer.new()
 		panel.custom_minimum_size = Vector2(96, 28)
 		
 		var hbox = HBoxContainer.new()
 		hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		
-		if i < GameWorld.talent_pool.size():
-			var tid = GameWorld.talent_pool[i]
+		var tid = GameWorld.talent_pool[i]
+		if tid != "":
 			var meta = TalentPool.get_metadata(tid)
-			
 			var lbl = Label.new()
 			lbl.text = meta.get("name", tid)
 			lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -781,7 +1056,7 @@ func _rebuild_slot_bar():
 			lbl.add_theme_color_override("font_color", Color(1.0, 0.84, 0.4))
 			hbox.add_child(lbl)
 			
-			# Remove button
+			# 移除按钮
 			var rm_btn = Button.new()
 			rm_btn.text = "✕"
 			rm_btn.flat = true
@@ -793,18 +1068,21 @@ func _rebuild_slot_bar():
 			hbox.add_child(rm_btn)
 		else:
 			var lbl = Label.new()
-			lbl.text = ""
-			lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			lbl.text = "空"
+			lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			lbl.add_theme_font_size_override("font_size", 9)
+			lbl.add_theme_color_override("font_color", Color(0.35, 0.35, 0.4))
 			hbox.add_child(lbl)
 		
 		panel.add_child(hbox)
-		talent_slot_bar.add_child(panel)
+		vbox.add_child(panel)
+		talent_slot_bar.add_child(vbox)
 	
 	_add_talent_slot_styles()
 
 func _on_slot_remove(slot_index: int):
 	if slot_index < GameWorld.talent_pool.size():
-		GameWorld.talent_pool.remove_at(slot_index)
+		GameWorld.talent_pool[slot_index] = ""
 		_populate_talents()
 
 func _populate_talents():
@@ -816,7 +1094,8 @@ func _populate_talents():
 	# 统计每个天赋在 talent_pool 中出现了几次（支持重复选取=叠层）
 	var count_map = {}
 	for tid in GameWorld.talent_pool:
-		count_map[tid] = count_map.get(tid, 0) + 1
+		if tid != "":
+			count_map[tid] = count_map.get(tid, 0) + 1
 	
 	for tid in TalentPool.get_all_ids():
 		var meta = TalentPool.get_metadata(tid)
@@ -876,23 +1155,36 @@ func _on_talent_card_clicked(event: InputEvent, tid: String):
 		return
 	var is_skill = TalentPool.get_metadata(tid).get("is_skill", false)
 	if event.button_index == MOUSE_BUTTON_LEFT:
-		# 左键：添加
-		if GameWorld.talent_pool.size() >= GameWorld.MAX_TALENT_SLOTS:
-			return
-		# 主动天赋只能取 1 次
-		if is_skill and tid in GameWorld.talent_pool:
-			return
-		GameWorld.talent_pool.append(tid)
+		# 左键：添加到对应类型的槽位
+		if is_skill:
+			# 主动天赋 → 只能放槽位0
+			if GameWorld.talent_pool[0] != "":
+				_show_toast("主动天赋栏位已满喵~")
+				return
+			if tid in GameWorld.talent_pool:
+				_show_toast("该主动天赋已装备喵~")
+				return
+			GameWorld.talent_pool[0] = tid
+		else:
+			# 被动天赋 → 只能放槽位1或2
+			var target_slot = -1
+			for j in [1, 2]:
+				if GameWorld.talent_pool[j] == "":
+					target_slot = j
+					break
+			if target_slot == -1:
+				_show_toast("被动天赋栏位已满喵~")
+				return
+			GameWorld.talent_pool[target_slot] = tid
 		_populate_talents()
 	elif event.button_index == MOUSE_BUTTON_RIGHT:
-		# 右键：移除最后出现的该天赋
-		var idx = -1
-		for j in range(GameWorld.talent_pool.size() - 1, -1, -1):
+		# 右键：移除所有槽位中的该天赋
+		var removed = false
+		for j in range(GameWorld.talent_pool.size()):
 			if GameWorld.talent_pool[j] == tid:
-				idx = j
-				break
-		if idx >= 0:
-			GameWorld.talent_pool.remove_at(idx)
+				GameWorld.talent_pool[j] = ""
+				removed = true
+		if removed:
 			_populate_talents()
 	print("[Talent] ", TalentPool.get_metadata(tid).get("name", tid),
 		" 当前=", GameWorld.talent_pool)
@@ -908,8 +1200,23 @@ func _on_talent_pressed():
 
 func _on_talent_close():
 	talent_overlay.visible = false
-	menu_main.visible = true
-	pokedex_btn.visible = true
-	exit_btn.visible = true
-	map_pool_btn.visible = true
-	talent_btn.visible = true
+	if _talent_from_char_select:
+		# 从选人界面来的 → 回到选人界面
+		_talent_from_char_select = false
+		char_select.visible = true
+	else:
+		# 从主界面来的（虽然入口已删除，保留兼容）
+		menu_main.visible = true
+		pokedex_btn.visible = true
+		exit_btn.visible = true
+		map_pool_btn.visible = true
+
+func _on_talent_confirm():
+	# 过滤空槽位，只保留已选择的天赋
+	var talents: Array = []
+	for tid in GameWorld.talent_pool:
+		if tid != "":
+			talents.append(tid)
+	GameWorld.player_talents = talents
+	print("[Talent] 确认选择: ", talents)
+	get_tree().change_scene_to_file("res://scenes/game.tscn")

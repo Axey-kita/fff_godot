@@ -23,6 +23,10 @@ static var STATUS_DEFS := {
 		"id": "frozen", "duration": 240, "vfx_color": Color.WHITE,
 		"freeze": true,
 	},
+	"stun": {
+		"id": "stun", "duration": 12, "vfx_color": Color(0.7, 0.5, 1.0),
+		"freeze": true,
+	},
 	"gravity_debuff": {
 		"id": "gravity_debuff", "duration": 120, "vfx_color": Color(0.67, 0.53, 1.0),
 	},
@@ -59,7 +63,7 @@ func apply(target):
 			target.emit_particles(target.pos_x + target.w / 2, target.pos_y + target.h / 2, 40, Color(0.53, 0.87, 1.0), 6, 8, "star", 1.5)
 		"gravity_debuff":
 			target.gravity_debuff = true
-			target.jump_reduction = 0.8
+			target.jump_reduction = 0.6  # 减少40%跳跃高度
 
 # Called each tick when tick_damage > 0 and tick_interval matched
 func _handle_tick(target: Fighter):

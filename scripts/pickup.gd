@@ -48,18 +48,19 @@ func apply_effect(target: Fighter):
 			if skill:
 				skill.cd = 0
 
-func draw(canvas: CanvasItem, cam_x: float):
+func draw(canvas: CanvasItem, cam_x: float, cam_y: float = 0.0):
 	if not active:
 		return
 	var px = x - cam_x
+	var py = y - cam_y
 	if px < -30 or px > Constants.W + 30:
 		return
 	var def = PICKUP_DEFS.get(type)
 	var color: Color = def["color"] if def else Color.WHITE
 	var symbol: String = def["symbol"] if def else "?"
 	var pulse = 1.0 + 0.1 * sin(glow)
-	canvas.draw_circle(Vector2(px + w/2, y + h/2), 10 * pulse, color)
-	canvas.draw_circle(Vector2(px + w/2, y + h/2), 5 * pulse, Color.WHITE)
+	canvas.draw_circle(Vector2(px + w/2, py + h/2), 10 * pulse, color)
+	canvas.draw_circle(Vector2(px + w/2, py + h/2), 5 * pulse, Color.WHITE)
 	# Draw symbol as text
 	var font = ThemeDB.fallback_font
-	canvas.draw_string(font, Vector2(px + w/2 - 4, y + h/2 + 4), symbol, HORIZONTAL_ALIGNMENT_CENTER, -1, 10, Color.BLACK)
+	canvas.draw_string(font, Vector2(px + w/2 - 4, py + h/2 + 4), symbol, HORIZONTAL_ALIGNMENT_CENTER, -1, 10, Color.BLACK)
