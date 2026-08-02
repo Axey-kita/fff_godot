@@ -143,6 +143,9 @@ static func _ult(owner: Fighter) -> Dictionary:
 		return {"success": false}
 	if comp.enhanced_mode:
 		return {"success": false}
+	# 需要至少 30 能量才能激活（否则强化模式瞬间结束）
+	if owner.energy < 100:
+		return {"success": false}
 
 	# 播放全屏 overlay 大招动画
 	var ult_anim = FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "ult/", "output_", _ult_frame_specs(), false)
@@ -304,6 +307,12 @@ static func update_systems(owner: Fighter):
 		comp.charge_end_pose_timer -= 1
 		if comp.charge_end_pose_timer <= 0 and owner.image_state == "skill1_end":
 			owner.set_animation_state("idle")
+
+	# AI 蓄力自动释放：最多蓄 3 秒后自动发射
+	if comp.charging_skill1 and not owner.is_player:
+		var ct = (Time.get_ticks_msec() - comp.charge_start) / 1000.0
+		if ct >= 3.0:
+			_fire_half_moon(owner, comp)
 
 	# 招架倒计时
 	if comp.parry_active:

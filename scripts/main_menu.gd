@@ -127,6 +127,11 @@ func _ready():
 	# Pokedex tab switching
 	char_tab_btn.pressed.connect(_on_char_tab_pressed)
 	talent_tab_btn.pressed.connect(_on_talent_tab_pressed)
+	
+	# 从游戏内"角色选择"按钮返回时，直接跳到选人界面
+	if GameWorld.skip_to_char_select:
+		GameWorld.skip_to_char_select = false
+		_show_char_select()
 
 # ===== Pokedex =====
 
@@ -1002,6 +1007,10 @@ func _style_talent_ui():
 	talent_close.add_theme_color_override("font_color", Color(0.914, 0.271, 0.157))
 	talent_close.add_theme_font_size_override("font_size", 20)
 	
+	# 禁用横向滚动，只保留竖向
+	var scroll = $TalentOverlay/TalentPanel/TalentScroll
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	
 	# 在天赋面板底部添加"开始战斗"确认按钮
 	var confirm_btn = Button.new()
 	confirm_btn.name = "TalentConfirmBtn"
@@ -1105,7 +1114,7 @@ func _populate_talents():
 		
 		# Create talent card
 		var card = PanelContainer.new()
-		card.custom_minimum_size = Vector2(180, 56)
+		card.custom_minimum_size = Vector2(80, 80)
 		card.mouse_filter = Control.MOUSE_FILTER_STOP
 		
 		# Card style (highlighted if selected)
@@ -1127,7 +1136,7 @@ func _populate_talents():
 		# Content
 		var vbox = VBoxContainer.new()
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.add_theme_constant_override("separation", 2)
+		vbox.add_theme_constant_override("separation", 1)
 		
 		var name_lbl = Label.new()
 		var name_text = meta.get("name", tid)
@@ -1135,14 +1144,14 @@ func _populate_talents():
 			name_text += "  ×" + str(count)
 		name_lbl.text = name_text
 		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_lbl.add_theme_font_size_override("font_size", 13)
+		name_lbl.add_theme_font_size_override("font_size", 11)
 		name_lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.7) if count > 0 else Color(0.8, 0.8, 0.85))
 		vbox.add_child(name_lbl)
 		
 		var type_lbl = Label.new()
 		type_lbl.text = type_str
 		type_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		type_lbl.add_theme_font_size_override("font_size", 10)
+		type_lbl.add_theme_font_size_override("font_size", 9)
 		var type_color = Color(0.5, 0.7, 1.0) if type_str == "主动" else Color(0.5, 0.9, 0.6)
 		type_lbl.add_theme_color_override("font_color", type_color)
 		vbox.add_child(type_lbl)

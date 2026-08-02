@@ -48,6 +48,9 @@ var rose_slash_trails: Array = []
 var rose_joystick_dir: Vector2 = Vector2.ZERO
 var active_overlays: Array = []  # [{anim, position, owner, overlay_id, on_finish}]
 
+# 从游戏内"角色选择"返回时，主菜单直接跳转到选人界面
+var skip_to_char_select := false
+
 # 角色注入的绘制回调 { "key": unique_key, "cb": Callable, "z": int }
 # 角色在 skill 激活时注册，用完自行注销；game.gd 只遍历调用，不关心来源
 static var draw_effect_callbacks: Array = []

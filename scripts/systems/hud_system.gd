@@ -181,4 +181,5 @@ static func _draw_game_over(game_node: CanvasItem, font: Font):
 	game_node.draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 - 20), title, HORIZONTAL_ALIGNMENT_CENTER, -1, 36, Color(1.0, 0.843, 0.0) if is_win else Color(1.0, 0.267, 0.267))
 	game_node.draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 + 16), sub, HORIZONTAL_ALIGNMENT_CENTER, -1, 14, Color.WHITE)
 	game_node.draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 + 42), "按 R 重新开始", HORIZONTAL_ALIGNMENT_CENTER, -1, 12, Color(0.667, 0.667, 0.667))
-	game_node.draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 + 58), "按 ESC 返回菜单", HORIZONTAL_ALIGNMENT_CENTER, -1, 10, Color(0.467, 0.467, 0.467))
+	game_node.draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 + 58), "按 C 角色选择", HORIZONTAL_ALIGNMENT_CENTER, -1, 10, Color(0.667, 0.533, 1.0))
+	game_node.draw_string(font, Vector2(Constants.W / 2.0, Constants.H / 2.0 + 74), "按 ESC 返回菜单", HORIZONTAL_ALIGNMENT_CENTER, -1, 10, Color(0.467, 0.467, 0.467))

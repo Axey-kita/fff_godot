@@ -352,6 +352,8 @@ func _unhandled_input(event: InputEvent):
 		InputRouter.map_game_keys(event, keys)
 		if event.pressed and event.keycode == KEY_R and GameWorld.game_over:
 			_restart_game()
+		if event.pressed and event.keycode == KEY_C and GameWorld.game_over:
+			_back_to_menu()
 
 func _restart_game():
 	# Clean up old fighters
@@ -420,6 +422,7 @@ func _back_to_menu():
 		_current_map.queue_free()
 		_current_map = null
 	GameWorld.reset_world()
+	GameWorld.skip_to_char_select = true
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
 func _exit_game():
@@ -442,6 +445,17 @@ func _style_pause_ui():
 	_style_pause_button(continue_btn, Color(0.298, 0.686, 0.314))
 	_style_pause_button(menu_btn, Color(1.0, 0.843, 0.0))
 	_style_pause_button(exit_btn, Color(0.914, 0.271, 0.157))
+
+	# 添加"角色选择"按钮
+	var char_btn = Button.new()
+	char_btn.name = "CharSelectBtn"
+	char_btn.text = "🎭 角色选择"
+	char_btn.pressed.connect(func():
+		_back_to_menu()
+	)
+	_style_pause_button(char_btn, Color(0.667, 0.533, 1.0))
+	var panel = $UILayer/PauseMenu/PausePanel
+	panel.add_child(char_btn)
 
 func _style_pause_button(btn: Button, accent: Color):
 	btn.add_theme_font_size_override("font_size", 16)

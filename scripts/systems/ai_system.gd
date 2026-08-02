@@ -414,6 +414,16 @@ static func update_ai(ai_think_delay: int) -> int:
 				return new_delay
 	
 	# ── 5. CHASE / KITE: 走位策略 ──
+	
+	# 地狱·影武者隐身中：无视陷阱直接冲向玩家
+	if GameWorld.difficulty == "hell" and f.char_id == "shadowwarrior":
+		var sw_chase = f.components.get_component("shadowwarrior") if f.components else null
+		if sw_chase and sw_chase.stealth_active:
+			f.vx = dir_to_target * diff["move_speed"]
+			_update_state(f, dir_to_target)
+			_state = "CHASE"
+			return new_delay
+	
 	# 识别目标所在平台
 	var target_feet_x = target.get("x", 0.0) if target is Dictionary else target.pos_x
 	var target_feet_y = target.get("y", 0.0) if target is Dictionary else (target.pos_y + target.h)
