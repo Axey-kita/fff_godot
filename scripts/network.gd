@@ -50,6 +50,7 @@ static func make_state_snapshot() -> Dictionary:
 	snap["frame"] = GameWorld.frame
 	snap["game_over"] = GameWorld.game_over
 	snap["camera_x"] = GameWorld.camera.x
+	snap["camera_y"] = GameWorld.camera.y
 	snap["slow_mo_timer"] = GameWorld.slow_mo_timer
 
 	# Projectiles
@@ -78,6 +79,7 @@ static func apply_state_snapshot(snap: Dictionary):
 	GameWorld.frame = snap.get("frame", GameWorld.frame)
 	GameWorld.game_over = snap.get("game_over", GameWorld.game_over)
 	GameWorld.camera.x = snap.get("camera_x", GameWorld.camera.x)
+	GameWorld.camera.y = snap.get("camera_y", GameWorld.camera.y)
 	GameWorld.slow_mo_timer = snap.get("slow_mo_timer", GameWorld.slow_mo_timer)
 
 static func _apply_fighter_snapshot(f: Fighter, data: Dictionary):

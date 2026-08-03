@@ -1,0 +1,10 @@
+frame1::0.248s
+frame2::0.248s
+frame3::0.248s
+frame4::0.248s
+frame5::0.248s
+frame6::0.248s
+frame7::0.248s
+frame8::0.497s
+frame9::1.000s
+end frames

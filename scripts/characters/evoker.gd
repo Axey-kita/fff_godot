@@ -18,7 +18,7 @@ const EVOKER_ANI_DIR = "res://assets/char_ani/evoker/"
 
 # ── 绘制注入（每局游戏开始时重新注册）──
 static func _inject_draw():
-	GameWorld.register_draw_effect("evoker_all", func(font, cam_x):
+	GameWorld.register_draw_effect("evoker_all", func(font, cam_x, _cam_y = 0.0):
 		var items: Array = []
 		for s in GameWorld.evoker_summons:
 			var sx = s["x"] - cam_x
@@ -42,23 +42,23 @@ static func _inject_draw():
 						face_dir = 1 if (enemy.pos_x + enemy.w/2) > (s["x"] + s["w"]/2) else -1
 					else:
 						face_dir = owner.facing
-				items.append({"type": "set_transform", "pos": Vector2(sx + s["w"]/2, s["y"]+s["h"]/2), "scale": Vector2(-face_dir, 1)})
+				items.append({"type": "set_transform", "pos": Vector2(sx + s["w"]/2, s["y"]+s["h"]/2 - _cam_y), "scale": Vector2(-face_dir, 1)})
 				items.append({"type": "tex", "tex": tex, "rect": Rect2(-s["w"]/2, -s["h"]/2, s["w"], s["h"])})
 				items.append({"type": "reset_transform"})
 			var hp_pct = s.get("hp", 0) / maxf(s.get("max_hp", 1), 1.0)
-			items.append({"type": "rect", "rect": Rect2(sx, s["y"]-10, s["w"], 6), "color": Color(0.2, 0.2, 0.2)})
+			items.append({"type": "rect", "rect": Rect2(sx, s["y"]-10 - _cam_y, s["w"], 6), "color": Color(0.2, 0.2, 0.2)})
 			var hc = Color.GREEN if hp_pct > 0.5 else (Color.ORANGE if hp_pct > 0.25 else Color.RED)
-			items.append({"type": "rect", "rect": Rect2(sx, s["y"]-10, s["w"]*hp_pct, 6), "color": hc})
-			items.append({"type": "string", "pos": Vector2(sx+s["w"]/2, s["y"]-16), "text": s.get("state",""), "size": 10, "color": Color.WHITE})
+			items.append({"type": "rect", "rect": Rect2(sx, s["y"]-10 - _cam_y, s["w"]*hp_pct, 6), "color": hc})
+			items.append({"type": "string", "pos": Vector2(sx+s["w"]/2, s["y"]-16 - _cam_y), "text": s.get("state",""), "size": 10, "color": Color.WHITE})
 		for fs in GameWorld.evoker_fire_seas:
-			items.append({"type": "tex", "tex": EVOKER_FIRE_SEA, "rect": Rect2(fs["x"]-cam_x, fs["y"]+60, fs["w"], fs["h"]), "color": Color(1,1,1,0.7)})
+			items.append({"type": "tex", "tex": EVOKER_FIRE_SEA, "rect": Rect2(fs["x"]-cam_x, fs["y"]+60 - _cam_y, fs["w"], fs["h"]), "color": Color(1,1,1,0.7)})
 		for b in GameWorld.gravity_balls:
-			items.append({"type": "tex", "tex": EVOKER_PULL_BALL, "rect": Rect2(b["x"]-cam_x, b["y"], b["w"], b["h"])})
+			items.append({"type": "tex", "tex": EVOKER_PULL_BALL, "rect": Rect2(b["x"]-cam_x, b["y"] - _cam_y, b["w"], b["h"])})
 		for rift in GameWorld.void_rifts:
 			var rx = rift["x"] - cam_x
-			items.append({"type": "tex", "tex": EVOKER_ULT_CRACK, "rect": Rect2(rx, rift["y"], rift["w"], rift["h"]), "color": Color(1,1,1,0.7)})
+			items.append({"type": "tex", "tex": EVOKER_ULT_CRACK, "rect": Rect2(rx, rift["y"] - _cam_y, rift["w"], rift["h"]), "color": Color(1,1,1,0.7)})
 			var pulse = sin(rift.get("timer",0)*0.1)*0.3+0.7
-			items.append({"type": "rect", "rect": Rect2(rx, rift["y"], rift["w"], rift["h"]), "color": Color(0.784,0.392,1.0,pulse*0.8), "filled": false, "border_width": 3})
+			items.append({"type": "rect", "rect": Rect2(rx, rift["y"] - _cam_y, rift["w"], rift["h"]), "color": Color(0.784,0.392,1.0,pulse*0.8), "filled": false, "border_width": 3})
 		return items
 	, 10)
 
@@ -79,7 +79,7 @@ static func get_config() -> Dictionary:
 		},
 		"dex": {
 			"icon": "🧙",
-			"intro": "与深渊签订契约的唤魔者，操纵三种召唤物进行战斗。",
+			"intro": "幽蓝的火焰自虚空燃起，焚尽凡俗，只留灰烬。他立于现世与深渊的交界，指尖跃动着来自异界的冷焰——每一簇蓝火都是魔物苏醒的指引，每一次召唤都是地狱的回响。魔物从阴影中爬出，服从他的意志，撕碎他的敌人。在他的领域里，你面对的不只是一个施法者，而是一支来自深渊的军团。\n\"死亡太廉价了——来见见我的收藏品吧。\"",
 			"stats": [
 				{"label": "生命", "value": "60"},
 				{"label": "能量上限", "value": "140"},
@@ -455,9 +455,10 @@ static func update_systems(f: Fighter):
 			if absf(f.vx) > max_spd:
 				f.vx = max_spd * signf(f.vx)
 	# Burn timer — damage every 120 frames (2 seconds)
+	# 龙鳞：龙骑士免疫一切灼烧效果
 	if f.burn_timer > 0:
 		f.burn_timer -= 1
-		if f.burn_timer % 120 == 0:
+		if f.char_id != "dragon_knight" and f.burn_timer % 120 == 0:
 			f.hp -= 1.0
 			if f.hp < 0.0:
 				f.hp = 0.0

@@ -6,6 +6,7 @@ enum State { IDLE, FADING_IN, PLAYING, FADING_OUT }
 
 const VOLUME_FLOOR_DB := -60.0
 const DUCK_LINEAR_MUL: float = 0.25           # -12 dB → 10^(-12/20) ≈ 0.25
+const DUCK_DB: float = -12.0
 
 var player: AudioStreamPlayer = null
 var config: AudioConfig = null
@@ -62,12 +63,12 @@ func play(p_config: AudioConfig, p_interrupt: bool = false):
 		state = State.FADING_IN
 		player.volume_db = VOLUME_FLOOR_DB
 		player.play()
-		_fade_to(linear2db(base_volume), config.fade_in_ms * 0.001, config.fade_curve)
+		_fade_to(linear_to_db(base_volume), config.fade_in_ms * 0.001, config.fade_curve)
 		var t = player.get_tree().create_timer(config.fade_in_ms * 0.001)
 		t.timeout.connect(func(): state = State.PLAYING if state == State.FADING_IN else state)
 	else:
 		state = State.PLAYING
-		player.volume_db = linear2db(base_volume)
+		player.volume_db = linear_to_db(base_volume)
 		player.play()
 
 	# 截断定时
@@ -102,7 +103,7 @@ func play_from_position(p_config: AudioConfig, position: float, cutoff_remaining
 	state = State.FADING_IN
 	player.volume_db = VOLUME_FLOOR_DB
 	player.play(position)
-	_fade_to(linear2db(base_volume), 0.1, AudioConfig.FadeCurve.EASE_IN)
+	_fade_to(linear_to_db(base_volume), 0.1, AudioConfig.FadeCurve.EASE_IN)
 	var t = player.get_tree().create_timer(0.1)
 	t.timeout.connect(func(): state = State.PLAYING if state == State.FADING_IN else state)
 
@@ -129,7 +130,7 @@ func duck():
 	if ducked or state == State.IDLE:
 		return
 	ducked = true
-	var target_db = linear2db(base_volume) + DUCK_DB
+	var target_db = linear_to_db(base_volume) + DUCK_DB
 	_fade_to(maxf(target_db, VOLUME_FLOOR_DB), 0.15, AudioConfig.FadeCurve.LINEAR)
 
 ## Unduck — 恢复音量
@@ -139,7 +140,7 @@ func unduck():
 	ducked = false
 	ducked_by.clear()
 	if state in [State.PLAYING, State.FADING_IN]:
-		_fade_to(linear2db(base_volume), 0.25, AudioConfig.FadeCurve.EASE_OUT)
+		_fade_to(linear_to_db(base_volume), 0.25, AudioConfig.FadeCurve.EASE_OUT)
 
 ## 获取当前播放位置（秒），用于断点保存
 func get_playback_position() -> float:

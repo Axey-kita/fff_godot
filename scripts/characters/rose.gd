@@ -219,7 +219,15 @@ static func update_systems(f: Fighter):
 					"damage": 7.0,
 					"owner": f,
 				})
-	if comp.rose_skill1_enhanced_slashes.size() == 0 and not _has_active_enhanced_trails(f) and comp.rose_skill1_holding:
+	# 常态抓取持续锁定：冲刺期间敌人被定身
+	if comp.rose_skill1_holding and comp.rose_skill1_enhanced_slashes.size() == 0 and not _has_active_enhanced_trails(f) and f.dashing:
+		var enemy = GameWorld.get_opponent(f)
+		if enemy and enemy.hp > 0:
+			enemy.pos_x = clampf(comp.rose_skill1_grab_pos_x - enemy.w / 2.0, 10, 2390 - enemy.w)
+			enemy.vx = 0
+			enemy.vy = 0
+	# 释放抓取：常态冲刺结束后释放 | 强化刀光全部结束后释放
+	if comp.rose_skill1_holding and comp.rose_skill1_enhanced_slashes.size() == 0 and not _has_active_enhanced_trails(f) and not f.dashing:
 		comp.rose_skill1_holding = false
 
 ## 判断是否还有未消失的强化刀光拖尾
@@ -253,7 +261,7 @@ static func update_rose_trails():
 	if GameWorld.rose_slash_trails.is_empty():
 		GameWorld.unregister_draw_effect("rose_slash_trails")
 	else:
-		GameWorld.register_draw_effect("rose_slash_trails", func(font, cam_x):
+		GameWorld.register_draw_effect("rose_slash_trails", func(font, cam_x, _cam_y = 0.0):
 			var items: Array = []
 			for trail in GameWorld.rose_slash_trails:
 				var tx = trail["x"] - cam_x
@@ -267,11 +275,11 @@ static func update_rose_trails():
 					if tex:
 						var dir = trail.get("dir", 1)
 						if dir < 0:
-							items.append({"type": "set_transform", "pos": Vector2(tx + trail["w"], trail["y"]), "scale": Vector2(-1, 1)})
+							items.append({"type": "set_transform", "pos": Vector2(tx + trail["w"], trail["y"] - _cam_y), "scale": Vector2(-1, 1)})
 							items.append({"type": "tex", "tex": tex, "rect": Rect2(0, 0, trail["w"], trail["h"]), "color": Color(1,1,1,0.85)})
 							items.append({"type": "reset_transform"})
 						else:
-							items.append({"type": "tex", "tex": tex, "rect": Rect2(tx, trail["y"], trail["w"], trail["h"]), "color": Color(1,1,1,0.85)})
+							items.append({"type": "tex", "tex": tex, "rect": Rect2(tx, trail["y"] - _cam_y, trail["w"], trail["h"]), "color": Color(1,1,1,0.85)})
 			return items
 		, 0)
 

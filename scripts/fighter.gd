@@ -102,6 +102,12 @@ var burn_timer: int = 0
 var is_invincible: bool = false
 var invincible_timer: int = 0
 
+# Damage reduction (domain effect, etc.)
+var damage_reduction: float = 0.0
+
+# Speed multiplier (domain effect, etc.)
+var speed_multiplier: float = 1.0
+
 # Status effects (shared)
 var gravity_debuff: bool = false
 var jump_reduction: float = 1.0
@@ -319,7 +325,7 @@ func get_slowed_factor() -> float:
 	return 1.0
 
 func is_movement_locked() -> bool:
-	return has_status("frozen") or shield_active or dashing
+	return has_status("frozen") or has_status("stun") or shield_active or dashing
 
 func get_hit_box() -> Rect2:
 	# 刺客冲刺中扩大受击体积（沿冲刺方向延伸 25 像素），更容易触发闪避
@@ -360,6 +366,9 @@ func apply_physics():
 			vy = 0
 		elif not grounded:
 			vy += 0.22 # GRAVITY
+			# 领域减速效果：跳跃速度减少
+			if vy < 0 and jump_reduction < 1.0 and absf(vy) > 8.0:
+				vy = -10.0 * jump_reduction
 		if grounded and absf(vx) > 0.1 and not dashing:
 			vx *= 0.88 # FRICTION
 		elif grounded and not dashing:
@@ -645,6 +654,10 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 		final_dmg = maxf(1.0, floorf(final_dmg * 0.7))
 		knockback = false
 
+	# 领域减伤（吟游诗人高音领域等）
+	if target.damage_reduction > 0.0:
+		final_dmg = maxf(1.0, floorf(final_dmg * (1.0 - target.damage_reduction)))
+
 	# Dragon Knight 龙魂大招：免疫击退和击飞
 	if target.dk_ult_active:
 		knockback = false
@@ -673,7 +686,9 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	if knockback and attacker and attacker != target:
 		target.vy = -4
 		target.vx = (attacker.facing if attacker.facing != 0 else (1 if target.is_player else -1)) * 5
-	emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 25, hit_color, 6, 6, "circle", 0.8)
+	# 领域伤害：无粒子效果和音效
+	if damage_source != "domain":
+		emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 25, hit_color, 6, 6, "circle", 0.8)
 	if target.hp < 0:
 		target.hp = 0
 	target.hp_changed.emit(old_hp, target.hp)
@@ -682,7 +697,8 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	TalentEventBus.emit_damage_received(target, attacker, final_dmg, damage_source, recursion_depth)
 	if target.hp <= 0:
 		TalentEventBus.emit_kill(attacker, target)
-	AudioManager.play_sound(sound_name)
+	if damage_source != "domain":
+		AudioManager.play_sound(sound_name)
 	# updateHUD() would go here
 
 # Call character-specific onDamageReceived hooks via components
@@ -725,6 +741,8 @@ static func grab_fighter_in_rect(grabber: Fighter, area: Rect2, teleport_x: floa
 	"""抓取矩形区域内的对手，瞬移到指定x坐标。返回是否抓取成功。"""
 	var target = GameWorld.get_opponent(grabber)
 	if not target or target.hp <= 0:
+		return false
+	if target.is_invincible:
 		return false
 	if not area.intersects(target.get_hit_box()):
 		return false
@@ -780,7 +798,7 @@ func _teleport_to_random_ground():
 static func apply_movement(f: Fighter, mx: int, max_spd: float):
 	if not f.has_status("frozen") and not f.dashing:
 		f.vx += mx * 0.25
-		if absf(f.vx) > max_spd: f.vx = max_spd * signf(f.vx)
+		if absf(f.vx) > max_spd * f.speed_multiplier: f.vx = max_spd * f.speed_multiplier * signf(f.vx)
 
 static func update_state(p: Fighter, mx: int):
 	if p.grounded and mx == 0 and not p.attacking and not p.dashing:

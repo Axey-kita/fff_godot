@@ -17,7 +17,7 @@ var hit_stop := 0
 const MAX_TALENT_SLOTS := 3
 var player_talents: Array = []
 var enemy_talents: Array = []
-var talent_pool: Array = []  # 主菜单中已选择的天赋 ID 列表
+var talent_pool: Array = ["", "", ""]  # 3个固定槽位: [0]=主动天赋专用, [1][2]=被动天赋专用
 
 # Slow motion
 var slow_mo_timer := 0
@@ -48,6 +48,9 @@ var rose_slash_trails: Array = []
 var rose_joystick_dir: Vector2 = Vector2.ZERO
 var active_overlays: Array = []  # [{anim, position, owner, overlay_id, on_finish}]
 
+# 从游戏内"角色选择"返回时，主菜单直接跳转到选人界面
+var skip_to_char_select := false
+
 # 角色注入的绘制回调 { "key": unique_key, "cb": Callable, "z": int }
 # 角色在 skill 激活时注册，用完自行注销；game.gd 只遍历调用，不关心来源
 static var draw_effect_callbacks: Array = []
@@ -75,7 +78,8 @@ static func cleanup_draw_callbacks():
 var platforms: Array = []
 
 # Camera
-var camera := {"x": 0.0}
+var camera := {"x": 0.0, "y": 0.0}
+var camera_vel := {"x": 0.0, "y": 0.0}  # 阻尼速度
 var screen_shake_intensity: float = 0.0
 var screen_shake_duration: int = 0
 
@@ -118,6 +122,9 @@ func reset_world():
 	draw_effect_callbacks.clear()
 	entities.clear()
 	camera.x = 0
+	camera.y = 0
+	camera_vel.x = 0
+	camera_vel.y = 0
 	pickup_timer = 0
 	slow_mo_timer = 0
 	slow_mo_tick = 0

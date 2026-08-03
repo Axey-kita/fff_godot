@@ -50,10 +50,19 @@ func _start_game():
 	var ai_char = enemy_chars[randi() % enemy_chars.size()]
 	print("Starting game: player=", GameWorld.selected_char_id, " enemy=", ai_char)
 	# ── 玩家天赋：使用主菜单选择（若无选择则用默认测试集）──
-	if GameWorld.talent_pool.is_empty():
-		GameWorld.player_talents = ["vitality", "blaze_rush"]
+	var pool = GameWorld.talent_pool
+	var has_talent = false
+	for tid in pool:
+		if tid != "":
+			has_talent = true
+			break
+	if not has_talent:
+		GameWorld.player_talents = []
 	else:
-		GameWorld.player_talents = GameWorld.talent_pool.duplicate()
+		GameWorld.player_talents = []
+		for tid in pool:
+			if tid != "":
+				GameWorld.player_talents.append(tid)
 	GameWorld.enemy_talents = []
 	init_game(GameWorld.selected_char_id, ai_char)
 
@@ -262,8 +271,6 @@ func _update():
 	# Input & AI (must happen BEFORE physics, so vx/vy from input take effect same frame)
 	InputHandler.update_player_input(GameWorld, keys)
 	InputRouter.handle_talent_keys(keys)
-	if touch_controls:
-		touch_controls.update_talent_visibility()
 	ai_think_delay = AISystem.update_ai(ai_think_delay)
 	# Apply physics (after input, matching JS order)
 	_apply_physics_all()
@@ -294,10 +301,27 @@ func _update():
 	CharacterSystems.update_active_overlays()
 	# CharacterFactory.call_rose_trails() 已由 CharacterSystems.update_characters() 在帧首调用，不再重复
 	CharacterFactory.call_global_update("evoker")
-	# Camera
-	var target_cam = GameWorld.player.pos_x - 400.0
-	target_cam = clampf(target_cam, 0, 2400 - 800)
-	GameWorld.camera.x += (target_cam - GameWorld.camera.x) * 0.1
+	CharacterFactory.call_global_update("bard")
+	# Camera — 弹簧阻尼 + 钳制防越界
+	const CAM_STIFFNESS := 0.015
+	const CAM_FRICTION := 0.88
+	var target_cam = GameWorld.player.pos_x - 350.0
+	# 屏幕抖动
+	if GameWorld.screen_shake_duration > 0:
+		GameWorld.screen_shake_duration -= 1
+		target_cam += randf_range(-GameWorld.screen_shake_intensity, GameWorld.screen_shake_intensity)
+	target_cam = clampf(target_cam, 0.0, 2400.0 - 800.0)
+	# 弹簧力 → 速度 → 摩擦力 → 位置
+	GameWorld.camera_vel.x += (target_cam - GameWorld.camera.x) * CAM_STIFFNESS
+	GameWorld.camera_vel.x *= CAM_FRICTION
+	GameWorld.camera.x += GameWorld.camera_vel.x
+	
+	# Camera Y — 追随人物Y坐标，钳制防止拍到地面以下
+	var target_cam_y = GameWorld.player.pos_y - 300.0
+	target_cam_y = clampf(target_cam_y, -80.0, 0.0)
+	GameWorld.camera_vel.y += (target_cam_y - GameWorld.camera.y) * CAM_STIFFNESS
+	GameWorld.camera_vel.y *= CAM_FRICTION
+	GameWorld.camera.y += GameWorld.camera_vel.y
 
 func _apply_physics_all():
 	# Time stop check — skip physics if any entity has time_stop active
@@ -328,6 +352,8 @@ func _unhandled_input(event: InputEvent):
 		InputRouter.map_game_keys(event, keys)
 		if event.pressed and event.keycode == KEY_R and GameWorld.game_over:
 			_restart_game()
+		if event.pressed and event.keycode == KEY_C and GameWorld.game_over:
+			_back_to_menu()
 
 func _restart_game():
 	# Clean up old fighters
@@ -339,10 +365,19 @@ func _restart_game():
 	# 重置角色配置缓存（大招等修改的 config 字段需要还原）
 	CharConfigs.reset()
 	# 重新填充天赋
-	if GameWorld.talent_pool.is_empty():
-		GameWorld.player_talents = ["vitality", "blaze_rush"]
+	var pool = GameWorld.talent_pool
+	var has_talent = false
+	for tid in pool:
+		if tid != "":
+			has_talent = true
+			break
+	if not has_talent:
+		GameWorld.player_talents = []
 	else:
-		GameWorld.player_talents = GameWorld.talent_pool.duplicate()
+		GameWorld.player_talents = []
+		for tid in pool:
+			if tid != "":
+				GameWorld.player_talents.append(tid)
 	GameWorld.enemy_talents = []
 	var enemy_chars = ["knight","mage","archer","paladin","witch","assassin","shadowwarrior","evoker","rose"]
 	var ai_char = enemy_chars[randi() % enemy_chars.size()]
@@ -387,6 +422,7 @@ func _back_to_menu():
 		_current_map.queue_free()
 		_current_map = null
 	GameWorld.reset_world()
+	GameWorld.skip_to_char_select = true
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
 func _exit_game():
@@ -409,6 +445,17 @@ func _style_pause_ui():
 	_style_pause_button(continue_btn, Color(0.298, 0.686, 0.314))
 	_style_pause_button(menu_btn, Color(1.0, 0.843, 0.0))
 	_style_pause_button(exit_btn, Color(0.914, 0.271, 0.157))
+
+	# 添加"角色选择"按钮
+	var char_btn = Button.new()
+	char_btn.name = "CharSelectBtn"
+	char_btn.text = "🎭 角色选择"
+	char_btn.pressed.connect(func():
+		_back_to_menu()
+	)
+	_style_pause_button(char_btn, Color(0.667, 0.533, 1.0))
+	var panel = $UILayer/PauseMenu/PausePanel
+	panel.add_child(char_btn)
 
 func _style_pause_button(btn: Button, accent: Color):
 	btn.add_theme_font_size_override("font_size", 16)

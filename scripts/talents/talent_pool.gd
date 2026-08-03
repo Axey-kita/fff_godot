@@ -16,12 +16,24 @@ static func _register_all():
 	_metadata["vampiric"]      = { "name": "鲜血汲取",  "desc": "被动 · 可重复选取\n每次选取：治疗 10%\n选取 2 次：15%\n选取 3 次：20%", "is_skill": false }
 	_metadata["blaze_rush"]    = { "name": "烈焰冲刺",  "desc": "主动 · 不可叠加\n向前冲刺并留下火海\n冲刺伤害：6  火海：4/次\n冷却：600 帧（10 秒）", "is_skill": true }
 	_metadata["void_affinity"] = { "name": "虚空亲和",  "desc": "被动 · 不可叠加\n触碰虚空时扣除当前生命 50%\n随机传送至地面", "is_skill": false }
+	_metadata["arcane_surge"]  = { "name": "奥术涌流",  "desc": "主动 · 不可叠加\n被动：能量回复速度 +5%\n释放：瞬间回复 40 能量\n冷却：30 秒", "is_skill": true }
+	_metadata["phase_blink"]   = { "name": "相位闪烁",  "desc": "主动 · 不可叠加\n向操控方向瞬移 500 像素\n无操控方向时默认向前瞬移\n冷却：10 秒", "is_skill": true }
+	_metadata["regen_rune"]    = { "name": "再生符文",  "desc": "主动 · 不可叠加\n被动：所有血量回复量 +10%\n释放：以 5/秒 回复生命\n持续 4 秒  冷却：30 秒", "is_skill": true }
+	_metadata["battle_frenzy"] = { "name": "战斗，爽！", "desc": "被动 · 不可叠加 · 占2格\n伤害 +5%  受伤 -10%\n技能1/2 冷却 -1 秒\n20% 概率免疫击退", "is_skill": false }
+	_metadata["last_stand"]    = { "name": "背水一战",  "desc": "被动 · 不可叠加 · 整局1次\nHP < 20% 时自动触发\n无敌 10 秒 · 免疫击退\n免疫所有负面效果", "is_skill": false }
+	_metadata["order_reforge"] = { "name": "秩序重铸",  "desc": "主动 · 不可叠加\n被动：技能一/二 冷却 -1 秒\n释放：所有冷却中的技能\n立即结束冷却\n冷却：40 秒", "is_skill": true }
 
 	_registry["vitality"]      = { "factory": _make_vitality }
 	_registry["thorns"]        = { "factory": _make_thorns }
 	_registry["vampiric"]      = { "factory": _make_vampiric }
 	_registry["blaze_rush"]    = { "factory": _make_blaze_rush }
 	_registry["void_affinity"] = { "factory": _make_void_affinity }
+	_registry["arcane_surge"]  = { "factory": _make_arcane_surge }
+	_registry["phase_blink"]   = { "factory": _make_phase_blink }
+	_registry["regen_rune"]    = { "factory": _make_regen_rune }
+	_registry["battle_frenzy"] = { "factory": _make_battle_frenzy }
+	_registry["last_stand"]    = { "factory": _make_last_stand }
+	_registry["order_reforge"] = { "factory": _make_order_reforge }
 
 static func create(talent_id: String, fighter) -> TalentInstance:
 	var entry = _registry.get(talent_id)
@@ -189,4 +201,308 @@ static func _make_void_affinity(f) -> TalentInstance:
 		var pre_hp = data["pre_hp"]
 		fighter.hp = maxf(1.0, pre_hp * 0.5)
 		fighter._teleport_to_random_ground()
+	return inst
+
+## 奥术涌流 — 主动天赋（被动+5%能量回复，释放回复40能量，冷却30s）
+static func _make_arcane_surge(f) -> TalentInstance:
+	const CD := 1800        # 冷却帧数（30 秒）
+	const BURST_ENERGY := 40  # 释放回复能量
+
+	var inst = TalentInstance.new()
+	inst.talent_name = "奥术涌流"
+	inst.description = "主动 · 不可叠加"
+	inst.is_skill = true
+
+	# ── 被动：能量回复速度 +5% ──
+	inst.on_attach = func():
+		f.energy_regen *= 1.05
+
+	# ── 主动状态 ──
+	f.ad["arcane_surge"] = {"cd": 0}
+
+	inst.can_activate = func():
+		return f.ad["arcane_surge"]["cd"] <= 0
+
+	inst.activate = func():
+		var state = f.ad["arcane_surge"]
+		if state["cd"] > 0:
+			return {"success": false}
+
+		state["cd"] = CD
+		f.energy = minf(f.max_energy, f.energy + BURST_ENERGY)
+
+		# 释放粒子特效（奥术蓝光）
+		Fighter.emit_particles(f.pos_x + f.w / 2.0, f.pos_y + f.h / 2.0, 20, Color(0.3, 0.5, 1.0), 6, 10, "star")
+		return {"success": true}
+
+	inst.update = func():
+		var state = f.ad["arcane_surge"]
+		if state["cd"] > 0:
+			state["cd"] -= 1
+
+	return inst
+
+## 相位闪烁 — 主动天赋（向操控方向瞬移500px，冷却10s）
+static func _make_phase_blink(f) -> TalentInstance:
+	const CD = 600            # 冷却帧数（10 秒）
+	const BLINK_DIST = 500    # 瞬移距离
+
+	var inst = TalentInstance.new()
+	inst.talent_name = "相位闪烁"
+	inst.description = "主动 · 不可叠加"
+	inst.is_skill = true
+
+	# ── 状态命名空间 ──
+	f.ad["phase_blink"] = {"cd": 0}
+
+	inst.can_activate = func():
+		return f.ad["phase_blink"]["cd"] <= 0
+
+	inst.activate = func():
+		var state = f.ad["phase_blink"]
+		if state["cd"] > 0:
+			return {"success": false}
+
+		state["cd"] = CD
+
+		# 方向判定：有操控输入则按输入方向，否则按朝向
+		var dir: int
+		if absf(f.vx) > 0.5:
+			dir = 1 if f.vx > 0 else -1
+		else:
+			dir = f.facing
+
+		# 瞬移入场粒子（瞬移前位置）
+		Fighter.emit_particles(f.pos_x + f.w / 2.0, f.pos_y + f.h / 2.0, 15, Color(0.5, 0.3, 1.0), 4, 6, "star")
+
+		# 执行瞬移并钳制到地图边界
+		f.pos_x += dir * BLINK_DIST
+		f.pos_x = clampf(f.pos_x, 10, 2400 - 10 - f.w)
+
+		# 瞬移出场粒子（瞬移后位置）
+		Fighter.emit_particles(f.pos_x + f.w / 2.0, f.pos_y + f.h / 2.0, 15, Color(0.5, 0.3, 1.0), 4, 6, "star")
+
+		return {"success": true}
+
+	inst.update = func():
+		var state = f.ad["phase_blink"]
+		if state["cd"] > 0:
+			state["cd"] -= 1
+
+	return inst
+
+## 再生符文 — 主动天赋（被动+10%治疗量，释放后5hp/s持续4s，冷却30s）
+static func _make_regen_rune(f) -> TalentInstance:
+	const CD = 1800              # 冷却帧数（30 秒）
+	const HEAL_PER_SEC := 5.0    # 每秒回复
+	const DURATION := 240        # 持续帧数（4 秒）
+	const HEAL_BOOST := 0.1      # 治疗加成 10%
+
+	var inst = TalentInstance.new()
+	inst.talent_name = "再生符文"
+	inst.description = "主动 · 不可叠加"
+	inst.is_skill = true
+
+	# ── 状态命名空间 ──
+	f.ad["regen_rune"] = {
+		"cd": 0, "active": false, "timer": 0,
+		"prev_hp": f.hp, "boosting": false,
+	}
+
+	inst.can_activate = func():
+		return f.ad["regen_rune"]["cd"] <= 0
+
+	inst.activate = func():
+		var state = f.ad["regen_rune"]
+		if state["cd"] > 0:
+			return {"success": false}
+
+		state["cd"] = CD
+		state["active"] = true
+		state["timer"] = DURATION
+
+		# 释放特效（翠绿光芒）
+		Fighter.emit_particles(f.pos_x + f.w / 2.0, f.pos_y + f.h / 2.0, 20, Color(0.27, 1.0, 0.27), 5, 8, "star")
+		return {"success": true}
+
+	inst.update = func():
+		var state = f.ad["regen_rune"]
+
+		# 冷却递减
+		if state["cd"] > 0:
+			state["cd"] -= 1
+
+		# 主动持续治疗：5hp/s = 5/60 每帧
+		if state["active"] and f.hp > 0:
+			state["timer"] -= 1
+			if state["timer"] <= 0:
+				state["active"] = false
+			else:
+				f.hp = minf(f.max_hp, f.hp + HEAL_PER_SEC / 60.0)
+
+		# 被动：所有治疗量 +10%（通过监测 hp 增量实现）
+		if f.hp > state["prev_hp"] and not state["boosting"]:
+			var delta = f.hp - state["prev_hp"]
+			state["boosting"] = true
+			f.hp = minf(f.max_hp, f.hp + delta * HEAL_BOOST)
+			state["boosting"] = false
+
+		state["prev_hp"] = f.hp
+
+	return inst
+
+## 战斗，爽！— 被动天赋 · 占2格（伤害+5%，受伤-10%，技能12冷却-1s，20%免疫击退）
+static func _make_battle_frenzy(f) -> TalentInstance:
+	const ATK_BOOST := 0.05       # 伤害 +5%
+	const DMG_REDUCTION := 0.1    # 受伤 -10%
+	const CD_REDUCTION := 60      # 技能冷却 -1 秒（60 帧）
+	const KNOCKBACK_RESIST := 0.2 # 击退免疫概率 20%
+
+	var inst = TalentInstance.new()
+	inst.talent_name = "战斗，爽！"
+	inst.description = "被动 · 不可叠加 · 占2格"
+	inst.is_skill = false
+
+	# ── 装配时生效 ──
+	inst.on_attach = func():
+		# 伤害 +5%
+		f.attack_boost += ATK_BOOST
+		# 受伤 -10%
+		f.damage_reduction += DMG_REDUCTION
+		# 技能1/2 冷却 -1s（仅首次装配）
+		if not f.ad.get("battle_frenzy_applied", false):
+			f.ad["battle_frenzy_applied"] = true
+			var s1 = f.get_skill("skill1")
+			if s1: s1.cooldown = maxi(1, s1.cooldown - CD_REDUCTION)
+			var s2 = f.get_skill("skill2")
+			if s2: s2.cooldown = maxi(1, s2.cooldown - CD_REDUCTION)
+
+	# ── 20% 几率免疫击退 ──
+	inst.on_damage_received = func(data: Dictionary):
+		if randf() < KNOCKBACK_RESIST:
+			f.vx = 0.0
+			f.vy = maxf(0.0, f.vy)
+
+	return inst
+
+## 背水一战 — 被动天赋 · 整局1次（HP<20%触发无敌10s，免疫击退+负面效果）
+static func _make_last_stand(f) -> TalentInstance:
+	const HP_THRESHOLD := 0.2     # 触发阈值：20% 最大生命
+	const INVULN_DURATION := 600  # 无敌持续帧数（10 秒）
+
+	var inst = TalentInstance.new()
+	inst.talent_name = "背水一战"
+	inst.description = "被动 · 不可叠加 · 整局1次"
+	inst.is_skill = false
+
+	# ── 状态命名空间 ──
+	f.ad["last_stand"] = {"triggered": false, "active": false, "timer": 0}
+
+	# ── hp_changed 监听：HP 首次低于 20% 时触发 ──
+	inst.on_attach = func():
+		f.hp_changed.connect(func(_old: float, new_hp: float):
+			var state = f.ad["last_stand"]
+			if state["triggered"]:
+				return
+			if new_hp <= 0:
+				return
+			if new_hp < f.max_hp * HP_THRESHOLD:
+				state["triggered"] = true
+				state["active"] = true
+				state["timer"] = INVULN_DURATION
+
+				# 无敌：伤害减免拉满 → 每击只受 1 点伤害
+				f.damage_reduction += 1.0
+
+				# 防止触发的那一击直接致死
+				f.hp = maxf(new_hp, f.max_hp * HP_THRESHOLD)
+
+				# 清除已有负面效果
+				_clear_debuffs(f)
+
+				# 释放粒子特效（金色光芒）
+				Fighter.emit_particles(f.pos_x + f.w / 2.0, f.pos_y + f.h / 2.0, 40, Color(1.0, 0.843, 0.0), 8, 12, "star", 1.5)
+		)
+
+	# ── 受击时：补回那 1 点强制伤害 → 真正无敌 + 免疫击退 ──
+	inst.on_damage_received = func(_data: Dictionary):
+		var state = f.ad["last_stand"]
+		if not state["active"]:
+			return
+		# 补回每击强制扣的 1 点伤害
+		f.hp = minf(f.max_hp, f.hp + 1)
+		# 免疫击退
+		f.vx = 0.0
+		f.vy = maxf(0.0, f.vy)
+
+	# ── 每帧：递减计时 + 持续清除负面效果 ──
+	inst.update = func():
+		var state = f.ad["last_stand"]
+		if not state["active"]:
+			return
+		state["timer"] -= 1
+		# 持续清除新施加的负面效果
+		_clear_debuffs(f)
+		if state["timer"] <= 0:
+			state["active"] = false
+			f.damage_reduction -= 1.0  # 恢复正常受伤
+
+	return inst
+
+## 清除所有负面效果（debuff）
+static func _clear_debuffs(f):
+	f.statuses.clear()
+	f.gravity_debuff = false
+	f.jump_reduction = 1.0
+	f.slow_timer = 0
+	f.slow_percent = 0.0
+	f.burn_timer = 0
+
+## 秩序重铸 — 主动天赋（被动技能12冷却-1s，释放重置所有技能冷却，冷却40s）
+static func _make_order_reforge(f) -> TalentInstance:
+	const CD := 2400             # 冷却帧数（40 秒）
+	const CD_REDUCTION := 60      # 技能冷却 -1 秒
+
+	var inst = TalentInstance.new()
+	inst.talent_name = "秩序重铸"
+	inst.description = "主动 · 不可叠加"
+	inst.is_skill = true
+
+	# ── 被动：技能1/2 冷却 -1s（仅首次）──
+	if not f.ad.get("order_reforge_applied", false):
+		f.ad["order_reforge_applied"] = true
+		var s1 = f.get_skill("skill1")
+		if s1: s1.cooldown = maxi(1, s1.cooldown - CD_REDUCTION)
+		var s2 = f.get_skill("skill2")
+		if s2: s2.cooldown = maxi(1, s2.cooldown - CD_REDUCTION)
+
+	# ── 主动状态 ──
+	f.ad["order_reforge"] = {"cd": 0}
+
+	inst.can_activate = func():
+		return f.ad["order_reforge"]["cd"] <= 0
+
+	inst.activate = func():
+		var state = f.ad["order_reforge"]
+		if state["cd"] > 0:
+			return {"success": false}
+
+		state["cd"] = CD
+
+		# 重置技能冷却（大招只重置50%）
+		for sk in f.skills:
+			if sk.key == "ult" and sk.cd > 0:
+				sk.cd = floori(sk.cd * 0.5)
+			else:
+				sk.cd = 0
+
+		# 金色重置特效
+		Fighter.emit_particles(f.pos_x + f.w / 2.0, f.pos_y + f.h / 2.0, 30, Color(1.0, 0.84, 0.0), 6, 9, "star", 1.2)
+		return {"success": true}
+
+	inst.update = func():
+		var state = f.ad["order_reforge"]
+		if state["cd"] > 0:
+			state["cd"] -= 1
+
 	return inst

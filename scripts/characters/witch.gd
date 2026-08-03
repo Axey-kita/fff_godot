@@ -63,7 +63,7 @@ static func _attack(owner: Fighter) -> Dictionary:
 	if witch_comp and witch_comp.is_flying:
 		p_vx = 3.0 * dir
 		p_vy = 2.0
-	GameWorld.projectiles.append({"x":px-16,"y":py-12,"w":32,"h":24,"vx":p_vx,"vy":p_vy,"life":120,"damage":4,"owner":owner,"type":"gravity","color":Color(0.67,0.53,1.0),"reflected":false,"is_gravity":true,"img":PROJ_GRAVITY})
+	GameWorld.projectiles.append({"x":px-16,"y":py-12,"w":32,"h":24,"vx":p_vx,"vy":p_vy,"life":120,"damage":4,"owner":owner,"type":"gravity","color":Color(0.67,0.53,1.0),"reflected":false,"isGravity":true,"img":PROJ_GRAVITY})
 	owner.attack_cooldown = 120
 	return {"success": true}
 
@@ -142,22 +142,22 @@ static func update_global():
 
 # ── 绘制注入（龙卷风 + 漩涡渲染，从 game.gd 迁移至此）──
 static func _inject_draw():
-	GameWorld.register_draw_effect("witch_tornadoes", func(font, cam_x):
+	GameWorld.register_draw_effect("witch_tornadoes", func(font, cam_x, _cam_y = 0.0):
 		var items: Array = []
 		for t in GameWorld.tornadoes:
 			var px = t["x"] - cam_x
 			if px > -t["w"] and px < Constants.W + t["w"]:
 				if t.has("img") and t["img"] is Texture2D:
-					items.append({"type": "tex", "tex": t["img"], "rect": Rect2(px, t["y"], t["w"], t["h"]), "color": Color(1,1,1,0.8)})
+					items.append({"type": "tex", "tex": t["img"], "rect": Rect2(px, t["y"] - _cam_y, t["w"], t["h"]), "color": Color(1,1,1,0.8)})
 				else:
-					items.append({"type": "rect", "rect": Rect2(px, t["y"], t["w"], t["h"]), "color": Color(0.533, 0.867, 1.0, 0.8)})
+					items.append({"type": "rect", "rect": Rect2(px, t["y"] - _cam_y, t["w"], t["h"]), "color": Color(0.533, 0.867, 1.0, 0.8)})
 		for v in GameWorld.vortexes:
 			var px = v["x"] - cam_x
 			if px > -v["w"] and px < Constants.W + v["w"]:
 				if v.has("img") and v["img"] is Texture2D:
-					items.append({"type": "tex", "tex": v["img"], "rect": Rect2(px, v["y"], v["w"], v["h"]), "color": Color(1,1,1,0.8)})
+					items.append({"type": "tex", "tex": v["img"], "rect": Rect2(px, v["y"] - _cam_y, v["w"], v["h"]), "color": Color(1,1,1,0.8)})
 				else:
-					items.append({"type": "rect", "rect": Rect2(px, v["y"], v["w"], v["h"]), "color": Color(0.467, 0.267, 0.667, 0.8)})
+					items.append({"type": "rect", "rect": Rect2(px, v["y"] - _cam_y, v["w"], v["h"]), "color": Color(0.467, 0.267, 0.667, 0.8)})
 		return items
 	, 0)
 

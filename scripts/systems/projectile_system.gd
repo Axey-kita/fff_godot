@@ -46,6 +46,8 @@ static func update_projectiles(game_node: Node):
 			continue
 
 		# 5. Collision detection
+		if p.get("type") == "bard_domain":
+			continue  # 领域弹射物不参与碰撞
 		var target = GameWorld.get_opponent(p["owner"])
 		if not target or p["owner"] == target:
 			GameWorld.projectiles.remove_at(i)
@@ -69,8 +71,8 @@ static func update_projectiles(game_node: Node):
 			GameWorld.projectiles.remove_at(i)
 			continue
 
-		# 6. Blocking / reflect
-		if target.blocking and target != p["owner"]:
+		# 6. Blocking / reflect (含骑士招架 damage_reduction >= 0.8)
+		if (target.blocking or target.damage_reduction >= 0.8) and target != p["owner"]:
 			if _reflect_projectile(p):
 				continue
 
@@ -117,6 +119,7 @@ static func update_projectiles(game_node: Node):
 					if p.get("burn"): target.add_status("burn")
 					if p.get("slow"): target.add_status("slow")
 					if p.get("isFire") or p.get("is_fire"): target.add_status("burn")
+					if p.get("stun"): target.add_status("stun")
 
 					# 弓箭手火矢命中：生成火焰区域
 					if p.get("is_fire") and (ptype == "arrow" or ptype == "arrow_ult"):
@@ -127,10 +130,15 @@ static func update_projectiles(game_node: Node):
 						})
 
 					# Damage: mage projectiles have no knockback
-					if ptype == "mage_fire" or ptype == "mage_ice" or ptype == "mage_light":
+					if ptype == "mage_fire" or ptype == "mage_ice" or ptype == "mage_light" or ptype == "bard_skill1_wave":
 						Fighter.apply_damage(target, p["damage"], p["owner"], false)
 					else:
 						Fighter.apply_damage(target, p["damage"], p["owner"])
+
+					# 命中回复能量（骑士强化普攻等）
+					var on_hit_energy = p.get("on_hit_energy", 0)
+					if on_hit_energy > 0 and p["owner"]:
+						p["owner"].energy = minf(p["owner"].max_energy, p["owner"].energy + on_hit_energy)
 
 					# Hit particles
 					Fighter.emit_particles(p["x"] + p["w"] / 2.0, p["y"] + p["h"] / 2.0, 30, Color(1.0, 0.67, 0.0), 6, 8, "star", 1.2)
@@ -154,7 +162,7 @@ static func _reset_casting(p: Dictionary):
 
 static func _reflect_projectile(p: Dictionary) -> bool:
 	var defender = GameWorld.get_opponent(p["owner"])
-	if not defender.blocking:
+	if not (defender.blocking or defender.damage_reduction >= 0.8):
 		return false
 	p["vx"] = -p["vx"] * 1.1
 	p["owner"] = defender
