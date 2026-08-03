@@ -1,6 +1,9 @@
 class_name Fighter
 extends Node2D
 
+#######################################
+#注意！ 本文件以后将不允许角色代码写入，必须用反向注入的方式放入角色自身文件
+#######################################
 # ── 信号 ──
 signal hp_changed(old_val: float, new_val: float)
 signal energy_changed(old_val: float, new_val: float)

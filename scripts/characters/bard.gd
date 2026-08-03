@@ -6,9 +6,9 @@ const NOTES_DIR = "res://assets/char_ani/bard/Notes/"
 
 # 技能1：我含泪而笑 — 声波贴图
 const SKILL1_DIR = "res://assets/char_ani/bard/skill1/"
-const SKILL1_WAVE_1 = preload(SKILL1_DIR + "bard_skill1_1.png")
-const SKILL1_WAVE_2 = preload(SKILL1_DIR + "bard_skill1_2.png")
-const SKILL1_WAVE_3 = preload(SKILL1_DIR + "bard_skill1_3.png")
+const SKILL1_WAVE_1 = preload(SKILL1_DIR + "bard_skill1_f_1.png")
+const SKILL1_WAVE_2 = preload(SKILL1_DIR + "bard_skill1_f_2.png")
+const SKILL1_WAVE_3 = preload(SKILL1_DIR + "bard_skill1_f_3.png")
 const SKILL1_WAVE_IMGS := [SKILL1_WAVE_1, SKILL1_WAVE_2, SKILL1_WAVE_3]
 
 const SKILL1_WAVE_INTERVAL := 12   # 0.2秒（60fps）

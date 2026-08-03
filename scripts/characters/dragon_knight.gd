@@ -3,7 +3,7 @@ class_name DragonKnightCharacter
 
 const DK_ANI_DIR = "res://assets/char_ani/dragon_knight/"
 const DK_FIRE_STAB = preload("res://assets/fx_dragon_knight_fire_stab.png")
-const DK_SKY_SPLIT = preload("res://assets/char_ani/dragon_knight/attack/44e1392e445ac500905fc2865a5c3a0d.png")
+const DK_SKY_SPLIT = preload("res://assets/char_ani/dragon_knight/attack/dragon_knight_attack_air_f_1.png")
 const DK_UPPERCUT = preload("res://assets/fx_dragon_knight_uppercut.png")
 const DK_AIR_STANCE = preload("res://assets/fx_dragon_knight_air_stance.png")
 const DK_DIVE_STRIKE = preload("res://assets/fx_dragon_knight_dive_strike.png")
@@ -12,7 +12,7 @@ const DK_FIREBALL_GROUND = preload("res://assets/fx_dragon_knight_fireball_groun
 const DK_FIREBALL_AIR = preload("res://assets/fx_dragon_knight_fireball_air.png")
 const DK_DRAGON_IDLE = preload("res://assets/fx_dragon_knight_dragon_idle.png")
 const DK_DRAGON_FLIGHT = preload("res://assets/fx_dragon_knight_dragon_flight.png")
-const DK_JUMP = preload("res://assets/char_ani/dragon_knight/idle/961E57E544F8638D4EE54F793C5477CF.png")
+const DK_JUMP = preload("res://assets/char_ani/dragon_knight/jump/dragon_knight_jump_f_1.png")
 
 ## 从预加载贴图创建单帧 FrameAnimation
 static func _make_anim(tex: Texture2D, dur: float, loop: bool = false) -> FrameAnimation:
@@ -163,7 +163,7 @@ static func _start_ult_phase2(owner: Fighter):
 		if entry.get("overlay_id") == "dk_ult":
 			return
 
-	var anim = FrameAnimation.load_from_frames(DK_ANI_DIR + "ult/ani/", "dragon_knight_f_", [
+	var anim = FrameAnimation.load_from_frames(DK_ANI_DIR + "ult/", "dragon_knight_ult_f_", [
 		{"index": 1, "duration": 0.507},
 		{"index": 2, "duration": 0.338},
 		{"index": 3, "duration": 0.338},

@@ -250,6 +250,8 @@ static var _char_registry := {
 
 ## 六、Fighter 类
 
+> ⚠️ **注意**：本文件不允许角色代码写入，必须用反向注入的方式放入角色自身代码库（`scripts/characters/*.gd` 与 `scripts/components/*.gd`）。
+
 [`fighter.gd`](file:///c:/workspace/fff_godot/scripts/fighter.gd) 是所有角色实体的基类，包含：
 
 ### 关键字段分组

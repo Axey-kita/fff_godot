@@ -42,7 +42,7 @@ static func get_config() -> Dictionary:
 			"jump": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "jump/", "knight_jump_f_", [{"index": 1, "duration": 999.0}], true),
 			"attack": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "attack/", "knight_attack_f_", [{"index": 1, "duration": 0.5}], false),
 			"skill2": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "skill2/", "knight_skill2_f_", [{"index": 1, "duration": 999.0}], true),
-			"ult": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "ult/", "output_", _ult_frame_specs(), false),
+			"ult": FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "ult/", "knight_ult_f_", _ult_frame_specs(), false),
 		},
 		"dex": {
 			"icon": "⚔️",
@@ -148,7 +148,7 @@ static func _ult(owner: Fighter) -> Dictionary:
 		return {"success": false}
 
 	# 播放全屏 overlay 大招动画
-	var ult_anim = FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "ult/", "output_", _ult_frame_specs(), false)
+	var ult_anim = FrameAnimation.load_from_frames(KNIGHT_ANI_DIR + "ult/", "knight_ult_f_", _ult_frame_specs(), false)
 	if ult_anim.frames.is_empty():
 		return {"success": false}
 	ult_anim.play()
@@ -182,7 +182,7 @@ static func _ult_frame_specs() -> Array:
 		var dur: float = 0.248
 		if i == 8: dur = 0.497
 		elif i == 9: dur = 1.0
-		specs.append({"index": i, "duration": dur, "filename": "output_%04d.png" % i})
+		specs.append({"index": i, "duration": dur})
 	return specs
 
 ## 输入处理

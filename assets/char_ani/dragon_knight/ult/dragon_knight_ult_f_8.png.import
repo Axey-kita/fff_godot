@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bperf3fmq70aq"
-path="res://.godot/imported/dragon_knight_ult_f_1.png-295bf2118b2f59de74b95609ca93c8ac.ctex"
+uid="uid://cd8y3nwpf5meq"
+path="res://.godot/imported/dragon_knight_ult_f_8.png-c34feb027312e9fa61a737aa566fbf31.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/char_ani/dragon_knight/ult/dragon_knight_ult_f_1.png"
-dest_files=["res://.godot/imported/dragon_knight_ult_f_1.png-295bf2118b2f59de74b95609ca93c8ac.ctex"]
+source_file="res://assets/char_ani/dragon_knight/ult/dragon_knight_ult_f_8.png"
+dest_files=["res://.godot/imported/dragon_knight_ult_f_8.png-c34feb027312e9fa61a737aa566fbf31.ctex"]
 
 [params]
 

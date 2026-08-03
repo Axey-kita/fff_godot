@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bperf3fmq70aq"
-path="res://.godot/imported/dragon_knight_ult_f_1.png-295bf2118b2f59de74b95609ca93c8ac.ctex"
+uid="uid://d0dxrtnjvjson"
+path="res://.godot/imported/bard_skill1_f_1.png-aef81147934a723a49cf1d1eb77cba37.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/char_ani/dragon_knight/ult/dragon_knight_ult_f_1.png"
-dest_files=["res://.godot/imported/dragon_knight_ult_f_1.png-295bf2118b2f59de74b95609ca93c8ac.ctex"]
+source_file="res://assets/char_ani/bard/skill1/bard_skill1_f_1.png"
+dest_files=["res://.godot/imported/bard_skill1_f_1.png-aef81147934a723a49cf1d1eb77cba37.ctex"]
 
 [params]
 
