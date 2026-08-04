@@ -33,6 +33,10 @@ static var STATUS_DEFS := {
 	"evoker_gazed": {
 		"id": "evoker_gazed", "duration": 600,
 	},
+	"astrologer_ult": {
+		"id": "astrologer_ult", "duration": 1080, "vfx_color": Color(0.8, 0.7, 1.0),  # 18秒@60fps
+		"slow_factor": 0.5,
+	},
 }
 
 func _init(p_id: String, p_duration: int = 0):
@@ -64,6 +68,9 @@ func apply(target):
 		"gravity_debuff":
 			target.gravity_debuff = true
 			target.jump_reduction = 0.6  # 减少40%跳跃高度
+		"astrologer_ult":
+			target.jump_reduction = 0.5
+			target.damage_reduction += 0.2
 
 # Called each tick when tick_damage > 0 and tick_interval matched
 func _handle_tick(target: Fighter):
@@ -83,6 +90,9 @@ func _handle_expire(target):
 		"gravity_debuff":
 			target.gravity_debuff = false
 			target.jump_reduction = 1.0
+		"astrologer_ult":
+			target.jump_reduction = 1.0
+			target.damage_reduction = maxf(0.0, target.damage_reduction - 0.2)
 
 func update(target: Fighter) -> bool:
 	timer -= 1

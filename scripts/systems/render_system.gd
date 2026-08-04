@@ -120,8 +120,11 @@ static func draw_frame(game_node: CanvasItem):
 
 # ===== 地图 =====
 static func _draw_map(game_node: CanvasItem, cam_x: float, cam_y: float):
-	if BG_IMG:
-		game_node.draw_texture_rect(BG_IMG, Rect2(-cam_x * 0.2, -cam_y * 0.3, Constants.W + 200, Constants.H + 100), false)
+	var bg_tex = BG_IMG
+	if GameWorld.astrologer_ult_end_frame > 0 and GameWorld.astrologer_ult_bg:
+		bg_tex = GameWorld.astrologer_ult_bg
+	if bg_tex:
+		game_node.draw_texture_rect(bg_tex, Rect2(-cam_x * 0.2, -cam_y * 0.3, Constants.W + 200, Constants.H + 100), false)
 	else:
 		var from_color = Color(0.102, 0.102, 0.18)
 		var to_color = Color(0.169, 0.137, 0.267)

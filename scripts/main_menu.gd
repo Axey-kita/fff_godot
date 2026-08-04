@@ -1176,6 +1176,19 @@ func _on_talent_card_clicked(event: InputEvent, tid: String):
 			GameWorld.talent_pool[0] = tid
 		else:
 			# 被动天赋 → 只能放槽位1或2
+			# ── 战斗，爽！占2格 ──
+			if tid == "battle_frenzy":
+				if GameWorld.talent_pool[1] != "" or GameWorld.talent_pool[2] != "":
+					_show_toast("被动天赋栏位已满喵~（战斗，爽！需要2格）")
+					return
+				GameWorld.talent_pool[1] = tid
+				GameWorld.talent_pool[2] = tid
+				_populate_talents()
+				return
+			# 检查战斗，爽！是否已占用被动位
+			if GameWorld.talent_pool[1] == "battle_frenzy" and GameWorld.talent_pool[2] == "battle_frenzy":
+				_show_toast("战斗，爽！已占用全部被动栏位喵~")
+				return
 			var target_slot = -1
 			for j in [1, 2]:
 				if GameWorld.talent_pool[j] == "":

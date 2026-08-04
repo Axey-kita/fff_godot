@@ -375,7 +375,10 @@ static func _inject_draw(f: Fighter, comp: ShadowwarriorComponent):
 	# Fighter 本体绘制注入
 	f.state_flags["skip_fighter_draw"] = comp.iaido_active
 	if comp.stealth_active:
-		f.state_flags["draw_alpha_mod"] = 0.5
+		if f == GameWorld.player:
+			f.state_flags["draw_alpha_mod"] = 0.5  # 操作者看半透明
+		else:
+			f.state_flags["skip_fighter_draw"] = true  # 对手看全透明
 	else:
 		f.state_flags.erase("draw_alpha_mod")
 	if comp.stealth_active and f.dashing:

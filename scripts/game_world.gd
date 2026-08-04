@@ -44,9 +44,16 @@ var evoker_summons: Array = []
 var void_rifts: Array = []
 var evoker_fire_seas: Array = []
 var gravity_balls: Array = []
+var craters: Array = []           # 占星术士陨石坑
+var astrologer_cards: Array = []  # 占星术士一技能圣三角牌面显示
 var rose_slash_trails: Array = []
 var rose_joystick_dir: Vector2 = Vector2.ZERO
 var active_overlays: Array = []  # [{anim, position, owner, overlay_id, on_finish}]
+
+# 占星术士大招：愚者之旅
+var astrologer_ult_end_frame := 0      # 大招结束帧号（实秒计时）
+var astrologer_ult_bg: Texture2D = null
+var astrologer_ult_owner = null   # 大招释放者引用
 
 # 从游戏内"角色选择"返回时，主菜单直接跳转到选人界面
 var skip_to_char_select := false
@@ -117,6 +124,8 @@ func reset_world():
 	void_rifts.clear()
 	evoker_fire_seas.clear()
 	gravity_balls.clear()
+	craters.clear()              # 占星术士陨石坑
+	astrologer_cards.clear()     # 占星术士圣三角
 	rose_slash_trails.clear()
 	active_overlays.clear()
 	draw_effect_callbacks.clear()

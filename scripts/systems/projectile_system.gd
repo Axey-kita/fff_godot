@@ -9,7 +9,12 @@ static func update_projectiles(game_node: Node):
 	for i in range(GameWorld.projectiles.size() - 1, -1, -1):
 		var p = GameWorld.projectiles[i]
 		# 1. Position & life update
-		p["x"] += p["vx"]; p["y"] += p["vy"]; p["life"] -= 1
+		var speed_mult = 1.0
+		if GameWorld.astrologer_ult_end_frame > 0:
+			var p_owner = p.get("owner")
+			if p_owner and p_owner != GameWorld.astrologer_ult_owner:
+				speed_mult = 0.5
+		p["x"] += p["vx"] * speed_mult; p["y"] += p["vy"] * speed_mult; p["life"] -= 1
 
 		# Gravity: parabolic projectiles
 		if p.has("gravity"): p["vy"] += p["gravity"]
