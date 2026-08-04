@@ -25,7 +25,7 @@ static func get_char_name(char_id: String) -> String:
 	return cfg.get("name", char_id)
 
 static func _init_all():
-	var ids = CharacterFactory._char_registry.keys()
+	var ids = CharacterFactory.get_all_char_ids()
 	print("[CharConfigs] _init_all() start, loading ", ids.size(), " characters...")
 	for cid in ids:
 		print("[CharConfigs] loading config for: ", cid)

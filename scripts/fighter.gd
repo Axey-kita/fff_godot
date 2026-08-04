@@ -227,11 +227,11 @@ func _init_from_config():
 	for key in fields:
 		var val = fields[key]
 		if val is Array:
-			set(key, val.duplicate())
+			set_meta(key, val.duplicate())
 		elif val is Dictionary:
-			set(key, val.duplicate())
+			set_meta(key, val.duplicate())
 		else:
-			set(key, val)
+			set_meta(key, val)
 	var anims = config.get("animations", {})
 	if anims.has("idle"):
 		current_anim = anims["idle"]
@@ -607,7 +607,7 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 
 	# 护盾吸收伤害（50%转化为治疗）
 	if target.shield_active:
-		var heal_amount: int = int(dmg * 0.5)
+		var heal_amount: float = dmg * 0.5
 		if heal_amount > 0:
 			target.hp = minf(target.max_hp, target.hp + heal_amount)
 			emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 15, Color(0.267, 1.0, 0.533), 3, 5, "circle", 0.5)
@@ -627,7 +627,7 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 
 	# 神圣壁垒：吸收伤害并转化为能量（1:3）
 	if paladin_comp and paladin_comp.divine_shield_active:
-		var holy_gain: int = int(base_dmg * 3)
+		var holy_gain: float = base_dmg * 3
 		paladin_comp.divine_shield_absorb += base_dmg
 		target.energy = minf(target.max_energy, target.energy + holy_gain)
 		emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 18, Color(1.0, 0.843, 0.0), 4, 6, "star", 0.8)
@@ -645,21 +645,21 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 
 	# 圣佑：减免50%伤害，免疫击退
 	if paladin_comp and paladin_comp.holy_empower_active:
-		final_dmg = maxf(1.0, floorf(base_dmg * 0.5))
+		final_dmg = maxf(1.0, base_dmg * 0.5)
 		knockback = false
 
 	# 龙鳞护体：减免40%伤害
 	if target.dragon_scales_active:
-		final_dmg = maxf(1.0, floorf(final_dmg * 0.6))
+		final_dmg = maxf(1.0, final_dmg * 0.6)
 
 	# 龙化形态：减免30%伤害，免疫击退
 	if target.dragon_form_active:
-		final_dmg = maxf(1.0, floorf(final_dmg * 0.7))
+		final_dmg = maxf(1.0, final_dmg * 0.7)
 		knockback = false
 
 	# 领域减伤（吟游诗人高音领域等）
 	if target.damage_reduction > 0.0:
-		final_dmg = maxf(1.0, floorf(final_dmg * (1.0 - target.damage_reduction)))
+		final_dmg = maxf(1.0, final_dmg * (1.0 - target.damage_reduction))
 
 	# Dragon Knight 龙魂大招：免疫击退和击飞
 	if target.dk_ult_active:
@@ -667,7 +667,7 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 
 	# 暴击伤害倍率
 	if is_critical:
-		final_dmg = floorf(final_dmg * 1.5)
+		final_dmg = final_dmg * 1.5
 		emit_particles(target.pos_x + target.w / 2.0, target.pos_y + target.h / 2.0, 30, Color(1.0, 0.867, 0.267), 6, 8, "star", 1.5)
 		AudioManager.play_sound("ult")
 
@@ -707,7 +707,7 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 # Call character-specific onDamageReceived hooks via components
 static func _call_on_damage_received(target: Fighter, attacker: Fighter, dmg: float):
 	if target.components:
-		target.components.call("on_damage_received", attacker, dmg)
+		target.components.on_damage_received(attacker, dmg)
 
 static func emit_particles(px: float, py: float, count: int, color: Color, speed: float, size: float, type: String = "circle", spread: float = 1.0):
 	for i in count:

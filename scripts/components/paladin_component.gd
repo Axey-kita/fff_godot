@@ -24,7 +24,7 @@ func update():
 func on_damage_received(attacker: Fighter, dmg: float):
 	# 神圣壁垒：吸收伤害转化为能量
 	if divine_shield_active:
-		var holy_gain = int(dmg * 3)
+		var holy_gain = dmg * 3
 		divine_shield_absorb += dmg
 		owner.energy = minf(owner.max_energy, owner.energy + holy_gain)
 	else:

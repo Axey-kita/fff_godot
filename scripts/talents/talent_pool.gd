@@ -363,19 +363,20 @@ static func _make_battle_frenzy(f) -> TalentInstance:
 	inst.description = "被动 · 不可叠加 · 占2格"
 	inst.is_skill = false
 
-	# ── 装配时生效 ──
+	# ── 装配时生效（占2格所以会被attach两次，用flag防叠加）──
 	inst.on_attach = func():
+		if f.ad.get("battle_frenzy_applied", false):
+			return
+		f.ad["battle_frenzy_applied"] = true
 		# 伤害 +5%
 		f.attack_boost += ATK_BOOST
 		# 受伤 -10%
 		f.damage_reduction += DMG_REDUCTION
-		# 技能1/2 冷却 -1s（仅首次装配）
-		if not f.ad.get("battle_frenzy_applied", false):
-			f.ad["battle_frenzy_applied"] = true
-			var s1 = f.get_skill("skill1")
-			if s1: s1.cooldown = maxi(1, s1.cooldown - CD_REDUCTION)
-			var s2 = f.get_skill("skill2")
-			if s2: s2.cooldown = maxi(1, s2.cooldown - CD_REDUCTION)
+		# 技能1/2 冷却 -1s
+		var s1 = f.get_skill("skill1")
+		if s1: s1.cooldown = maxi(1, s1.cooldown - CD_REDUCTION)
+		var s2 = f.get_skill("skill2")
+		if s2: s2.cooldown = maxi(1, s2.cooldown - CD_REDUCTION)
 
 	# ── 20% 几率免疫击退 ──
 	inst.on_damage_received = func(data: Dictionary):

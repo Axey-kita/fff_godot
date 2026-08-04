@@ -11,6 +11,7 @@ const Evoker = preload("res://scripts/characters/evoker.gd")
 const Rose = preload("res://scripts/characters/rose.gd")
 const DragonKnight = preload("res://scripts/characters/dragon_knight.gd")
 const Bard = preload("res://scripts/characters/bard.gd")
+const Astrologer = preload("res://scripts/characters/astrologer.gd")
 
 # Component preloads
 const COMP_ARCHER = preload("res://scripts/components/archer_component.gd")
@@ -24,6 +25,7 @@ const COMP_KNIGHT = preload("res://scripts/components/knight_component.gd")
 const COMP_MAGE = preload("res://scripts/components/char_component.gd")    # fallback
 const COMP_DRAGON_KNIGHT = preload("res://scripts/components/char_component.gd")  # fallback
 const COMP_BARD = preload("res://scripts/components/bard_component.gd")
+const COMP_ASTROLOGER = preload("res://scripts/components/char_component.gd")  # fallback
 
 static var _char_registry := {
 	"knight": { "cls": Knight, "config": null, "comp": COMP_KNIGHT },
@@ -37,6 +39,7 @@ static var _char_registry := {
 	"rose": { "cls": Rose, "config": null, "comp": COMP_ROSE },
 	"dragon_knight": { "cls": DragonKnight, "config": null, "comp": COMP_DRAGON_KNIGHT },
 	"bard": { "cls": Bard, "config": null, "comp": COMP_BARD },
+	"astrologer": { "cls": Astrologer, "config": null, "comp": COMP_ASTROLOGER },
 }
 
 static func get_config(char_id: String) -> Dictionary:
@@ -100,9 +103,13 @@ static func call_global_update(char_id: String):
 	if cls and cls.has_method("update_global"):
 		cls.update_global()
 
+## 返回所有已注册角色 ID
+static func get_all_char_ids() -> Array:
+	return _char_registry.keys()
+
 ## 重新注入全局绘制（reset_world 清除后调用，仅无参版本）
 static func reinject_draws():
-	for cid in ["evoker", "witch"]:
+	for cid in ["evoker", "witch", "astrologer"]:
 		var entry = _char_registry.get(cid, {})
 		var cls = entry.get("cls")
 		if cls:
