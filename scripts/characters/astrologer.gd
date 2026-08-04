@@ -263,6 +263,8 @@ static func _draw_craters(_font, cam_x, _cam_y = 0.0):
 			items.append({"type": "tex", "tex": tex, "rect": Rect2(rx, ry, rw, rh)})
 	# 小阿卡纳 / 开场标签（角色头顶）
 	for f in GameWorld.entities:
+		if not is_instance_valid(f):
+			continue
 		var label_tex = null
 		var intro = f.get_meta("intro_timer", null)
 		if intro != null and intro > 0:
@@ -940,13 +942,13 @@ static func _remove_wall(w: Dictionary, idx: int):
 
 # ── 大招: 愚者之旅 ──
 
-## 大招帧规格（30帧，含时长数据）
+## 大招帧规格（30帧，含时长数据）—— 播片速度 x2（原 f1~f29 0.121s / f30 1.0s）
 static func _ult_frame_specs() -> Array:
 	var specs := []
-	# timetable: f1~f29 0.121s, f30 1.0s
+	# timetable: f1~f29 0.121s, f30 1.0s → 时长减半，播放速度 x2
 	for i in range(1, ULT_FRAME_COUNT + 1):
-		var dur: float = 0.121
-		if i == 30: dur = 1.0
+		var dur: float = 0.0605
+		if i == 30: dur = 0.5
 		specs.append({"index": i, "duration": dur})
 	return specs
 

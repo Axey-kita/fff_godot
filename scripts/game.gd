@@ -26,6 +26,15 @@ var _accumulator := 0.0
 # AI
 var ai_think_delay := 0
 
+# 游戏结束选择操作后的加载滤镜时长（帧，60fps 下 90 帧 ≈ 1.5 秒）
+const LOADING_FILTER_FRAMES := 90
+
+# 异步重开加载状态：R 重开时后台预加载资源，期间呼吸滤镜保持画面活动
+var _restart_loading := false
+var _pending_map_path := ""      # 预选并后台加载的地图
+var _pending_enemy_char := ""    # 预选的敌方角色（与 _restart_game 保持一致）
+var _pending_load_paths: Array = []
+
 # 当前地图实例
 var _current_map: Node2D = null
 
@@ -69,6 +78,8 @@ func _start_game():
 func init_game(player_char_id: String, enemy_char_id: String):
 	CharConfigs.ensure_init()
 	print("Configs available: ", CharConfigs.configs.keys())
+	# 每次开局先清空旧角色实例，避免上一局残留引用触发 "previously freed"
+	_clear_old_fighters()
 	GameWorld.reset_world()
 	CharacterFactory.reinject_draws()
 	
@@ -96,6 +107,19 @@ func init_game(player_char_id: String, enemy_char_id: String):
 	GameWorld.game_over = false
 	GameWorld.frame = 0
 	print("Game initialized! player.hp=", GameWorld.player.hp, " enemy.hp=", GameWorld.enemy.hp)
+
+## 清除上一局残留的角色实例：解除注入 → 释放节点 → 置空全局引用
+func _clear_old_fighters():
+	if is_instance_valid(GameWorld.player):
+		GameWorld.player.detach_injections()
+		GameWorld.player.queue_free()
+	if is_instance_valid(GameWorld.enemy):
+		GameWorld.enemy.detach_injections()
+		GameWorld.enemy.queue_free()
+	GameWorld.player = null
+	GameWorld.enemy = null
+	GameWorld.entities.clear()
+	GameWorld.cleanup_draw_callbacks()
 
 ## 根据已加载的平台计算出生位置,确保角色站在地面/平台上
 func _assemble_talents(fighter: Fighter, talent_ids: Array):
@@ -160,7 +184,11 @@ func _load_random_map():
 	GameWorld.platforms.clear()
 	
 	MapManager.ensure_init()
-	var map_path = MapManager.pick_random()
+	# 优先使用异步重开时预加载的地图，否则随机选
+	var map_path = _pending_map_path
+	_pending_map_path = ""
+	if map_path == "":
+		map_path = MapManager.pick_random()
 	print("[Map] 选中地图: ", map_path)
 	
 	var map_scene = load(map_path)
@@ -201,6 +229,12 @@ func _load_random_map():
 	print("[Map] 加载 ", GameWorld.platforms.size(), " 个地形块, 地图=", MapManager.get_display_name(map_path))
 
 func _process(_delta: float):
+	# 异步重开加载中：持续点亮呼吸滤镜，直到后台资源加载完成
+	if _restart_loading:
+		GameWorld.loading_filter_frames = LOADING_FILTER_FRAMES
+	# 加载滤镜帧计数：每渲染帧递减
+	if GameWorld.loading_filter_frames > 0:
+		GameWorld.loading_filter_frames -= 1
 	if not GameWorld.game_running or GameWorld.game_over:
 		queue_redraw()
 		# Always show UI for game over
@@ -345,23 +379,106 @@ func _unhandled_input(event: InputEvent):
 	if event is InputEventKey:
 		if event.pressed and event.keycode == KEY_ESCAPE:
 			if GameWorld.game_over:
+				_start_loading_filter()
 				get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 			else:
 				_toggle_pause()
 			return
 		InputRouter.map_game_keys(event, keys)
-		if event.pressed and event.keycode == KEY_R and GameWorld.game_over:
-			_restart_game()
+		if event.pressed and event.keycode == KEY_R and GameWorld.game_over and not _restart_loading:
+			_begin_async_restart()
 		if event.pressed and event.keycode == KEY_C and GameWorld.game_over:
+			_start_loading_filter()
 			_back_to_menu()
 
+## 游戏结束选择 ESC/R/C 后，开启加载中的灰色呼吸滤镜（帧计数，阻塞加载不消耗）
+func _start_loading_filter():
+	GameWorld.loading_filter_frames = LOADING_FILTER_FRAMES
+
+## R 重开：先显示呼吸滤镜，后台线程预加载地图+角色贴图，加载完成才正式开局
+func _begin_async_restart():
+	if _restart_loading:
+		return
+	_restart_loading = true
+	_start_loading_filter()
+	await _do_async_restart()
+
+func _do_async_restart():
+	# 先让滤镜渲染一帧
+	await get_tree().process_frame
+	# 预选地图与敌方角色（与 _restart_game 保持一致）
+	_pending_map_path = MapManager.pick_random()
+	_pending_enemy_char = _pick_enemy_char()
+	# 分帧收集所有角色动画贴图路径（避免一次性扫描上千文件卡住主循环）
+	_pending_load_paths = [_pending_map_path]
+	for cid in CharacterFactory.get_all_char_ids():
+		_pending_load_paths.append_array(_collect_char_images(cid))
+		await get_tree().process_frame
+	# 分批后台加载：发出请求 → 等本批完成 → 下一批
+	# （每批数量受限，主循环每帧都渲染呼吸滤镜，加载全程画面保持活动）
+	const BATCH_SIZE := 64
+	var batch := 0
+	while batch < _pending_load_paths.size():
+		var end = mini(batch + BATCH_SIZE, _pending_load_paths.size())
+		for i in range(batch, end):
+			ResourceLoader.load_threaded_request(_pending_load_paths[i])
+		var waited := 0
+		while waited < 300:  # 每批最多等 5 秒
+			var all_done := true
+			for i in range(batch, end):
+				var st = ResourceLoader.load_threaded_get_status(_pending_load_paths[i])
+				if st != ResourceLoader.THREAD_LOAD_LOADED \
+						and st != ResourceLoader.THREAD_LOAD_FAILED \
+						and st != ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+					all_done = false
+					break
+			if all_done:
+				break
+			waited += 1
+			await get_tree().process_frame
+		# 取出资源写入缓存，后续 load() 命中缓存不再阻塞
+		for i in range(batch, end):
+			ResourceLoader.load_threaded_get(_pending_load_paths[i])
+		batch = end
+		await get_tree().process_frame  # 批次间隙让滤镜多渲染几帧
+	_pending_load_paths = []
+	_restart_loading = false
+	GameWorld.loading_filter_frames = 0
+	_restart_game()
+
+## 随机敌方角色（供异步重开预加载与 _restart_game 共用，保证加载与使用一致）
+func _pick_enemy_char() -> String:
+	var enemy_chars = ["knight","mage","archer","paladin","witch","assassin","shadowwarrior","evoker","rose"]
+	return enemy_chars[randi() % enemy_chars.size()]
+
+## 收集角色动画目录下所有图片路径（用于后台预加载）
+func _collect_char_images(char_id: String) -> Array:
+	var paths: Array = []
+	var base := "res://assets/char_ani/" + char_id + "/"
+	var dir = DirAccess.open(base)
+	if dir:
+		_collect_images_recursive(dir, base, paths)
+	return paths
+
+func _collect_images_recursive(dir: DirAccess, base: String, paths: Array):
+	dir.list_dir_begin()
+	var fname = dir.get_next()
+	while fname != "":
+		if fname.begins_with("."):
+			fname = dir.get_next()
+			continue
+		var full: String = base + fname
+		if dir.current_is_dir():
+			var sub = DirAccess.open(full)
+			if sub:
+				_collect_images_recursive(sub, full + "/", paths)
+		elif fname.ends_with(".png") or fname.ends_with(".jpg"):
+			paths.append(full)
+		fname = dir.get_next()
+	dir.list_dir_end()
+
 func _restart_game():
-	# Clean up old fighters
-	if GameWorld.player: GameWorld.player.queue_free()
-	if GameWorld.enemy: GameWorld.enemy.queue_free()
-	# 清理旧地图 (由 _load_random_map 负责清理)
-	GameWorld.player = null
-	GameWorld.enemy = null
+	# 旧角色实例的清理由 init_game → _clear_old_fighters() 统一处理
 	# 重置角色配置缓存（大招等修改的 config 字段需要还原）
 	CharConfigs.reset()
 	# 重新填充天赋
@@ -379,8 +496,11 @@ func _restart_game():
 			if tid != "":
 				GameWorld.player_talents.append(tid)
 	GameWorld.enemy_talents = []
-	var enemy_chars = ["knight","mage","archer","paladin","witch","assassin","shadowwarrior","evoker","rose"]
-	var ai_char = enemy_chars[randi() % enemy_chars.size()]
+	# 优先使用异步重开时预选的敌方角色（已后台预加载其贴图）
+	var ai_char = _pending_enemy_char
+	_pending_enemy_char = ""
+	if ai_char == "":
+		ai_char = _pick_enemy_char()
 	init_game(GameWorld.selected_char_id, ai_char)
 
 # ===== Pause menu =====

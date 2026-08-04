@@ -12,6 +12,8 @@ var game_mode := "pve" # "pve" or "pvp"
 var difficulty := "medium"
 var frame := 0
 var hit_stop := 0
+# 加载滤镜：游戏结束选择 ESC/R/C 后的呼吸灰色遮罩（帧计数，跨场景生效；阻塞加载不消耗）
+var loading_filter_frames := 0
 
 # Talent system
 const MAX_TALENT_SLOTS := 3
@@ -126,6 +128,9 @@ func reset_world():
 	gravity_balls.clear()
 	craters.clear()              # 占星术士陨石坑
 	astrologer_cards.clear()     # 占星术士圣三角
+	astrologer_ult_bg = null     # 占星术士大招背景（重开需还原）
+	astrologer_ult_owner = null
+	astrologer_ult_end_frame = 0
 	rose_slash_trails.clear()
 	active_overlays.clear()
 	draw_effect_callbacks.clear()

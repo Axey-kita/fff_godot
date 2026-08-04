@@ -13,6 +13,27 @@ static func draw(game_node: CanvasItem, font: Font):
 	_draw_skill_cooldowns(game_node, font)
 	_draw_talent_buttons(game_node, font)
 	_draw_game_over(game_node, font)
+	_draw_loading_filter(game_node)  # 最后绘制，盖住整个画面
+
+## 加载中灰色滤镜：透明度呼吸变化 + 上升浮动小圆点
+static func _draw_loading_filter(game_node: CanvasItem):
+	if GameWorld.loading_filter_frames <= 0:
+		return
+	var t = Time.get_ticks_msec() / 1000.0
+	var breath = 0.5 + 0.5 * sin(t * TAU / 3.0)
+	game_node.draw_rect(Rect2(0, 0, Constants.W, Constants.H), Color(0.45, 0.45, 0.45, 0.35 + 0.3 * breath))
+	# 上升浮动的小圆点：底部生成、缓慢上浮、左右微摆、透明度闪烁
+	const DOT_COUNT := 16
+	const DOT_R := 3.0
+	const RISE_SPEED := 45.0
+	for i in DOT_COUNT:
+		var seed_x = float((i * 97 + 13) % 97) / 97.0
+		var seed_y = float((i * 53 + 7) % 101) / 101.0
+		var x = seed_x * Constants.W + sin(t * 1.5 + seed_x * TAU) * 10.0
+		var rise = fmod(t * RISE_SPEED + seed_y * (Constants.H + 80.0), Constants.H + 80.0)
+		var y = Constants.H - rise
+		var alpha = 0.35 + 0.65 * (0.5 + 0.5 * sin(t * 2.0 + seed_x * TAU))
+		game_node.draw_circle(Vector2(x, y), DOT_R, Color(0.88, 0.88, 0.92, alpha))
 
 ## 绘制蓄力条（角色上方）
 static func draw_charge_bar(game_node: CanvasItem, owner: Fighter, cam_x: float, cam_y: float = 0.0):

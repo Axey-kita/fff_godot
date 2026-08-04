@@ -59,6 +59,10 @@ var char_cards := {}
 var _title_click_count := 0  # 作弊计数器
 var _talent_from_char_select := false  # 天赋界面是否来自选人界面
 
+# 加载滤镜（游戏结束 ESC/C 返回时的灰色呼吸遮罩 + 上升浮动圆点）
+var _loading_filter: ColorRect = null
+var _loading_dots: Array = []
+
 const IMG_TITLE = preload("res://assets/ui_title.png")
 const IMG_PVE = preload("res://assets/ui_btn_pve.png")
 const IMG_COMING = preload("res://assets/ui_btn_coming.png")
@@ -132,6 +136,49 @@ func _ready():
 	if GameWorld.skip_to_char_select:
 		GameWorld.skip_to_char_select = false
 		_show_char_select()
+
+	# 加载滤镜：作为最后子节点绘制在全部 UI 之上（ESC/C 返回菜单时显示）
+	_loading_filter = ColorRect.new()
+	_loading_filter.color = Color(0.45, 0.45, 0.45, 0.5)
+	_loading_filter.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_loading_filter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_loading_filter.visible = false
+	add_child(_loading_filter)
+	# 上升浮动小圆点（作为滤镜的子节点，随滤镜一起显隐）
+	_loading_dots.clear()
+	for i in 16:
+		var dot = ColorRect.new()
+		dot.color = Color(0.88, 0.88, 0.92, 0.6)
+		dot.size = Vector2(6, 6)
+		dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_loading_filter.add_child(dot)
+		_loading_dots.append({
+			"rect": dot,
+			"seed_x": float((i * 97 + 13) % 97) / 97.0,
+			"seed_y": float((i * 53 + 7) % 101) / 101.0,
+		})
+
+func _process(_delta):
+	if _loading_filter == null:
+		return
+	if GameWorld.loading_filter_frames > 0:
+		GameWorld.loading_filter_frames -= 1
+		var t = Time.get_ticks_msec() / 1000.0
+		var breath = 0.5 + 0.5 * sin(t * TAU / 3.0)
+		_loading_filter.color = Color(0.45, 0.45, 0.45, 0.35 + 0.3 * breath)
+		# 圆点从底部上浮，左右微摆，透明度闪烁
+		var w = _loading_filter.size.x
+		var h = _loading_filter.size.y
+		for d in _loading_dots:
+			var dot: ColorRect = d.rect
+			var x = d.seed_x * (w - 12.0) + sin(t * 1.5 + d.seed_x * TAU) * 10.0
+			var rise = fmod(t * 45.0 + d.seed_y * (h + 80.0), h + 80.0)
+			var y = h - rise
+			dot.position = Vector2(x, y)
+			dot.color.a = 0.35 + 0.65 * (0.5 + 0.5 * sin(t * 2.0 + d.seed_x * TAU))
+		_loading_filter.visible = true
+	else:
+		_loading_filter.visible = false
 
 # ===== Pokedex =====
 
