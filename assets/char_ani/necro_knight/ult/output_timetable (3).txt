@@ -1,0 +1,18 @@
+frame1::0.355s
+frame2::0.355s
+frame3::0.355s
+frame4::0.355s
+frame5::0.355s
+frame6::0.355s
+frame7::0.355s
+frame8::0.355s
+frame9::0.355s
+frame10::0.355s
+frame11::0.355s
+frame12::0.355s
+frame13::0.355s
+frame14::0.355s
+frame15::0.355s
+frame16::0.355s
+frame17::1.000s
+end frames

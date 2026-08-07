@@ -145,6 +145,7 @@ static func handle_input(owner: Fighter, keys: Dictionary) -> int:
 		if keys.left or keys.right or keys.up or keys.attack or keys.skill1 or keys.skill2 or keys.ult or down_just_pressed:
 			comp.perform_active = false
 			owner.image_state = ""
+			owner.set_animation_state("idle")
 		return 0
 
 	if down_just_pressed and owner.grounded and owner.pos_y + owner.h >= 375.0:
@@ -487,7 +488,13 @@ static func update_systems(f: Fighter):
 		return
 
 	if comp.perform_active:
-		f.energy = minf(f.max_energy, f.energy + f.energy_regen)
+		# 受击时退出演奏状态，恢复待机贴图
+		if f.damage_flash > 0:
+			comp.perform_active = false
+			f.image_state = ""
+			f.set_animation_state("idle")
+		else:
+			f.energy = minf(f.max_energy, f.energy + f.energy_regen)
 
 	# 技能1：我含泪而笑 — 波次定时发射
 	if comp.skill1_active:

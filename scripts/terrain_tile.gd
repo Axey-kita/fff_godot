@@ -42,12 +42,11 @@ const _COLORS := {
 
 func _ready():
 	centered = false
-	_generate_texture()
+	# 已从 .tscn 加载纹理则不重建，保持与编辑器一致
+	if texture == null:
+		_generate_texture()
 
 func _generate_texture():
-	if not Engine.is_editor_hint() and not is_inside_tree():
-		return
-	
 	var w = maxi(block_w, 8)
 	var h = maxi(block_h, 8)
 	centered = false

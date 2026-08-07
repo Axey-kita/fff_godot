@@ -26,7 +26,7 @@ static func get_config() -> Dictionary:
 			"stats": [{"label": "生命", "value": "120"}, {"label": "圣光值（能量）", "value": "100"}],
 			"skills": [
 				{"name": "劈砍（普通攻击）", "desc": "向前劈砍，造成 5 点伤害。", "meta": "消耗：无 ｜ 冷却：1 秒"},
-				{"name": "正义冲锋（技能一）", "desc": "长按蓄力，松开发动冲锋撞击敌人，蓄力越久冲刺越远（最大约 400 像素），造成 15 点伤害。冷却在蓄力结束后开始计算。", "meta": "消耗：无 ｜ 冷却：10 秒"},
+				{"name": "正义冲锋（技能一）", "desc": "长按蓄力，松开发动冲锋撞击敌人，蓄力越久冲刺越远（最大约 280 像素），造成 15 点伤害。冷却在蓄力结束后开始计算。", "meta": "消耗：无 ｜ 冷却：10 秒"},
 				{"name": "神圣壁垒（技能二）", "desc": "生成持续 4 秒的无敌护盾，吸收所有伤害并以 1:3 比例转化为圣光值（能量）。期间可移动、跳跃、攻击。", "meta": "消耗：无 ｜ 冷却：12 秒"},
 				{"name": "圣佑（大招）", "desc": "需满圣光值释放。进入强化状态，伤害 +5，受伤减半，免疫击飞，持续消耗圣光值（15 点 / 秒）。", "meta": "消耗：15 圣光 / 秒 ｜ 冷却：无"},
 			]
@@ -120,7 +120,7 @@ static func _release_paladin_charge(owner: Fighter):
 	if not owner.charging_skill1:
 		return
 	var ct = (Time.get_ticks_msec() - owner.charge_start_time) / 1000.0
-	var dist = 100 + minf(ct, 2.0) * 150
+	var dist = (100 + minf(ct, 2.0) * 150) * 0.7
 	var d = owner.facing if owner.facing != 0 else 1
 	owner.charging_skill1 = false
 	owner.state = "idle"

@@ -16,7 +16,7 @@ static func reset():
 	_init_all()
 
 static func get_all_ids() -> Array:
-	return configs.keys()
+	return CharacterFactory.get_all_char_ids()
 
 static func get_char_name(char_id: String) -> String:
 	var cfg = configs.get(char_id, {})

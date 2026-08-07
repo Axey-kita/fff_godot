@@ -327,7 +327,7 @@ static func update_ai(ai_think_delay: int) -> int:
 				var d = f.facing
 				var px2 = f.pos_x + (f.w if d == 1 else 0)
 				var py2 = f.pos_y + 30
-				GameWorld.projectiles.append({"x":px2-16,"y":py2-12,"w":32,"h":24,"vx":3*d,"vy":0,"life":120,"damage":3,"owner":f,"type":"mage_fire","color":Color(1,0.4,0),"reflected":false,"burn":true})
+				GameWorld.projectiles.append({"x":px2-16,"y":py2-12,"w":32,"h":24,"vx":3*d,"vy":0,"life":120,"damage":3,"owner":f,"type":"mage_fire","color":Color(1,0.4,0),"reflected":false,"burn":true,"img":preload("res://assets/fx_fire_projectile.png")})
 				_state = "ATTACK"
 				return new_delay
 

@@ -56,6 +56,7 @@ var active_overlays: Array = []  # [{anim, position, owner, overlay_id, on_finis
 var astrologer_ult_end_frame := 0      # 大招结束帧号（实秒计时）
 var astrologer_ult_bg: Texture2D = null
 var astrologer_ult_owner = null   # 大招释放者引用
+var battle_bg: Texture2D = null   # 当前地图战斗背景
 
 # 从游戏内"角色选择"返回时，主菜单直接跳转到选人界面
 var skip_to_char_select := false
@@ -65,15 +66,15 @@ var skip_to_char_select := false
 static var draw_effect_callbacks: Array = []
 
 ## 注册绘制回调（角色调用）
-static func register_draw_effect(key: String, cb: Callable, z: int = 0):
-	# 同名 key 先移除旧注册
+static func register_draw_effect(key: String, cb: Callable, z: int = 0, screen_space: bool = false):
 	unregister_draw_effect(key)
-	draw_effect_callbacks.append({"key": key, "cb": cb, "z": z})
+	draw_effect_callbacks.append({"key": key, "cb": cb, "z": z, "screen_space": screen_space})
 	draw_effect_callbacks.sort_custom(_sort_by_z)
 
 static func unregister_draw_effect(key: String):
 	for i in range(draw_effect_callbacks.size() - 1, -1, -1):
-		if draw_effect_callbacks[i].get("key") == key:
+		var e: Dictionary = draw_effect_callbacks[i]
+		if e.get("key") == key:
 			draw_effect_callbacks.remove_at(i)
 
 static func _sort_by_z(a: Dictionary, b: Dictionary) -> bool:
@@ -97,6 +98,7 @@ var pickup_timer := 0.0
 
 # Selected character
 var selected_char_id := "knight"
+var selected_ai_char_id := ""  # 空字符串 = 随机选择
 
 # Cheats
 var infinite_energy := false
@@ -131,6 +133,7 @@ func reset_world():
 	astrologer_ult_bg = null     # 占星术士大招背景（重开需还原）
 	astrologer_ult_owner = null
 	astrologer_ult_end_frame = 0
+	battle_bg = null             # 战斗背景
 	rose_slash_trails.clear()
 	active_overlays.clear()
 	draw_effect_callbacks.clear()
