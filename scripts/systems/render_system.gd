@@ -34,6 +34,9 @@ static func draw_frame(game_node: CanvasItem):
 		var fs_alpha = 0.3 + sin(fs_progress * PI * 6) * 0.2
 		game_node.draw_rect(Rect2(cam_x, cam_y, Constants.W, Constants.H), Color(fs_border.r, fs_border.g, fs_border.b, fs_alpha), false, 8)
 
+	# 1.7 平台地形块（背景之上、角色之下，替代场景 sprite 自渲染）
+	_draw_platforms(game_node, cam_x, cam_y)
+
 	# 2. 角色实体
 	if is_instance_valid(GameWorld.player):
 		_draw_fighter(game_node, GameWorld.player, cam_x, cam_y, true)
@@ -209,6 +212,38 @@ static func _draw_map(game_node: CanvasItem, cam_x: float, cam_y: float):
 
 	game_node.draw_rect(Rect2(0 - cam_x, Constants.GROUND_Y - cam_y - 10, 10, 10), Color(0.914, 0.271, 0.157))
 	game_node.draw_rect(Rect2(Constants.MAP_W - 10 - cam_x, Constants.GROUND_Y - cam_y - 10, 10, 10), Color(0.914, 0.271, 0.157))
+
+## 无贴图平台（如默认平台）的兜底配色，与 terrain_tile.gd 一致
+const _TERRAIN_FALLBACK_COLORS := {
+	0: Color("3a3a52"),  # GROUND
+	1: Color("2e2e3e"),  # WALL
+	2: Color("6a4c9c"),  # PLATFORM
+	3: Color("1a0a2e"),  # VOID
+}
+
+## 绘制平台地形块（位于背景之上、角色与 HUD 之下）
+static func _draw_platforms(game_node: CanvasItem, cam_x: float, cam_y: float):
+	for p in GameWorld.platforms:
+		if not p is Dictionary:
+			continue
+		var pd: Dictionary = p
+		# 占星术士土墙由角色自身的绘制回调渲染，这里跳过避免重复
+		if pd.has("wall_ref"):
+			continue
+		var px: float = pd["x"] - cam_x
+		var py: float = pd["y"] - cam_y
+		var pw: float = pd["w"]
+		var ph: float = pd["h"]
+		if px > Constants.W + 100 or px + pw < -100:
+			continue
+		var tex: Texture2D = pd.get("tex")
+		if tex is Texture2D:
+			var sx: float = pd.get("scale_x", 1.0)
+			var sy: float = pd.get("scale_y", 1.0)
+			game_node.draw_texture_rect(tex, Rect2(px, py, pw * sx, ph * sy), false)
+		else:
+			var col: Color = _TERRAIN_FALLBACK_COLORS.get(pd.get("terrain_type", -1), Color("3a3a52"))
+			game_node.draw_rect(Rect2(px, py, pw, ph), col)
 
 # ===== 角色实体 =====
 static func _draw_fighter(game_node: CanvasItem, f: Fighter, cam_x: float, cam_y: float, is_local: bool = false):

@@ -244,6 +244,8 @@ func _load_random_map():
 	
 	_current_map = map_scene.instantiate()
 	add_child(_current_map)
+	# 地形块改由 RenderSystem 管线统一绘制（避免场景 sprite 作为子节点盖住角色/HUD），隐藏场景自渲染
+	_current_map.visible = false
 	
 	# 根据地图类型随机选择背景
 	GameWorld.battle_bg = MapManager.get_background(map_path)
@@ -273,9 +275,13 @@ func _load_random_map():
 				"is_wall": is_wall,
 				"is_void": is_void,
 				"terrain_type": ttype,
+				# 贴图与缩放：供 RenderSystem 在正确层级（角色/HUD 之下）统一绘制
+				"tex": tt.texture,
+				"scale_x": tt.scale.x,
+				"scale_y": tt.scale.y,
 			})
 	
-	# 地形块由场景自带 sprites 渲染（与编辑器一致）
+	# 地形块已隐藏场景自渲染，由 RenderSystem 管线统一绘制
 	print("[Map] 加载 ", GameWorld.platforms.size(), " 个地形块, 地图=", MapManager.get_display_name(map_path))
 
 func _process(_delta: float):
