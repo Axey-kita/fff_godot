@@ -54,6 +54,7 @@ var _dex_easter: Label = null
 var _dex_char_id: String = ""
 
 var selected_char := "knight"
+var selected_ai_char := ""  # 空字符串 = 随机AI
 var chars_initialized := false
 var char_cards := {}
 var _title_click_count := 0  # 作弊计数器
@@ -831,26 +832,47 @@ func _create_char_card(char_id: String) -> Control:
 	return card
 
 func _select_card(char_id: String):
+	selected_char = char_id
+	GameWorld.selected_char_id = char_id
+	_update_all_card_styles()
+
+func _update_all_card_styles():
 	for cid in char_cards:
 		var card = char_cards[cid]
 		var inner = card.get_child(0) as PanelContainer
 		var border = inner.get_theme_stylebox("panel", "PanelContainer") as StyleBoxFlat
 		if not border: continue
-		if cid == char_id:
+		
+		var is_player = (cid == selected_char)
+		var is_ai = (cid == selected_ai_char)
+		
+		if is_player:
 			border.bg_color = Color(1, 0.843, 0, 0.12)
 			border.border_color = Color(1, 0.843, 0, 0.9)
 			border.shadow_size = 8
 			border.shadow_color = Color(1, 0.843, 0, 0.3)
+		elif is_ai:
+			border.bg_color = Color(0.3, 0.5, 1.0, 0.12)
+			border.border_color = Color(0.3, 0.5, 1.0, 0.9)
+			border.shadow_size = 8
+			border.shadow_color = Color(0.3, 0.5, 1.0, 0.3)
 		else:
 			border.bg_color = Color(1, 1, 1, 0.06)
 			border.border_color = Color(0.4, 0.4, 0.4, 0.6)
 			border.shadow_size = 0
-	selected_char = char_id
-	GameWorld.selected_char_id = char_id
 
 func _on_card_clicked(event: InputEvent, char_id: String):
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_select_card(char_id)
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			_select_card(char_id)
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			# 右键选择/取消AI英雄
+			if selected_ai_char == char_id:
+				selected_ai_char = ""
+			else:
+				selected_ai_char = char_id
+			_update_all_card_styles()
+			_update_char_title()
 
 # ===== Signal handlers =====
 
@@ -860,7 +882,8 @@ func _init_char_configs():
 	chars_initialized = true
 
 func _on_pve_pressed():
-	GameWorld.game_mode = "pve"; _show_diff_select()
+	GameWorld.game_mode = "pve"
+	_show_diff_select()
 
 func _show_diff_select():
 	menu_main.visible = false
@@ -921,6 +944,13 @@ func _show_char_select():
 	pokedex_btn.visible = false; exit_btn.visible = false
 	char_select.visible = true
 	if char_cards.is_empty(): _populate_characters()
+	selected_ai_char = ""
+	_update_all_card_styles()
+	_update_char_title()
+
+func _update_char_title():
+	var ai_name = CharConfigs.get_char_name(selected_ai_char) if selected_ai_char != "" else "随机"
+	char_title_label.text = "选择英雄 (左键)    |    AI: " + ai_name + " (右键选择)"
 
 func _on_back_pressed():
 	char_select.visible = false
@@ -942,6 +972,8 @@ func _on_exit_pressed():
 func _on_start_pressed():
 	# 重置天赋池为3个空槽位
 	GameWorld.talent_pool = ["", "", ""]
+	# 传递AI英雄选择
+	GameWorld.selected_ai_char_id = selected_ai_char
 	# 弹出天赋选择界面
 	_talent_from_char_select = true
 	talent_overlay.visible = true
@@ -980,6 +1012,26 @@ func _populate_map_pool():
 	var all_maps = MapManager.get_all_maps()
 	for map_path in all_maps:
 		var name_str = MapManager.get_display_name(map_path)
+		
+		# 锁定地图：不可勾选，整行点击提示"开发中"
+		if MapManager.is_locked(map_path):
+			var hbox = HBoxContainer.new()
+			hbox.add_theme_constant_override("separation", 8)
+			hbox.mouse_filter = Control.MOUSE_FILTER_STOP
+			hbox.gui_input.connect(_on_locked_map_clicked.bind(map_path))
+			var lbl = Label.new()
+			lbl.text = name_str
+			lbl.add_theme_color_override("font_color", Color(0.4, 0.35, 0.45))
+			lbl.add_theme_font_size_override("font_size", 14)
+			hbox.add_child(lbl)
+			var tag = Label.new()
+			tag.text = "开发中"
+			tag.add_theme_color_override("font_color", Color(0.6, 0.4, 0.2))
+			tag.add_theme_font_size_override("font_size", 10)
+			hbox.add_child(tag)
+			map_pool_container.add_child(hbox)
+			continue
+		
 		var is_enabled = MapManager.is_in_pool(map_path)
 		
 		var hbox = HBoxContainer.new()
@@ -1002,6 +1054,11 @@ func _populate_map_pool():
 func _on_map_toggle(pressed: bool, map_path: String):
 	MapManager.toggle_map(map_path)
 	print("[MapPool] 切换: ", MapManager.get_display_name(map_path), " 池中=", MapManager.is_in_pool(map_path))
+
+## 锁定地图点击：提示开发中
+func _on_locked_map_clicked(event: InputEvent, _map_path: String):
+	if event is InputEventMouseButton and event.pressed:
+		_show_toast("该地图开发中，敬请期待")
 
 func _on_map_pool_pressed():
 	map_pool_overlay.visible = true

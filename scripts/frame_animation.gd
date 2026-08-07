@@ -31,9 +31,12 @@ static func load_from_frames(dir_path: String, prefix: String, frame_specs: Arra
 	
 	var loaded_count := 0
 	for spec in frame_specs:
-		var frame_num: int = spec.get("index", 0)
-		var duration: float = spec.get("duration", 0.0)
-		var custom_name: String = spec.get("filename", "")
+		var spec_d: Dictionary = spec as Dictionary
+		if spec_d == null or spec_d.is_empty():
+			continue
+		var frame_num: int = spec_d["index"]
+		var duration: float = spec_d["duration"]
+		var custom_name: String = spec_d.get("filename", "")
 		
 		var file_name: String
 		if not custom_name.is_empty():

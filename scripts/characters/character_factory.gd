@@ -12,6 +12,7 @@ const Rose = preload("res://scripts/characters/rose.gd")
 const DragonKnight = preload("res://scripts/characters/dragon_knight.gd")
 const Bard = preload("res://scripts/characters/bard.gd")
 const Astrologer = preload("res://scripts/characters/astrologer.gd")
+const NecroKnight = preload("res://scripts/characters/necro_knight.gd")
 
 # Component preloads
 const COMP_ARCHER = preload("res://scripts/components/archer_component.gd")
@@ -26,6 +27,7 @@ const COMP_MAGE = preload("res://scripts/components/char_component.gd")    # fal
 const COMP_DRAGON_KNIGHT = preload("res://scripts/components/char_component.gd")  # fallback
 const COMP_BARD = preload("res://scripts/components/bard_component.gd")
 const COMP_ASTROLOGER = preload("res://scripts/components/char_component.gd")  # fallback
+const COMP_NECRO_KNIGHT = preload("res://scripts/components/necro_knight_component.gd")
 
 static var _char_registry := {
 	"knight": { "cls": Knight, "config": null, "comp": COMP_KNIGHT },
@@ -40,6 +42,7 @@ static var _char_registry := {
 	"dragon_knight": { "cls": DragonKnight, "config": null, "comp": COMP_DRAGON_KNIGHT },
 	"bard": { "cls": Bard, "config": null, "comp": COMP_BARD },
 	"astrologer": { "cls": Astrologer, "config": null, "comp": COMP_ASTROLOGER },
+	"necro_knight": { "cls": NecroKnight, "config": null, "comp": COMP_NECRO_KNIGHT },
 }
 
 static func get_config(char_id: String) -> Dictionary:
@@ -107,9 +110,16 @@ static func call_global_update(char_id: String):
 static func get_all_char_ids() -> Array:
 	return _char_registry.keys()
 
+## 触发角色开场动画（有 play_intro 方法的角色）
+static func play_intro(char_id: String):
+	var entry = _char_registry.get(char_id, {})
+	var cls = entry.get("cls")
+	if cls and cls.has_method("play_intro"):
+		cls.play_intro()
+
 ## 重新注入全局绘制（reset_world 清除后调用，仅无参版本）
 static func reinject_draws():
-	for cid in ["evoker", "witch", "astrologer"]:
+	for cid in ["evoker", "witch", "astrologer", "necro_knight"]:
 		var entry = _char_registry.get(cid, {})
 		var cls = entry.get("cls")
 		if cls:

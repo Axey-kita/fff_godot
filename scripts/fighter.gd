@@ -39,6 +39,8 @@ var char_id: String = "knight"
 var config: Dictionary = {}
 var skills: Array = [] # Array of Skill objects
 var skill_map: Dictionary = {}
+var spawn_x: float = 160
+var spawn_y: float = 324
 
 # Health & energy
 var hp: float = 100
@@ -196,6 +198,8 @@ var forced_skill_timer: int = 0
 func setup(p_x: float, p_y: float, p_is_player: bool, p_char_id: String, p_skills: Array):
 	pos_x = p_x
 	pos_y = p_y
+	spawn_x = p_x
+	spawn_y = p_y
 	is_player = p_is_player
 	display_name = "玩家" if is_player else "AI"
 	char_id = p_char_id
@@ -408,10 +412,11 @@ func apply_physics():
 				continue  # 虚空：无碰撞，可穿过
 			if vy >= 0 and pos_x + w > p["x"] + 4 and pos_x < p["x"] + p["w"] - 4 and \
 			   pos_y + h >= p["y"] and pos_y + h <= p["y"] + p["h"] + 6:
-				pos_y = p["y"] - h
-				vy = 0
-				grounded = true
-				on_platform = p
+				if not state_flags.get("necro_slam_crashing"):
+					pos_y = p["y"] - h
+					vy = 0
+					grounded = true
+					on_platform = p
 				break
 		if not grounded and pos_y >= 380 - h:
 			# 检查下方是否有地面平台
@@ -426,10 +431,13 @@ func apply_physics():
 				pos_y = 380 - h
 				vy = 0
 				grounded = true
-		# 虚空：穿透后兜底硬地板
-		if not grounded and pos_y > 500:
-			pos_y = 500
+		# 虚空：掉落超过底线 → 受20伤害，传送回出生点
+		if pos_y > 500:
+			hp -= 20
+			pos_x = spawn_x
+			pos_y = spawn_y
 			vy = 0
+			vx = 0
 			grounded = true
 		pos_x = clampf(pos_x, 10, 2400 - 10 - w) # MAP_W
 		if char_id == "rose" and dashing and image_state == "skill1" and GameWorld.enemy:
@@ -535,6 +543,8 @@ func apply_physics():
 		pass  # 空中下砸动画由角色 update_systems 管理
 	elif image_state.begins_with("skill") and not attacking:
 		pass  # Keep skill-specific animation state (set by character logic)
+	elif image_state.begins_with("mounted_"):
+		pass  # 骑乘状态动画由角色 handle_input 管理
 	elif dashing or charging_skill1 or charging:
 		set_animation_state("charge")
 	elif attacking:
@@ -665,6 +675,10 @@ static func apply_damage(target: Fighter, dmg: float, attacker: Fighter, knockba
 	if target.dk_ult_active:
 		knockback = false
 
+	# 霸体：免疫击退和击飞
+	if target.state_flags.get("super_armor", false):
+		knockback = false
+
 	# 暴击伤害倍率
 	if is_critical:
 		final_dmg = final_dmg * 1.5
@@ -774,11 +788,12 @@ static func reflect_projectile(proj: Dictionary, defender: Fighter) -> bool:
 
 ## 虚空触碰：默认即死，天赋可通过 on_in_void 拦截
 func _on_void_touch():
-	var pre_hp = hp
-	if talent_manager:
-		talent_manager.on_in_void({"fighter": self, "pre_hp": pre_hp})
-	if hp == pre_hp:  # 无天赋处理 → 即死
-		hp = 0
+	hp -= 20
+	pos_x = spawn_x
+	pos_y = spawn_y
+	vy = 0
+	vx = 0
+	grounded = true
 
 ## 虚空亲和：传送到随机地面位置
 func _teleport_to_random_ground():

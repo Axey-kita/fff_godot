@@ -24,7 +24,8 @@ static func ensure_init():
 static var _builtin_maps: Array[String] = [
 	"res://maps/map_01_battlefield.tscn",
 	"res://maps/map_02_towers.tscn",
-	"res://maps/map_03_voids.tscn.tscn",
+	"res://maps/map_03_voids_brokenbridge.tscn",
+	"res://maps/map_04_voids_skypalace.tscn",
 ]
 
 static func _scan_maps():
@@ -49,18 +50,25 @@ static func _load_pool_config():
 	_pool_maps.clear()
 	var cfg = ConfigFile.new()
 	if cfg.load(POOL_CONFIG_PATH) != OK:
-		# 首次运行：默认启用全部地图
-		_pool_maps = _all_maps.duplicate()
+		# 首次运行：默认启用全部可用地图（不含锁定地图）
+		_pool_maps = _get_default_pool()
 		_save_pool_config()
 		return
 	var saved: Array = cfg.get_value(POOL_SECTION, POOL_KEY, [])
-	# 只保留仍存在的有效地图
+	# 只保留仍存在的、且未锁定的地图
 	for path in saved:
-		if _all_maps.has(path):
+		if _all_maps.has(path) and not is_locked(path):
 			_pool_maps.append(path)
 	# 如果全部被过滤掉，退回默认
 	if _pool_maps.is_empty():
-		_pool_maps = _all_maps.duplicate()
+		_pool_maps = _get_default_pool()
+
+static func _get_default_pool() -> Array[String]:
+	var pool: Array[String] = []
+	for m in _all_maps:
+		if not is_locked(m):
+			pool.append(m)
+	return pool
 
 static func _save_pool_config():
 	var cfg = ConfigFile.new()
@@ -84,12 +92,28 @@ static func set_pool_maps(pool: Array[String]):
 	_pool_maps = pool.duplicate()
 	_save_pool_config()
 
-## 从池中随机选一张地图
+## 从池中随机选一张地图（排除锁定地图）
 static func pick_random() -> String:
 	ensure_init()
-	if _pool_maps.is_empty():
-		_pool_maps = _all_maps.duplicate()
-	return _pool_maps[randi() % _pool_maps.size()]
+	var candidates: Array[String] = []
+	for m in _pool_maps:
+		if not is_locked(m):
+			candidates.append(m)
+	if candidates.is_empty():
+		candidates = _pool_maps.duplicate()  # fallback
+	if candidates.is_empty():
+		return ""
+	return candidates[randi() % candidates.size()]
+
+## 地图是否锁定（玩家不可选择，界面展示"开发中"）
+static func is_locked(map_path: String) -> bool:
+	var p: String = map_path.to_lower()
+	for kw in _locked_map_keywords:
+		if kw in p:
+			return true
+	return false
+
+const _locked_map_keywords: Array[String] = ["map_03"]  # 地图3 暂未开放
 
 ## 检查地图是否在池中
 static func is_in_pool(map_path: String) -> bool:
@@ -110,3 +134,63 @@ static func toggle_map(map_path: String):
 static func get_display_name(map_path: String) -> String:
 	var fname = map_path.get_file()
 	return fname.trim_suffix(".tscn")
+
+# ===== 背景图管理 =====
+
+const BG_DIR := "res://assets/battle_bg/"
+
+# 地图关键词 → 背景文件名（精确配对，优先级最高）
+static var _map_bg_pairs: Dictionary = {
+	"brokenbridge": "bg_void_01.png",
+	"skypalace":   "bg_void_02.png",
+	"battlefield": "bg_fallen_throne.png",
+	"towers":      "bg_divine_ruins.png",
+}
+
+static var _void_bgs: Array = []       # 虚空背景池（未配对时随机）
+static var _normal_bgs: Array = []     # 普通背景池（未配对时随机）
+static var _bg_cache: Dictionary = {}             # {filename: Texture2D}
+static var _bgs_scanned: bool = false
+
+static func _scan_backgrounds():
+	if _bgs_scanned:
+		return
+	_bgs_scanned = true
+	_void_bgs.clear()
+	_normal_bgs.clear()
+	_bg_cache.clear()
+	var dir = DirAccess.open(BG_DIR)
+	if not dir:
+		return
+	dir.list_dir_begin()
+	var fname = dir.get_next()
+	while fname != "":
+		if fname.ends_with(".png") and not fname.begins_with("."):
+			var tex: Texture2D = load(BG_DIR + fname)
+			if tex:
+				_bg_cache[fname] = tex
+				if "void" in fname.to_lower():
+					_void_bgs.append(tex)
+				else:
+					_normal_bgs.append(tex)
+		fname = dir.get_next()
+	dir.list_dir_end()
+	print("[MapManager] 背景扫描: 普通=", _normal_bgs.size(), " 虚空=", _void_bgs.size())
+
+## 根据地图路径获取背景（优先精确配对，否则按类型随机池选取）
+static func get_background(map_path: String) -> Texture2D:
+	_scan_backgrounds()
+	var path_lower: String = map_path.to_lower()
+	# 1. 精确配对
+	for keyword: String in _map_bg_pairs:
+		if keyword in path_lower:
+			var bg_name: String = _map_bg_pairs[keyword]
+			if _bg_cache.has(bg_name):
+				return _bg_cache[bg_name]
+	# 2. 回退到随机池
+	var is_void_map: bool = "voids" in path_lower
+	if is_void_map and not _void_bgs.is_empty():
+		return _void_bgs[randi() % _void_bgs.size()]
+	if not is_void_map and not _normal_bgs.is_empty():
+		return _normal_bgs[randi() % _normal_bgs.size()]
+	return null
